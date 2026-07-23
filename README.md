@@ -299,9 +299,9 @@ Các nhóm test ưu tiên:
 
 | Thành viên | Phạm vi chính | CRUD chính |
 |---|---|---|
-| Thành viên 1 | Tài khoản, hồ sơ, chỉ số cơ thể, dashboard, báo cáo và chuỗi hoạt động | Hồ sơ và bản ghi cân nặng |
-| Thành viên 2 | Thư viện bài mẫu, kho bài cá nhân, bản đồ nhóm cơ và quản trị bài mẫu | Bài tập mẫu và bài tập cá nhân |
-| Thành viên 3 | Kế hoạch, xếp lịch, kết quả, nhắc lịch và Readiness Adjustment | Kế hoạch, lịch tập và kết quả |
+| Lê Tiến Hải | Tài khoản, hồ sơ, chỉ số cơ thể, dashboard, báo cáo và chuỗi hoạt động | Hồ sơ và bản ghi cân nặng |
+| Minh Thắng | Thư viện bài mẫu, kho bài cá nhân, bản đồ nhóm cơ và quản trị bài mẫu | Bài tập mẫu và bài tập cá nhân |
+| Võ Việt Anh | Kế hoạch, xếp lịch, kết quả, nhắc lịch và Readiness Adjustment | Kế hoạch, lịch tập và kết quả |
 
 ## 11. Quy trình Git
 
