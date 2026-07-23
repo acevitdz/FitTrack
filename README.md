@@ -341,11 +341,8 @@ Các nhóm test ưu tiên:
 ## 13. Tài liệu liên quan
 
 - [Đặc tả yêu cầu hệ thống](./FitTrack_System_Requirements_Specification.md)
-- [Kiến trúc mã nguồn](./FitTrack_Source_Code_Architecture.md)
 - [Đặc tả chức năng và UI](./FitTrack_Dac_ta_chuc_nang_UI.md)
-- [Yêu cầu chi tiết từng màn hình](./FitTrack_Detailed_UI_Screen_Requirements.md)
-- [Yêu cầu giao diện cho Figma AI](./FitTrack_Figma_AI_UI_Requirements.md)
-- [Kế hoạch cộng tác Git](./FitTrack_Git_Collaboration_Plan.md)
+
 
 ## 14. Trạng thái dự án
 
