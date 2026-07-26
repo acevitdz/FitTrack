@@ -336,5 +336,3 @@ trong nhiều branch.
 
 - [Đặc tả chức năng và UI](./FitTrack_Dac_ta_chuc_nang_UI.md)
 - [Đặc tả yêu cầu hệ thống](./FitTrack_System_Requirements_Specification.md)
-- [README của project Flutter](./FitTrack/README.md)
-- [Báo cáo triển khai](./FitTrack/docs/implementation_report.md)
