@@ -39,74 +39,134 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 18, 16, 32),
         children: [
-          Text('Hồ sơ', style: Theme.of(context).textTheme.headlineSmall),
-          const SizedBox(height: 18),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(18),
-              child: Row(
-                children: [
-                  Tooltip(
-                    message: 'Đổi ảnh đại diện',
-                    child: InkWell(
-                      customBorder: const CircleBorder(),
-                      onTap: _updateAvatar,
-                      child: Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          CircleAvatar(
-                            radius: 32,
-                            backgroundColor: AppColors.paleBlue,
-                            backgroundImage: fitTrackImageProvider(
-                              profile.photoUrl,
-                            ),
-                            child: profile.photoUrl == null
-                                ? Text(initial)
-                                : null,
-                          ),
-                          const Positioned(
-                            right: -3,
-                            bottom: -3,
-                            child: CircleAvatar(
-                              radius: 12,
-                              child: Icon(Icons.camera_alt_outlined, size: 14),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+          Row(
+            children: [
+              const SizedBox(width: 48),
+              Expanded(
+                child: Text(
+                  'FitTrack',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w800,
                   ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                ),
+              ),
+              IconButton(
+                tooltip: 'Thông báo',
+                onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Bạn không có thông báo mới.')),
+                ),
+                icon: const Icon(Icons.notifications_none_outlined),
+              ),
+            ],
+          ),
+          const SizedBox(height: 26),
+          Center(
+            child: Column(
+              children: [
+                Tooltip(
+                  message: 'Đổi ảnh đại diện',
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: _updateAvatar,
+                    child: Stack(
+                      clipBehavior: Clip.none,
                       children: [
-                        Text(
-                          profile.name,
-                          style: Theme.of(context).textTheme.titleLarge,
+                        CircleAvatar(
+                          radius: 48,
+                          backgroundColor: AppColors.paleBlue,
+                          backgroundImage: fitTrackImageProvider(
+                            profile.photoUrl,
+                          ),
+                          child: profile.photoUrl == null
+                              ? Text(
+                                  initial,
+                                  style: Theme.of(context).textTheme.headlineMedium
+                                      ?.copyWith(
+                                        color: AppColors.primary,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                )
+                              : null,
                         ),
-                        Text(
-                          profile.email,
-                          style: const TextStyle(color: AppColors.textMuted),
+                        const Positioned(
+                          right: -2,
+                          bottom: -2,
+                          child: CircleAvatar(
+                            radius: 15,
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            child: Icon(Icons.edit_outlined, size: 16),
+                          ),
                         ),
-                        const SizedBox(height: 4),
-                        const Text('Người dùng'),
                       ],
                     ),
                   ),
-                  IconButton(
-                    tooltip: 'Sửa tên hiển thị',
-                    onPressed: _editName,
-                    icon: const Icon(Icons.edit_outlined),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  profile.name,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    color: AppColors.text,
+                    fontWeight: FontWeight.w800,
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  profile.email,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: AppColors.textMuted),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.local_fire_department_outlined,
+                        color: Colors.white,
+                        size: 17,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        TrainingGoalKey.labels[
+                              state.trainingPreferences.goalKey
+                            ] ??
+                            'Mục tiêu luyện tập',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
           _Section(
             title: 'Luyện tập',
             children: [
+              _MenuTile(
+                icon: Icons.person_outline,
+                title: 'Chỉnh sửa hồ sơ',
+                subtitle: 'Cập nhật tên hiển thị và ảnh đại diện',
+                onTap: _editName,
+              ),
               _MenuTile(
                 icon: Icons.tune,
                 title: 'Lựa chọn chương trình',
@@ -574,3 +634,5 @@ class _MenuTile extends StatelessWidget {
     onTap: onTap,
   );
 }
+
+
