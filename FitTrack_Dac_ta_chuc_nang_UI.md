@@ -1,357 +1,456 @@
-# FITTRACK — ĐẶC TẢ CHỨC NĂNG VÀ QUY TẮC NGHIỆP VỤ
+# FitTrack — Đặc tả chức năng và giao diện đang có
 
-## 1. Phạm vi đã chốt
+Tài liệu này mô tả những màn hình và hành vi đã tồn tại trong mã nguồn
+FitTrack tại ngày 26/07/2026. Mục đích của tài liệu là giúp các thành viên nối
+logic vào giao diện hiện có mà không tự thay đổi luồng sản phẩm hoặc tạo thêm
+chức năng chưa được thống nhất.
 
-FitTrack là ứng dụng Android bằng Flutter/Dart hỗ trợ lập kế hoạch, xếp lịch, ghi kết quả sau khi tập và theo dõi tiến độ. Người dùng **không theo dõi trực tiếp trong lúc tập**; hệ thống không có Active Workout, Rest Timer, Pause hoặc Resume.
+## 1. Nguyên tắc chung của giao diện
 
-Luồng trung tâm:
+FitTrack dùng Material 3, có theme sáng, theme tối và chế độ theo hệ thống.
+Giao diện chính được thiết kế cho điện thoại, đồng thời các danh sách và lưới
+có thể thay đổi số cột khi màn hình rộng hơn. Bộ test hiện kiểm tra hai kích
+thước 360×800 và 412×915.
+
+Các nguyên tắc đang được áp dụng:
+
+- Tác vụ chính dùng nút rõ ràng và chỉ cần một lần chạm.
+- Hành động có thể làm mất dữ liệu như bỏ buổi, đăng xuất hoặc yêu cầu xóa tài
+  khoản phải hỏi xác nhận.
+- Nội dung chưa có dữ liệu dùng `EmptyState`, không hiển thị một con số giả.
+- Lỗi từ thao tác thường được báo bằng `SnackBar` hoặc thông báo ngay trong
+  form.
+- Khi Firebase không khả dụng, Trang chủ hiển thị banner offline.
+- Màu sắc không phải tín hiệu duy nhất; trạng thái còn có nhãn và icon.
+- Các cảnh báo sức khỏe luôn nhắc rằng FitTrack không thay thế tư vấn y tế.
+
+## 2. Khởi động và điều hướng theo trạng thái
+
+`main.dart` khởi tạo locale tiếng Việt, Firebase, notification service và
+`AppState`. `app.dart` quyết định màn hình đầu tiên dựa trên trạng thái:
 
 ```text
-WorkoutPlan → WorkoutSchedule → Readiness (tùy chọn)
-→ Người dùng tự tập → Bấm Done → Nhập kết quả thực tế
-→ WorkoutCompletion → Dashboard/Báo cáo/Streak/Muscle Balance
+Splash
+  ├── Chưa đăng nhập → Đăng nhập
+  └── Đã đăng nhập
+        ├── Chưa onboarding → Onboarding
+        └── Đã onboarding → MainShell
 ```
 
-Ba đối tượng không được trộn lẫn:
+Splash hiển thị khoảng 900 ms. Sau onboarding, `MainShell` có bốn tab:
 
-- `WorkoutPlan`: nội dung dự kiến có thể tái sử dụng.
-- `WorkoutSchedule`: ngày/giờ áp dụng kế hoạch.
-- `WorkoutCompletion`: kết quả thực tế và snapshot khi bấm Done.
+1. **Trang chủ**
+2. **Chương trình**
+3. **Tiến độ**
+4. **Hồ sơ**
 
-## 2. Vai trò
+Ứng dụng giữ các tab trong `IndexedStack`, vì vậy trạng thái cuộn của từng tab
+không bị tạo lại mỗi lần chuyển tab.
 
-- **Khách:** đăng ký, đăng nhập, quên mật khẩu.
-- **Người dùng:** quản lý toàn bộ dữ liệu cá nhân của chính mình và đọc bài mẫu đang hoạt động.
-- **Admin:** thêm, sửa, ẩn/hiện bài mẫu; không mặc nhiên được đọc dữ liệu sức khỏe của người khác.
+Notification payload bắt đầu bằng `today:` đưa người dùng về Trang chủ.
+Payload bắt đầu bằng `active:` chỉ mở lại Active Workout nếu draft và
+occurrence tương ứng vẫn tồn tại.
 
-## 3. Quy tắc chung
+## 3. Đăng nhập, đăng ký và quên mật khẩu
 
-- Dữ liệu cá nhân phải gắn với `FirebaseAuth.currentUser.uid`.
-- Mọi màn hình bất đồng bộ có `loading`, `success`, `empty`, `error` và retry phù hợp.
-- Form có validation, trạng thái submitting và chống double tap.
-- ID ổn định; không dùng vị trí danh sách làm ID.
-- Thời gian đồng bộ quan trọng dùng server timestamp.
-- Xóa dữ liệu quan trọng phải xác nhận.
-- Không truy vấn Firebase trực tiếp trong `build()`.
-- Không lưu secret hoặc dữ liệu sức khỏe thật trong repository công khai.
+### Đăng nhập
 
----
+Màn hình đăng nhập gồm email, mật khẩu, nút hiện/ẩn mật khẩu, nút đăng nhập,
+liên kết quên mật khẩu và liên kết chuyển sang đăng ký.
 
-# 4. Đặc tả 13 chức năng
+Validation hiện có:
 
-## 4.1. Quản lý tài khoản
+- email phải đúng định dạng cơ bản;
+- mật khẩu phải có ít nhất 8 ký tự;
+- không gửi form khi AppState đang xử lý.
 
-### Chức năng
+Khi đăng nhập thất bại, màn hình hiển thị thông báo thân thiện cho mật khẩu
+sai, tài khoản bị khóa, lỗi mạng hoặc lỗi chung. Đăng nhập thành công không tự
+đẩy route bằng tay; `FitTrackApp` tự chọn onboarding hoặc MainShell theo state.
 
-- Đăng ký bằng email/mật khẩu.
-- Đăng nhập, duy trì phiên và đăng xuất.
-- Gửi email đặt lại mật khẩu.
+Hai nút Google và Facebook vẫn xuất hiện trong chế độ đăng nhập nhưng chỉ mở
+thông báo rằng phiên bản hiện tại hỗ trợ email/mật khẩu.
 
-### Quy tắc
+### Đăng ký
 
-- Email được trim và đúng định dạng.
-- Mật khẩu tối thiểu 8 ký tự; xác nhận mật khẩu phải trùng.
-- Không làm lộ việc một email có tồn tại hay không qua thông báo quá chi tiết.
-- Người đã đăng nhập mở lại app được chuyển vào Dashboard.
-- Sau đăng xuất không thể quay Back vào route riêng tư.
+Khi chuyển sang đăng ký, form bổ sung:
 
-### Giao diện
+- họ và tên;
+- xác nhận mật khẩu;
+- checkbox đồng ý điều khoản.
 
-- Splash, Login, Register, Forgot Password và trạng thái gửi email thành công.
+Tên không được để trống, hai mật khẩu phải khớp và checkbox điều khoản phải
+được chọn. Tài khoản vừa đăng ký được chuyển vào onboarding.
 
-## 4.2. Quản lý hồ sơ
+### Quên mật khẩu
 
-### Chức năng
+Màn hình quên mật khẩu nhận email đã nhập từ màn hình trước. Sau khi người dùng
+gửi form, giao diện luôn dùng thông báo trung tính “nếu email hợp lệ” để tránh
+xác nhận email có tồn tại trong hệ thống hay không.
 
-- Cập nhật họ tên, ngày sinh, giới tính và avatar.
-- Chọn mục tiêu giảm cân/tăng cơ/duy trì.
-- Đặt số buổi mục tiêu mỗi tuần.
+Firebase gửi email đặt lại mật khẩu khi được cấu hình. Trong chế độ local,
+service trả về mà không gửi email thật.
 
-### Quy tắc
+## 4. Onboarding
 
-- Họ tên không rỗng; ngày sinh không ở tương lai.
-- Mục tiêu tuần là số nguyên 1–7.
-- Avatar phải được kiểm tra định dạng/kích thước.
-- Thoát form chưa lưu phải xác nhận.
+Onboarding có ba bước và không cho quay về màn hình đăng nhập bằng nút Back.
 
-### Giao diện
+### Bước 1 — Bắt đầu an toàn
 
-- Initial Profile Setup, Profile và Edit Profile.
+Người dùng nhập tên hiển thị và chọn một trong hai nhóm:
 
-## 4.3. Theo dõi chỉ số cơ thể
+- Người trưởng thành khỏe mạnh 18–64.
+- Ngoài phạm vi hỗ trợ.
 
-### Chức năng
+Nếu chọn ngoài phạm vi, màn hình hiển thị cảnh báo rằng FitTrack sẽ không tự kê
+chương trình và khuyên người dùng trao đổi với chuyên gia phù hợp.
 
-- Cập nhật chiều cao.
-- CRUD bản ghi cân nặng.
-- Tính BMI và hiển thị biểu đồ cân nặng.
+### Bước 2 — Chỉ số cơ thể
 
-### Quy tắc
-
-- Chiều cao/cân nặng là số dương trong phạm vi cấu hình.
-- Ngày cân không ở tương lai.
-- `BMI = kg / m²`; chỉ làm tròn khi hiển thị và ghi rõ “mang tính tham khảo”.
-- Cân nặng hiện tại là bản ghi có thời điểm mới nhất.
-- Biểu đồ sắp xếp tăng dần theo thời gian.
-
-### Giao diện
-
-- Body Metrics, Weight Entry Form, Weight History/Chart và xác nhận xóa.
-
-## 4.4. Thư viện bài tập mẫu
-
-### Chức năng
-
-- Xem danh sách/chi tiết, tìm theo tên, lọc nhóm cơ và yêu thích.
-
-### Quy tắc
-
-- Tìm kiếm không phân biệt hoa/thường và trim từ khóa.
-- Bộ lọc có thể kết hợp và đặt lại.
-- User chỉ đọc bài `isActive == true`.
-- Bài bị ẩn không làm mất snapshot trong kế hoạch/kết quả cũ.
-
-### Giao diện
-
-- Exercise Library, Exercise Detail và Filter Bottom Sheet.
-
-## 4.5. Kho bài tập cá nhân
-
-### Chức năng
-
-- CRUD bài tự tạo; xem bài tự tạo/yêu thích/đã dùng.
-- Xem số lần tập, lần gần nhất và PR về weight/reps/volume.
-
-### Quy tắc
-
-- Bài cá nhân chỉ thuộc một UID.
-- Chỉ completed set trong completion hợp lệ được tính PR.
-- Một bài nhiều set trong cùng completion chỉ tăng tần suất buổi một lần.
-- Xóa bài không xóa snapshot lịch sử.
-
-### Giao diện
-
-- Personal Exercise Library, Personal Exercise Form và Exercise Progress.
-
-## 4.6. Quản lý kế hoạch luyện tập
-
-### 4.6.1. WorkoutPlan
-
-- CRUD kế hoạch; sao chép phải tạo ID mới.
-- Thêm bài mẫu/cá nhân; sắp xếp thứ tự.
-- Cấu hình target sets, min/max reps, target weight, rest seconds và note.
+Người dùng chọn `cm/kg` hoặc `in/lb`, sau đó nhập chiều cao và cân nặng.
 
 Quy tắc:
 
-- Tên không rỗng; có ít nhất một bài.
-- Sets/reps dương; `minReps <= maxReps`; weight/rest không âm.
-- `WorkoutPlan` không có `isDone`.
+- chiều cao sau quy đổi phải nằm trong 100–250 cm;
+- cân nặng sau quy đổi phải lớn hơn 0 và không quá 500 kg;
+- khi đổi hệ đơn vị, giá trị đang nhập được chuyển đổi thay vì xóa;
+- BMI được tính từ chiều cao và cân nặng, không có ô nhập BMI;
+- không có ô cân nặng mục tiêu.
 
-### 4.6.2. WorkoutSchedule
+### Bước 3 — Lựa chọn chương trình
 
-Ba lựa chọn:
+Các lựa chọn một chạm gồm:
 
-- Chưa xếp lịch.
-- Một ngày cụ thể (`once`).
-- Lặp theo các ngày trong tuần (`weekly`).
+- mục tiêu;
+- 2, 3, 4 hoặc 5 buổi mỗi tuần;
+- mới bắt đầu hoặc đã tập;
+- không dụng cụ hoặc phòng gym;
+- nội dung chung, nam hoặc nữ.
 
-Quy tắc:
+Nút **Chọn chương trình** lưu hồ sơ, preferences, lần đo cơ thể đầu tiên, hệ
+đơn vị và hoàn thành onboarding. AppState sau đó chạy `ProgramMatcher`.
 
-- Once yêu cầu `scheduledDate`.
-- Weekly yêu cầu ít nhất một weekday và `startDate`; `endDate >= startDate` nếu có.
-- Một plan có thể có nhiều schedule.
-- Sửa/xóa schedule tương lai không thay đổi completion cũ.
-- Trạng thái occurrence được tính: scheduled, completed, partial, overdue; không lưu `overdue` cố định.
+## 5. Trang chủ
 
-### 4.6.3. Done và WorkoutCompletion
+Phần đầu Trang chủ có avatar, ngày hiện tại và nút mở Chỉ số cơ thể. Avatar
+đưa người dùng sang tab Hồ sơ.
 
-Sau khi tự tập, người dùng bấm Done và nhập:
+Khu vực chính chỉ hiển thị một trong ba trạng thái:
 
-- Actual sets, reps, weight.
-- Completed checkbox cho từng set.
-- Set thêm, bài bỏ qua, thời gian, perceived difficulty và note.
+### Có draft đang tập
 
-Quy tắc:
+Thẻ resume cho biết buổi tập, phase và số hiệp đã xử lý. Người dùng có thể:
 
-- Form khởi tạo từ plan hoặc adjusted snapshot.
-- Chỉ completed set được tính `reps × weight` vào volume.
-- Có ít nhất một completed set mới được lưu.
-- Nếu có bài bị bỏ qua: `partiallyCompleted`; nếu mọi bài có completed set: `completed`.
-- Completion lưu plan snapshot; không sửa plan gốc.
-- Không tạo hai completion cho cùng `userId + scheduleId + occurrenceDate`.
-- Sửa/xóa completion phải làm mới report, streak, PR và muscle balance.
+- tiếp tục buổi tập;
+- hoàn tất với các hiệp đã xác nhận;
+- bỏ buổi tập và xóa draft.
 
-### Giao diện
+Chức năng hoàn tất nhanh chỉ khả dụng khi draft đã bắt đầu. Bỏ draft đồng thời
+đánh dấu occurrence là skipped.
 
-- Plan List theo ngày.
-- Plan Detail.
-- Plan Form bước nội dung.
-- Plan Form bước xếp lịch.
-- Exercise Selection.
-- Workout Result Form.
-- Completion Summary/Success.
-- Completion History/Detail/Edit/Delete.
+### Có buổi được đề xuất
 
-## 4.7. Dashboard và mục tiêu
+Thẻ buổi tập hiển thị tên, tuần, thời lượng dự kiến, số hiệp và số block. Người
+dùng chọn readiness:
 
-### Chức năng
+- **Sung sức** dùng nội dung gốc;
+- **Hơi mệt (Giảm tải)** dùng biến thể ít hiệp hơn;
+- **Cần nghỉ ngơi** dùng nội dung phục hồi đã cấu hình.
 
-- Lịch hôm nay, tiến độ tuần, thời gian, sets, volume, BMI và PR gần nhất.
+Các hành động gồm bắt đầu với Guided Confirmation, dời lịch và bỏ qua. Dời lịch
+chuyển occurrence sang ngày trống tiếp theo. Bỏ qua phải xác nhận.
 
-### Quy tắc
+### Không có buổi
 
-- Chỉ completion completed/partial được tính.
-- Tuần mặc định thứ Hai–Chủ Nhật.
-- Thanh tiến độ giới hạn hiển thị 100% nhưng số liệu có thể vượt mục tiêu.
-- Một card lỗi không làm khóa cả Dashboard.
+Màn hình giải thích chưa có buổi phù hợp và cung cấp nút mở tab Chương trình.
 
-### Giao diện
+Phần dưới Trang chủ hiển thị số buổi đã tập trong tuần, workout streak, chuỗi
+ngày cập nhật cân nặng và chương trình đang theo. Hai loại streak được trình
+bày riêng, không cộng chung.
 
-- Dashboard với Today Plan, Weekly Goal, Metric Grid, Streak và Muscle Preview.
+## 6. Tổng quan chương trình
 
-## 4.8. Báo cáo và thống kê
+Nếu chưa có chương trình, màn hình hiển thị empty state và nút thử ghép lại.
 
-### Chức năng
+Khi đã có chương trình, giao diện trình bày:
 
-- Lọc tuần/tháng; thống kê số buổi, sets, volume, thời gian và bài thường tập.
+- tên và mô tả chương trình;
+- version, số tuần, số buổi mỗi tuần và tổng số buổi;
+- các tiêu chí đã dùng để ghép;
+- cảnh báo khi cadence gần nhất khác số buổi người dùng mong muốn;
+- từng tuần, từng buổi, ngày dự kiến và trạng thái occurrence;
+- các block và prescription bên trong buổi;
+- safety copy và danh sách nguồn tham khảo.
 
-### Quy tắc
+Các trạng thái occurrence gồm sắp tới, đang tập, hoàn thành, đã dời, bỏ qua và
+đã hủy. Màn hình này hoàn toàn chỉ đọc; người dùng không chỉnh số hiệp, target
+hoặc lịch từ đây.
 
-- Dùng dữ liệu từ `WorkoutCompletion`, không dùng plan dự kiến.
-- Khoảng bắt đầu không sau kết thúc.
-- Không cộng trùng; sửa/xóa completion cập nhật kết quả.
-- Không có dữ liệu phải dùng empty state, không vẽ chart gây hiểu nhầm.
+## 7. Active Workout
 
-### Giao diện
+### Màn hình chuẩn bị
 
-- Report Filter, KPI Cards, Charts, Top Exercises và Workout History.
+Trước khi bắt đầu, người dùng thấy tổng số hiệp, danh sách bài tập và target.
+Người dùng chọn **Hướng dẫn** hoặc **AI Camera**. Nếu thiết bị, bài tập hoặc
+pose rule không phù hợp, ứng dụng tự chuyển về chế độ Hướng dẫn.
 
-## 4.9. Chuỗi hoạt động
+Giao diện luôn hiển thị giải thích:
 
-### Login streak
+- camera chỉ xử lý frame tạm thời;
+- FitTrack không lưu video;
+- AI có thể sai;
+- người dùng phải ưu tiên cảm nhận an toàn.
 
-- Một UID chỉ có một active day/ngày theo `Asia/Ho_Chi_Minh`.
-- Ngày kế tiếp tăng; bỏ ngày thì lần sau về 1.
-- `longestStreak >= currentStreak` và không giảm.
+### Phase working
 
-### Workout streak
+Màn hình working hiển thị:
 
-- Chỉ ngày có completion hợp lệ mới tính.
-- Nhiều completion cùng ngày chỉ đóng góp một ngày.
-- Xóa completion phải tính lại.
+- tiến độ toàn buổi;
+- chế độ xác nhận hiện tại;
+- thời gian hoạt động;
+- media hoặc placeholder của bài;
+- tên bài, hiệp hiện tại và target;
+- tối đa ba cue kỹ thuật;
+- nút hoàn thành, làm lại, bỏ qua và tạm dừng.
 
-### Giao diện
+Trong Guided Confirmation, nút **Đã hoàn thành hiệp** chỉ tạo một `SetEvent`
+đã xác nhận. Ứng dụng không hỏi actual reps, mức tạ hoặc thời lượng. Nếu bài
+Squat và thiết bị đủ điều kiện, người dùng có thể bật AI cho hiệp hiện tại.
 
-- Streak Detail với hai section/tab và heatmap có legend.
+Nút **Làm lại** ghi một event `redone` nhưng giữ nguyên bài và hiệp. Nút
+**Bỏ qua** mở bottom sheet để chọn lý do; lý do rỗng không được chấp nhận.
 
-## 4.10. Nhắc lịch tập
+### Phase resting
 
-### Nhắc kế hoạch
+Màn hình nghỉ hiển thị thời gian còn lại và bài tiếp theo. Người dùng có thể:
 
-- Đăng ký local notification từ schedule; sửa/xóa lịch phải hủy notification cũ.
-- Nhấn notification mở đúng plan.
+- cộng 15 giây;
+- tập tiếp ngay;
+- tạm dừng.
 
-### Nhắc duy trì streak
+Nguồn thời gian thật là `restEndsAt`. Khi quay lại ứng dụng, controller so sánh
+timestamp hiện tại thay vì tin vào số tick đã chạy trên UI.
 
-- Lên lịch nhắc local nếu người dùng chưa mở app trong ngày; hủy khi đã check-in trên thiết bị.
-- Đây là reminder cục bộ, không cam kết đồng bộ tuyệt đối đa thiết bị.
+### Phase paused
 
-### Giao diện
+Khi tạm dừng, active duration và thời gian nghỉ còn lại được đóng băng. Người
+dùng có thể tiếp tục, kết thúc với tiến độ hiện tại hoặc bỏ và xóa buổi tập.
 
-- Permission Card, Reminder List/Form, trạng thái denied và nút mở Settings.
+### Phase finishing và summary
 
-## 4.11. Điều chỉnh theo mức sẵn sàng
+Khi hết các hiệp hoặc người dùng kết thúc sớm, ứng dụng lưu completion. Nếu lưu
+lỗi, màn hình giữ phase finishing và cung cấp nút thử lại.
 
-### Đầu vào
+Summary hiển thị:
 
-- Energy 1–5, soreness 1–5, sore muscles, available minutes và equipment.
+- trạng thái hoàn thành toàn bộ hoặc một phần;
+- số hiệp hoàn tất, bỏ qua và làm lại;
+- thời lượng;
+- Guided Confirmation, AI Camera Coach hoặc cả hai;
+- chi tiết event theo bài;
+- version và nguồn nội dung.
 
-### Quy tắc MVP
+Người dùng có thể mở tab Tiến độ hoặc trở về Trang chủ.
 
-- Energy 4–5 và soreness 1–2: giữ nguyên.
-- Energy 3 hoặc soreness 3: giảm nhẹ sets.
-- Energy 2 hoặc soreness 4: giảm vừa.
-- Energy 1 hoặc soreness 5: đề xuất recovery/nghỉ.
-- Loại bài có primary muscle xung đột soreness cao.
-- Loại bài cần dụng cụ không có.
-- Giảm bài phụ/sets để khớp thời gian.
-- Tạo `AdjustedPlanSnapshot`, không sửa `WorkoutPlan`.
-- Hiển thị thay đổi và lý do; người dùng được giữ plan gốc.
+### Rời màn hình
 
-### Giao diện
+Nếu dùng nút Back trong khi buổi tập đang chạy hoặc đang nghỉ, controller tạm
+dừng, lưu checkpoint và trở về Trang chủ. Việc rời màn hình không tự đánh dấu
+completion.
 
-- Readiness Wizard, Evaluating và Adjustment Comparison.
+## 8. AI Camera Coach
 
-## 4.12. Bản đồ cân bằng nhóm cơ
+Camera panel chỉ hỗ trợ các ID Squat đã định nghĩa và chỉ khởi tạo trên
+Android. Panel ưu tiên camera trước, cho phép đổi camera và tắt camera.
 
-### Chức năng
+Trình tự giao diện:
 
-- Tổng hợp working sets theo tuần/tháng; xem chi tiết nhóm cơ.
+1. Hiển thị trạng thái đang chuẩn bị camera.
+2. Camera preview có khung gợi ý đặt toàn thân.
+3. Hiển thị trạng thái định vị, tốt, cần điều chỉnh, chưa thấy rõ hoặc không
+   chắc chắn.
+4. Hiển thị số lần hiện tại trên target.
+5. Khi đạt target, hiệp được hoàn tất kèm rep count và confidence.
 
-### Quy tắc
+`PoseRuleEngine` cần một chuỗi phase ổn định:
 
-- Chỉ completed set trong completion hợp lệ được tính.
-- Primary muscle nhận 1 set; secondary có thể nhận 0,5 nếu bật trọng số.
-- Phân loại bằng ngưỡng cấu hình: chưa tập, ít, cân bằng, nhiều.
-- Không có dữ liệu thì hiển thị neutral, không kết luận mất cân bằng.
-- Chỉ mang tính tham khảo.
+```text
+standing → descending → bottom → ascending → standing
+```
 
-### Giao diện
+Một lần đi xuống chưa đủ sâu không được tính rep và có thể đưa ra cue hạ thấp
+thêm. Landmark thiếu, visibility thấp, confidence thấp, frame cũ hoặc frame
+đến sai thứ tự không được làm tăng rep.
 
-- Muscle Balance dạng bar/card ưu tiên; Muscle Detail và legend không chỉ dựa vào màu.
+Khi camera không khả dụng, panel hiển thị lý do và nút tiếp tục không dùng
+camera. Fallback cũng được kích hoạt tự động sau các lỗi liên tiếp hoặc trạng
+thái không chắc chắn kéo dài.
 
-## 4.13. Quản trị bài tập mẫu
+## 9. Tiến độ và lịch sử
 
-### Chức năng
+Màn hình Tiến độ có bộ chọn 7 ngày, 30 ngày hoặc tất cả. Các số liệu gồm:
 
-- Admin thêm, sửa, upload ảnh và ẩn/hiện bài mẫu.
+- số buổi trong kỳ;
+- tổng thời gian;
+- hiệp hoàn tất;
+- workout streak;
+- streak cập nhật cân nặng và streak dài nhất;
+- độ chuyên cần dựa trên lịch chương trình;
+- activity heatmap của hai loại hoạt động;
+- bài tập xuất hiện thường xuyên;
+- phân bổ nhóm cơ.
 
-### Quy tắc
+Danh sách completion ở cuối màn hình chỉ dùng schema workout mới. Mỗi thẻ có
+thể mở rộng để xem hiệp hoàn tất/bỏ qua, confirmation mode, ProgramVersion và
+nguồn.
 
-- Quyền admin được kiểm tra trong Security Rules, không chỉ ẩn nút UI.
-- User thường không thể ghi collection bài mẫu.
-- Dùng soft delete/`isActive`, giữ snapshot lịch sử.
+Nếu còn dữ liệu kế hoạch hoặc kết quả cũ, màn hình cung cấp liên kết riêng tới
+Dữ liệu phiên bản cũ; các số liệu legacy không được trộn vào báo cáo mới.
 
-### Giao diện
+## 10. Chỉ số cơ thể
 
-- Admin Exercise List và Admin Exercise Form.
+Màn hình hiển thị chiều cao, cân nặng hiện tại, streak nhập cân, streak dài
+nhất và BMI tham khảo. Biểu đồ có hai khoảng thời gian: tuần và tháng. Cần ít
+nhất hai lần đo trong khoảng đã chọn mới vẽ đường.
 
----
+Nút **Cập nhật** mở form tạo lần đo mới. Validation giống onboarding. Lần đo
+lưu snapshot chiều cao để BMI lịch sử không thay đổi khi người dùng cập nhật
+chiều cao sau này.
 
-# 5. Phân công nhóm đã chốt
+Lịch sử đo chỉ đọc trong UI hiện tại. Người dùng không sửa hoặc xóa một lần đo
+cũ; họ tạo lần đo mới.
 
-## Thành viên 1 — chức năng 1, 2, 3, 7, 8, 9
+## 11. Thư viện bài tập
 
-- Authentication, Profile, Body Metrics, Dashboard, Reports và Streaks.
-- CRUD chính: Profile và WeightEntry.
+Màn hình thư viện:
 
-## Thành viên 2 — chức năng 4, 5, 12, 13
+- debounce ô tìm kiếm 250 ms;
+- tìm theo tên tiếng Việt hoặc tiếng Anh;
+- lọc bằng chip nhóm cơ;
+- thay đổi bố cục 1, 2 hoặc 3 cột theo chiều rộng;
+- cho phép yêu thích hoặc bỏ yêu thích;
+- mở trang chi tiết.
 
-- Exercise Library, Personal Exercises, Muscle Balance và Admin Exercises.
-- CRUD chính: TemplateExercise và PersonalExercise.
+Trang chi tiết hiển thị ảnh/placeholder, tên, tên tiếng Anh, nhóm cơ, độ khó,
+dụng cụ, mô tả, từng bước thực hiện và lỗi thường gặp. Không có nút thêm vào
+plan hoặc tạo bài cá nhân.
 
-## Thành viên 3 — chức năng 6, 10, 11
+File `exercise_filter_sheet.dart` có component lọc độ khó, dụng cụ và yêu
+thích, nhưng component này chưa được nối vào `ExerciseLibraryScreen`; vì vậy
+không được mô tả là chức năng đang sử dụng.
 
-- Plan, Schedule, Done/Completion, Reminder infrastructure và Readiness.
-- CRUD chính: WorkoutPlan, WorkoutSchedule và WorkoutCompletion.
+## 12. Hồ sơ và các màn hình phụ
 
-## Điểm tích hợp
+### Hồ sơ
 
-- TV3 cung cấp completion cho Dashboard/Reports/Streak của TV1.
-- TV3 cung cấp completed sets cho PR/Muscle Balance của TV2.
-- TV2 cung cấp ExerciseSnapshot cho Plan/Readiness của TV3.
-- TV1 cung cấp auth UID/profile cho toàn hệ thống.
+Hồ sơ hiển thị avatar, tên, email và nhãn người dùng. Người dùng có thể sửa tên
+hoặc chọn ảnh đại diện tối đa 5 MB.
 
-# 6. Correctness properties tối thiểu
+Các mục điều hướng gồm lựa chọn chương trình, thư viện, chỉ số cơ thể, thành
+tích, thông báo, quyền riêng tư và dữ liệu cũ.
 
-1. Completion không thay đổi plan gốc.
-2. Sửa plan không thay đổi completion snapshot.
-3. Volume chỉ tính completed set và không âm.
-4. Một schedule occurrence chỉ có tối đa một completion.
-5. Login streak tăng tối đa một lần/ngày.
-6. Readiness không tăng sets và không sửa plan.
-7. Bài xung đột sore muscle cao không xuất hiện trong adjusted snapshot.
-8. Người dùng A không đọc/sửa dữ liệu riêng của B.
-9. User thường không ghi được bài mẫu.
-10. Muscle balance chỉ dùng completed sets trong khoảng lọc.
+### Lựa chọn chương trình
 
+Người dùng chỉnh số buổi, mục tiêu, kinh nghiệm, dụng cụ và ưu tiên nội dung,
+sau đó bấm **Lưu và chọn lại**. Không cho đổi chương trình khi còn draft buổi
+tập đang dở. Khi lưu thành công, các occurrence mở của enrollment cũ bị hủy và
+ứng dụng ghép chương trình lại.
+
+### Thành tích
+
+Màn hình hiển thị các mốc buổi tập đầu tiên, 5 buổi, 10 buổi và streak 3, 7,
+30 ngày. Thành tích được mở khi completion hoặc streak thỏa điều kiện.
+
+### Thông báo và nhắc lịch
+
+Người dùng bật nhắc lịch, cấp quyền Android, chọn giờ mặc định và chọn nhắc
+đúng giờ hoặc trước 15, 30, 60 phút. Màn hình hiển thị tối đa năm occurrence
+sắp tới. Nếu quyền bị từ chối, người dùng có thể mở cài đặt notification của
+Android.
+
+Nhắc lịch được sinh từ occurrence; màn hình không tạo lịch tập mới.
+
+### Cài đặt
+
+Các tùy chọn gồm Voice Coach, rung, theme và hệ đơn vị. Theme và đơn vị được
+lưu trong snapshot người dùng. Hệ đơn vị chỉ thay cách hiển thị/nhập; dữ liệu
+canonical vẫn là cm/kg.
+
+### Quyền riêng tư và tài khoản
+
+Dialog quyền riêng tư giải thích camera xử lý trên thiết bị, dữ liệu sức khỏe
+thuộc tài khoản và FitTrack không thay thế tư vấn y tế.
+
+**Yêu cầu xuất dữ liệu** tạo một request Firestore khi Firebase hoạt động.
+**Yêu cầu xóa tài khoản và dữ liệu** hiện tạo request rồi đăng xuất; việc xóa
+toàn bộ dữ liệu cần backend xử lý, không hoàn thành ngay trong ứng dụng.
+
+## 13. Dữ liệu phiên bản cũ
+
+Màn hình Legacy trình bày kế hoạch và completion cũ dưới nhãn chỉ đọc. Không có
+nút tạo, chỉnh sửa, sao chép, xóa hoặc dùng lại dữ liệu. Mục đích của màn hình
+là tránh mất khả năng xem dữ liệu đã lưu từ schema trước.
+
+## 14. Trạng thái lỗi và fallback
+
+Các trường hợp đã có xử lý giao diện:
+
+- Firebase không khả dụng: banner offline và cache cục bộ.
+- Không có chương trình: empty state và nút ghép lại.
+- Không có buổi: điều hướng sang Chương trình.
+- Không đủ dữ liệu biểu đồ: empty state có giải thích.
+- Không tìm thấy bài tập: gợi ý đổi từ khóa/nhóm cơ.
+- Camera hoặc ML Kit lỗi: chuyển Guided Confirmation.
+- Notification bị từ chối: hiển thị cảnh báo và nút mở cài đặt.
+- Lưu completion lỗi: giữ phase finishing và cho thử lại.
+- ProgramVersion bị recall: hủy lịch mở và báo lý do.
+
+Project chưa có một hàng đợi đồng bộ offline bền vững. Khi sync Firebase thất
+bại, AppState giữ cache local nhưng không hiển thị tiến độ retry chi tiết.
+
+## 15. Ma trận nền tảng
+
+| Chức năng | Android | Web |
+|---|---:|---:|
+| Đăng nhập email, onboarding, chương trình | Có | Có |
+| Guided Confirmation | Có | Có |
+| AI Camera Coach Squat | Có code path | Fallback |
+| Text-to-Speech | Có code path | Không |
+| Local notification | Có code path | Không |
+| Theme, Body Metrics, history | Có | Có |
+
+“Có code path” nghĩa là source đã nối end-to-end nhưng vẫn cần QA trên thiết
+bị thật trước khi xem là đạt yêu cầu phát hành.
+
+## 16. Tiêu chí nghiệm thu giao diện hiện tại
+
+1. Người dùng đăng ký mới phải đi vào onboarding.
+2. Form không chấp nhận email sai, mật khẩu ngắn hoặc hai mật khẩu khác nhau.
+3. Chiều cao/cân nặng sai giới hạn không được lưu.
+4. MainShell chỉ có bốn tab đã mô tả.
+5. Người dùng không thấy tính năng tạo plan, lịch thủ công hoặc bài cá nhân.
+6. Chỉ ProgramVersion published mới được ghép.
+7. Readiness chỉ chọn một biến thể đã có trong session.
+8. Không được mở hai Active Workout khác nhau cùng lúc.
+9. Back khỏi workout phải lưu draft, không tự tạo completion.
+10. Guided Confirmation không lưu rep count hoặc confidence suy đoán.
+11. AI Camera không hỗ trợ phải fallback mà không chặn buổi tập.
+12. Completion retry không tạo bản ghi trùng.
+13. Hai loại streak phải được trình bày riêng.
+14. Thư viện người dùng phải chỉ đọc.
+15. Published version không được sửa nội dung hoặc quay lại draft.
+16. Legacy không có mutation route trên UI.
+17. Các màn hình chính không overflow ở 360×800 và 412×915.
+
+## 17. Ngoài phạm vi hiện tại
+
+- Đăng nhập Google hoặc Facebook.
+- Tạo plan, lịch hoặc bài tập cá nhân bởi người dùng.
+- Nhập actual reps, mức tạ hoặc volume bằng form trong luồng mới.
+- AI Camera cho bài khác Squat.
+- Pose detection trên Web.
+- Công cụ biên soạn catalog trong ứng dụng người dùng.
+- Backend đóng gói export và xóa toàn bộ dữ liệu.
+- iOS.
+- Wearable, Health Connect, mạng xã hội, thanh toán hoặc huấn luyện viên trực
+  tiếp.
