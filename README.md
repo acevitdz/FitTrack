@@ -1,363 +1,340 @@
-# FitTrack — Ứng dụng quản lý luyện tập
+# FitTrack
 
-FitTrack là ứng dụng Android được xây dựng bằng Flutter và Dart, giúp người dùng quản lý bài tập, lập lịch luyện tập, ghi nhận kết quả thực tế và theo dõi tiến độ cá nhân. Ứng dụng hướng đến trải nghiệm đơn giản: người dùng chuẩn bị kế hoạch trên app, tự tập bên ngoài app, sau đó bấm **Done** và nhập kết quả thực tế.
+FitTrack là ứng dụng Flutter hỗ trợ người dùng luyện tập theo chương trình có
+sẵn. Thay vì yêu cầu người dùng tự tạo kế hoạch, tự xếp lịch và nhập lại kết
+quả bằng nhiều biểu mẫu, ứng dụng chọn một chương trình phù hợp, tạo lịch tập,
+hướng dẫn từng hiệp và tự tổng hợp những gì người dùng đã xác nhận trong buổi
+tập.
 
-Điểm nổi bật của FitTrack là **Readiness Adjustment** — điều chỉnh một bản sao của buổi tập dựa trên năng lượng, đau/mỏi, thời gian và dụng cụ hiện có. Việc điều chỉnh sử dụng quy tắc minh bạch, hiển thị lý do và không làm thay đổi kế hoạch gốc.
+Tài liệu này mô tả đúng trạng thái mã nguồn hiện có tại ngày 26/07/2026. Những
+phần còn cần kiểm thử trên thiết bị hoặc cần backend xử lý được ghi rõ ở phần
+giới hạn, không được xem là chức năng đã sẵn sàng để phát hành.
 
-## 1. Mục tiêu dự án
+## 1. Người dùng có thể làm gì?
 
-- Áp dụng kiến thức Dart, Flutter, Material 3, form, navigation và quản lý trạng thái.
-- Xây dựng ứng dụng có xác thực, CRUD, cơ sở dữ liệu và phân quyền người dùng.
-- Hỗ trợ người dùng lập kế hoạch và theo dõi kết quả luyện tập thực tế.
-- Trực quan hóa tiến độ bằng dashboard, biểu đồ, báo cáo và bản đồ nhóm cơ.
-- Tổ chức mã nguồn theo feature-first kết hợp phân tầng để dễ phát triển theo nhóm.
+### Tài khoản
 
-## 2. Đối tượng sử dụng
+Người dùng có thể đăng ký bằng họ tên, email và mật khẩu; đăng nhập; đăng xuất;
+và yêu cầu gửi email đặt lại mật khẩu. Màn hình đăng ký yêu cầu xác nhận mật
+khẩu và đồng ý với điều khoản. Hai nút Google và Facebook hiện chỉ hiển thị
+thông báo chưa hỗ trợ, chưa có đăng nhập mạng xã hội.
 
-- **Khách:** đăng ký, đăng nhập và yêu cầu đặt lại mật khẩu.
-- **Người dùng:** quản lý hồ sơ, bài tập, kế hoạch, kết quả và tiến độ của chính mình.
-- **Quản trị viên:** thêm, sửa, ẩn hoặc hiện bài tập mẫu trong thư viện chung.
+Khi Firebase hoạt động, phiên đăng nhập sử dụng Firebase Authentication và dữ
+liệu riêng được phân tách theo UID. Nếu Firebase không khởi tạo được, ứng dụng
+chuyển sang chế độ dữ liệu cục bộ để nhóm có thể chạy thử giao diện và luồng
+nghiệp vụ; chế độ này không thay thế cơ chế xác thực thật.
 
-## 3. Luồng hoạt động chính
+### Thiết lập ban đầu
+
+Người đăng ký mới đi qua ba bước:
+
+1. Nhập tên hiển thị và xác nhận nhóm người dùng được hỗ trợ.
+2. Nhập chiều cao, cân nặng và chọn hệ đơn vị `cm/kg` hoặc `in/lb`.
+3. Chọn mục tiêu, số buổi mỗi tuần, kinh nghiệm, dụng cụ và ưu tiên nội dung.
+
+Chiều cao và cân nặng được chuẩn hóa về `cm/kg`. BMI được tính tự động và chỉ
+được trình bày như một chỉ số tham khảo. Nếu người dùng chọn nhóm nằm ngoài
+phạm vi người trưởng thành khỏe mạnh 18–64 tuổi, bộ ghép chương trình sẽ không
+tự gán chương trình không phù hợp.
+
+### Chương trình và lịch tập
+
+`ProgramMatcher` chỉ xét những phiên bản chương trình đang ở trạng thái
+`published`. Việc ghép chương trình dựa trên nhóm người dùng, mục tiêu, kinh
+nghiệm và dụng cụ; ưu tiên nội dung và số buổi mỗi tuần được dùng để xếp hạng.
+Fallback được phép nới mục tiêu nhưng vẫn phải giữ các điều kiện an toàn,
+kinh nghiệm và dụng cụ.
+
+Khi tìm được chương trình, ứng dụng tạo `ProgramEnrollment` và danh sách
+`WorkoutOccurrence` theo cadence của phiên bản đó. Enrollment được ghim vào
+một `ProgramVersion`, vì vậy lịch sử không bị thay đổi khi catalog có phiên bản
+mới. Người dùng có thể:
+
+- xem toàn bộ tuần, buổi, block và prescription ở chế độ chỉ đọc;
+- xem phiên bản, nội dung an toàn và nguồn tham khảo;
+- dời một buổi sang ngày trống tiếp theo;
+- bỏ qua một buổi sau khi xác nhận;
+- chọn mức sẵn sàng cho buổi hôm nay.
+
+Ba lựa chọn readiness hiện có là **Sung sức**, **Hơi mệt (Giảm tải)** và
+**Cần nghỉ ngơi**. Mỗi lựa chọn dùng một biến thể nội dung đã có trong phiên
+bản chương trình; ứng dụng không tự sinh prescription mới.
+
+### Active Workout
+
+Buổi tập được thực hiện bằng một state machine rõ ràng:
 
 ```text
-Mở ứng dụng
-    ↓
-Đăng ký hoặc đăng nhập
-    ↓
-Cập nhật thông tin ban đầu
-(hồ sơ → chỉ số cơ thể → mục tiêu luyện tập)
-    ↓
-Dashboard
-    ↓
-Chọn hoặc tạo bài tập
-    ↓
-Tạo kế hoạch → cấu hình sets/reps/mức tạ/nghỉ → xếp lịch
-    ↓
-Readiness Adjustment (tùy chọn)
-    ↓
-Người dùng tự luyện tập bên ngoài ứng dụng
-    ↓
-Bấm Done → nhập sets/reps/mức tạ/thời gian thực tế → lưu kết quả
-    ↓
-Cập nhật Dashboard, báo cáo, chuỗi hoạt động, kỷ lục và bản đồ nhóm cơ
+preparing → working ↔ resting → finishing → completed
+                 ↘ paused ↗
+preparing/working/resting/paused → discarded
 ```
 
-FitTrack **không triển khai** Active Workout, Rest Timer, Pause hoặc Resume. Trạng thái hoàn thành thuộc một lần xuất hiện của lịch tập theo ngày, không thuộc toàn bộ kế hoạch.
+Trong một buổi tập, người dùng có thể:
 
-## 4. Chức năng chính
+- xem bài hiện tại, mục tiêu, số hiệp, gợi ý kỹ thuật và thời gian đã tập;
+- xác nhận hoàn thành hiệp;
+- làm lại một hiệp mà không di chuyển con trỏ;
+- bỏ qua hiệp với một lý do được chọn;
+- nghỉ theo thời gian đã cấu hình, cộng thêm 15 giây hoặc kết thúc nghỉ sớm;
+- tạm dừng rồi tiếp tục;
+- kết thúc sớm và lưu phần đã thực hiện;
+- bỏ buổi tập và xóa bản nháp.
 
-### 4.1. Quản lý tài khoản
+Sau mỗi chuyển trạng thái quan trọng, draft được lưu theo UID trong
+`SharedPreferences`. Nếu ứng dụng bị đóng khi buổi tập chưa kết thúc, thẻ
+**Tiếp tục buổi tập** xuất hiện ở Trang chủ. Completion dùng idempotency key
+để thao tác lưu lại không tạo bản ghi trùng.
 
-- Đăng ký bằng họ tên, email và mật khẩu.
-- Đăng nhập và duy trì phiên đăng nhập.
-- Gửi email đặt lại mật khẩu.
-- Đăng xuất và bảo vệ các màn hình yêu cầu xác thực.
+### Guided Confirmation và AI Camera Coach
 
-### 4.2. Quản lý hồ sơ
+Guided Confirmation là chế độ mặc định và hoạt động trên cả Android lẫn Web.
+Người dùng xác nhận hiệp bằng nút; chế độ này không tự suy ra số lần lặp,
+confidence hoặc mức tạ.
 
-- Xem và cập nhật thông tin cá nhân.
-- Cập nhật ảnh đại diện.
-- Chọn mục tiêu luyện tập.
-- Đặt số buổi tập mục tiêu mỗi tuần.
+AI Camera Coach hiện là MVP dành cho bài **Squat trên Android**. Camera gửi
+khung hình tạm thời tới Google ML Kit Pose Detection, sau đó `PoseRuleEngine`
+đánh giá các mốc vai, hông, gối và cổ chân để nhận biết chu kỳ squat. Giao diện
+hiển thị số lần lặp, trạng thái nhìn thấy cơ thể và các gợi ý như đứng thẳng,
+hạ thấp thêm hoặc cải thiện ánh sáng.
 
-### 4.3. Theo dõi chỉ số cơ thể
+AI Camera Coach sẽ chuyển về Guided Confirmation khi:
 
-- Cập nhật chiều cao.
-- Thêm, sửa và xóa bản ghi cân nặng.
-- Tính BMI theo công thức `cân nặng (kg) / chiều cao² (m)`.
-- Xem lịch sử và biểu đồ cân nặng.
+- chạy trên Web hoặc nền tảng chưa hỗ trợ;
+- bài tập không phải Squat hoặc không có rule `squat_pose_v1`;
+- người dùng từ chối quyền camera;
+- không có camera, model lỗi hoặc kết quả không chắc chắn kéo dài;
+- người dùng chủ động tắt camera.
 
-> BMI chỉ mang tính tham khảo, không thay thế tư vấn y khoa.
+Khung hình, video và landmark không được lưu trong state hoặc tải lên Firebase.
+Dữ liệu đếm lần và confidence chỉ được gắn vào sự kiện của hiệp khi chế độ AI
+thực sự hoàn thành hiệp đó.
 
-### 4.4. Thư viện bài tập mẫu
+### Tiến độ và chỉ số cơ thể
 
-- Xem danh sách và chi tiết bài tập.
-- Tìm kiếm theo tên và lọc theo nhóm cơ.
-- Xem nhóm cơ, dụng cụ, độ khó và hướng dẫn thực hiện.
-- Đánh dấu hoặc bỏ đánh dấu yêu thích.
+Khu vực **Tiến độ** cho phép chọn báo cáo 7 ngày, 30 ngày hoặc toàn bộ thời
+gian. Màn hình tổng hợp số buổi, thời gian, số hiệp hoàn tất, độ chuyên cần,
+bài tập xuất hiện nhiều nhất, phân bổ nhóm cơ và chi tiết từng completion.
+Completion lưu snapshot của buổi tập, phiên bản nội dung, nguồn tham khảo và
+chế độ xác nhận.
 
-### 4.5. Kho bài tập cá nhân
+Khu vực **Chỉ số cơ thể** cho phép tạo lần đo mới với chiều cao và cân nặng,
+hiển thị BMI, biểu đồ cân nặng trong 7 hoặc 30 ngày và lịch sử đo. Ứng dụng theo
+dõi riêng hai loại chuỗi:
 
-- Tạo, xem, sửa và xóa bài tập cá nhân.
-- Quản lý bài tự tạo, bài yêu thích và bài đã sử dụng.
-- Xem số lần thực hiện và kỷ lục về mức tạ, reps hoặc volume.
+- chuỗi ngày cập nhật chỉ số cơ thể;
+- chuỗi ngày hoàn thành buổi tập.
 
-### 4.6. Quản lý kế hoạch luyện tập
+Nhiều lần cập nhật trong cùng một ngày chỉ được tính là một ngày hoạt động.
 
-- Tạo, xem, sửa, sao chép và xóa kế hoạch.
-- Thêm bài mẫu hoặc bài cá nhân vào kế hoạch và thay đổi thứ tự.
-- Cấu hình sets, khoảng reps, mức tạ dự kiến, thời gian nghỉ và ghi chú.
-- Xếp lịch một lần hoặc lặp theo các ngày trong tuần.
-- Chọn ngày, giờ, thời gian bắt đầu/kết thúc và bật nhắc lịch.
-- Xem lịch theo ngày với trạng thái `scheduled`, `completed`, `partial` hoặc `overdue`.
-- Sau khi tập, nhập sets, reps, mức tạ, thời gian và ghi chú thực tế.
-- Xem, sửa hoặc xóa kết quả của buổi đã hoàn thành.
+### Thư viện bài tập
 
-### 4.7. Dashboard và mục tiêu
+Người dùng có thể tìm bài tập theo tên tiếng Việt hoặc tiếng Anh, lọc theo
+nhóm cơ, mở trang chi tiết và đánh dấu yêu thích. Trang chi tiết trình bày mô
+tả, dụng cụ, độ khó, các bước thực hiện và lỗi thường gặp.
 
-- Xem lịch tập hôm nay và tiến độ mục tiêu tuần.
-- Xem tổng thời gian, tổng sets, volume và BMI gần nhất.
-- Xem kỷ lục mới nhất và thông tin phục hồi/cân bằng nhóm cơ.
+Thư viện của người dùng là nội dung chỉ đọc. Người dùng không có nút tạo bài
+tập cá nhân, thêm bài vào kế hoạch hoặc sửa prescription.
 
-### 4.8. Báo cáo và thống kê
+### Hồ sơ và cài đặt
 
-- Thống kê số buổi, sets, volume và thời gian thực tế.
-- Xem các bài tập được thực hiện thường xuyên.
-- Lọc dữ liệu theo tuần, tháng hoặc khoảng ngày.
-- Tự cập nhật khi kết quả buổi tập được sửa hoặc xóa.
+Người dùng có thể:
 
-### 4.9. Chuỗi hoạt động
+- đổi tên hiển thị và ảnh đại diện;
+- thay đổi lựa chọn chương trình rồi yêu cầu ghép lại;
+- chọn giao diện hệ thống, sáng hoặc tối;
+- chọn hệ đơn vị;
+- bật hoặc tắt Voice Coach và phản hồi rung;
+- bật nhắc lịch, chọn giờ nhắc và chọn trước 0, 15, 30 hoặc 60 phút;
+- xem thành tích;
+- gửi yêu cầu xuất dữ liệu;
+- gửi yêu cầu xóa tài khoản và đăng xuất;
+- xem giải thích về quyền riêng tư, camera và giới hạn sức khỏe.
 
-- Theo dõi riêng chuỗi đăng nhập và chuỗi ngày hoàn thành luyện tập.
-- Hiển thị chuỗi hiện tại, chuỗi dài nhất và lịch ngày hoạt động.
-- Mỗi chuỗi chỉ tăng tối đa một lần mỗi ngày.
+Voice Coach dùng Text-to-Speech tiếng Việt qua Android MethodChannel. Thông báo
+cục bộ nhắc buổi tập và báo hết giờ nghỉ cũng đang được triển khai cho Android.
+Nếu người dùng không cấp quyền, buổi tập vẫn hoạt động bình thường.
 
-### 4.10. Nhắc lịch tập
+### Dữ liệu phiên bản cũ
 
-- Tạo local notification từ lịch tập đã cấu hình.
-- Nhắc người dùng mở ứng dụng để duy trì chuỗi hoạt động.
-- Hủy hoặc cập nhật thông báo khi lịch tập thay đổi.
-- Nhấn thông báo để mở đúng kế hoạch liên quan.
+Model kế hoạch thủ công, lịch thủ công và completion cũ vẫn được giữ để đọc dữ
+liệu đã có. Màn hình **Dữ liệu phiên bản cũ** chỉ cho xem; các hàm tạo, sửa,
+xóa hoặc sao chép dữ liệu legacy đều bị chặn trong AppState.
 
-### 4.11. Readiness Adjustment
+## 2. Điều hướng hiện tại
 
-- Thu thập mức năng lượng, mức đau/mỏi, nhóm cơ đau, thời gian và dụng cụ hiện có.
-- Phân loại mức điều chỉnh: giữ nguyên, nhẹ, vừa hoặc phục hồi.
-- Có thể giảm sets, bỏ bài xung đột hoặc thay bằng bài phù hợp.
-- Hiển thị kế hoạch trước/sau điều chỉnh và lý do của từng thay đổi.
-- Cho phép giữ kế hoạch gốc hoặc dùng snapshot đã điều chỉnh cho buổi hiện tại.
-- Không sửa dữ liệu của kế hoạch gốc.
+Sau khi đăng nhập và hoàn thành onboarding, thanh điều hướng có bốn khu vực:
 
-### 4.12. Bản đồ cân bằng nhóm cơ
-
-- Tổng hợp working sets theo nhóm cơ trong tuần hoặc tháng.
-- Phân biệt nhóm cơ chính và nhóm cơ phụ.
-- Phân loại: chưa có dữ liệu, tập ít, cân bằng hoặc tập nhiều.
-- Xem các bài tập và kết quả đóng góp cho từng nhóm cơ.
-
-### 4.13. Quản trị bài tập mẫu
-
-- Admin thêm và sửa bài tập mẫu.
-- Cấu hình ảnh, nhóm cơ, dụng cụ, độ khó và hướng dẫn.
-- Ẩn hoặc hiện bài tập trong thư viện chung.
-- Phân quyền bằng Firebase Authentication và Firebase Security Rules.
-
-## 5. Công nghệ sử dụng
-
-| Thành phần | Công nghệ |
+| Khu vực | Nội dung |
 |---|---|
-| Ngôn ngữ | Dart, null safety |
-| Framework | Flutter, Material 3 |
-| Thiết kế giao diện | Figma |
-| Xác thực | Firebase Authentication |
-| Cơ sở dữ liệu | Cloud Firestore |
-| Lưu ảnh | Firebase Storage |
-| Thông báo | Local Notifications |
-| Quản lý trạng thái | Riverpod, Provider hoặc giải pháp thống nhất của nhóm |
-| Điều hướng | Router có auth guard và admin guard |
-| Biểu đồ | Thư viện biểu đồ tương thích Flutter |
-| Kiểm thử | Unit test, widget test và integration test cho luồng chính |
-| Nền tảng chính | Android |
+| Trang chủ | Buổi hôm nay, readiness, resume, tiến độ tuần và cảnh báo offline |
+| Chương trình | Phiên bản đang theo, các tuần, buổi, block và nguồn |
+| Tiến độ | Báo cáo, streak, heatmap, Body Metrics và lịch sử completion |
+| Hồ sơ | Thư viện, tùy chọn chương trình, cài đặt và quyền riêng tư |
 
-## 6. Kiến trúc hệ thống
+Splash screen, đăng nhập và onboarding nằm ngoài thanh điều hướng này.
 
-FitTrack sử dụng kiến trúc **feature-first kết hợp phân tầng**:
+## 3. Nền tảng và mức hỗ trợ
 
-```text
-Screen/Widget
-    ↓
-Controller/State
-    ↓
-Rule hoặc Use Case
-    ↓
-Repository Contract
-    ↓
-Repository Implementation
-    ↓
-Firebase hoặc dịch vụ thiết bị
-```
+| Khả năng | Android | Web |
+|---|---:|---:|
+| Luồng tài khoản và dữ liệu Firebase | Có | Có |
+| Guided Confirmation | Có | Có |
+| AI Camera Coach Squat | Có code path, cần QA thiết bị | Không, tự fallback |
+| Voice Coach | Có code path, cần QA thiết bị | Không |
+| Local notification và rest notification | Có code path, cần QA thiết bị | Không |
+| Theme, chương trình, tiến độ và Body Metrics | Có | Có |
 
-Nguyên tắc chính:
+Repository hiện có thư mục nền tảng `android/` và `web/`. iOS chưa được cấu
+hình trong project và `firebase_options.dart` cũng chưa có cấu hình iOS.
 
-- UI không gọi Firebase trực tiếp.
-- Domain không phụ thuộc Flutter hoặc Firebase.
-- Business rules được viết bằng Dart thuần để có thể unit test.
-- Mỗi feature có thể chứa `data`, `domain` và `presentation`.
-- `WorkoutPlan`, `WorkoutSchedule` và `WorkoutCompletion` là ba entity độc lập.
-- Completion lưu snapshot để lịch sử không bị thay đổi khi bài tập hoặc kế hoạch gốc được sửa.
+## 4. Công nghệ chính
 
-Cấu trúc rút gọn:
+- Flutter, Dart và Material 3.
+- Firebase Authentication, Cloud Firestore, Firebase Storage và Firebase
+  Messaging.
+- `shared_preferences` cho snapshot cục bộ và draft buổi tập.
+- `camera` và Google ML Kit Pose Detection cho Camera Coach Android.
+- `flutter_local_notifications` và `timezone` cho lịch nhắc.
+- Android Text-to-Speech qua MethodChannel cho Voice Coach.
+- `fl_chart` cho biểu đồ.
+- `intl` cho định dạng ngày tiếng Việt.
+
+## 5. Cấu trúc mã nguồn
+
+Project đang dùng cấu trúc phân tầng trực tiếp:
 
 ```text
-lib/
-├── main.dart
-├── bootstrap.dart
-├── app.dart
-├── core/
-│   ├── config/
-│   ├── constants/
-│   ├── errors/
-│   ├── navigation/
-│   ├── services/
-│   ├── theme/
-│   └── widgets/
-├── shared/
-└── features/
-    ├── auth/
-    ├── onboarding/
-    ├── profile/
-    ├── body_metrics/
-    ├── exercise_library/
-    ├── personal_exercises/
-    ├── workout_plan/
-    ├── workout_schedule/
-    ├── workout_completion/
-    ├── readiness/
-    ├── dashboard/
-    ├── reports/
-    ├── streaks/
-    ├── reminders/
-    ├── muscle_balance/
-    └── admin_exercises/
+FitTrack/
+├── android/                 # Cấu hình và mã native Android
+├── web/                     # Bootstrap Flutter Web
+├── lib/
+│   ├── data/                # Catalog và dữ liệu seed
+│   ├── models/              # Model chương trình, workout, hồ sơ và sức khỏe
+│   ├── screens/             # Các màn hình theo nhóm chức năng
+│   ├── services/            # Firebase, local store, notification, pose, TTS
+│   ├── state/               # AppState và nghiệp vụ điều phối toàn ứng dụng
+│   ├── theme/               # Màu sắc và theme sáng/tối
+│   ├── widgets/             # Widget dùng lại và Camera Coach panel
+│   ├── app.dart             # Chọn màn hình theo auth/onboarding state
+│   ├── firebase_options.dart
+│   └── main.dart            # Khởi tạo Firebase, locale, notification và state
+├── test/
+├── firestore.rules
+├── storage.rules
+└── pubspec.yaml
 ```
 
-## 7. Mô hình dữ liệu chính
+`AppState` là `ChangeNotifier` trung tâm, vừa giữ state vừa điều phối các
+service. Những luật cần kiểm thử độc lập được tách riêng, gồm
+`ProgramMatcher`, `ActiveWorkoutController` và `PoseRuleEngine`.
 
-Các collection/entity dự kiến:
+## 6. Dữ liệu và đồng bộ
 
-- `users`: hồ sơ, mục tiêu, vai trò và trạng thái onboarding.
-- `weight_records`: lịch sử cân nặng theo người dùng.
-- `template_exercises`: bài tập mẫu do admin quản lý.
-- `personal_exercises`: bài tập cá nhân.
-- `favorites`: liên kết người dùng với bài tập yêu thích.
-- `workout_plans`: nội dung kế hoạch gốc.
-- `workout_schedules`: quy tắc xếp lịch và nhắc lịch.
-- `workout_completions`: snapshot kết quả thực tế theo occurrence/ngày.
-- `readiness_snapshots`: đầu vào, kết quả và lý do điều chỉnh.
-- `streaks`: chuỗi đăng nhập và chuỗi luyện tập.
-- `reminders`: cấu hình local notification.
+Khi Firebase khả dụng, snapshot tài khoản được lưu tại:
 
-Mọi dữ liệu cá nhân phải gắn với UID của Firebase Authentication. Người dùng chỉ được đọc và sửa dữ liệu của chính mình; quyền quản trị được kiểm tra bằng role/claim và Firebase Security Rules.
+```text
+users/{uid}/appState/current
+```
 
-## 8. Cài đặt và chạy dự án
+Catalog bài tập, chương trình và phiên bản dùng các collection cấp cao riêng.
+Ảnh đại diện nằm dưới đường dẫn Storage của UID; media catalog chỉ được ứng
+dụng người dùng đọc.
 
-### 8.1. Yêu cầu môi trường
+Ứng dụng đồng thời giữ một cache cục bộ theo UID. Cache giúp mở lại dữ liệu gần
+nhất khi mất mạng, nhưng project chưa có hàng đợi đồng bộ bền vững hoặc cơ chế
+giải quyết xung đột hai chiều. Khi đồng bộ cloud thất bại, bản cục bộ được giữ
+lại và ứng dụng tiếp tục hoạt động.
 
-- Flutter SDK phiên bản stable phù hợp với dự án.
-- Dart SDK đi kèm Flutter.
-- Android Studio hoặc VS Code.
-- Android SDK và Android Emulator hoặc thiết bị Android thật.
-- Firebase CLI và FlutterFire CLI nếu cần cấu hình lại Firebase.
+Firestore Rules hiện kiểm tra UID và chỉ cho ứng dụng đọc catalog đang
+active/published. Client không được ghi catalog. Storage Rules giới hạn ảnh
+người dùng dưới 5 MB và chỉ cho đọc media gắn với nội dung đã phát hành. Các
+rules này vẫn cần được kiểm thử bằng Firebase Emulator trước khi xem là đạt mức
+phát hành.
 
-### 8.2. Các bước chạy
+## 7. Cài đặt và chạy
+
+Yêu cầu:
+
+- Flutter SDK tương thích với Dart `^3.12.2`;
+- Android SDK và thiết bị/emulator nếu chạy Android;
+- Chrome nếu chạy Web;
+- quyền truy cập Firebase project nếu kiểm thử dữ liệu thật.
+
+Từ thư mục repository:
 
 ```powershell
-git clone <repository-url>
-cd fittrack
+cd FitTrack
 flutter pub get
-flutter run
+flutter run -d chrome
 ```
 
-Nếu Firebase chưa được cấu hình:
+Chạy Android:
 
 ```powershell
-firebase login
-flutterfire configure
+flutter devices
+flutter run -d <device-id>
 ```
 
-Sau đó bật các dịch vụ cần thiết trong Firebase Console:
+Nếu Firebase không khởi tạo được, ứng dụng vẫn có thể chạy luồng cục bộ để
+phát triển và kiểm tra giao diện.
 
-1. Authentication với Email/Password.
-2. Cloud Firestore.
-3. Firebase Storage nếu sử dụng ảnh đại diện hoặc ảnh bài tập.
-4. Triển khai `firestore.rules`, `storage.rules` và indexes cần thiết.
+## 8. Kiểm tra
 
-> Không commit API key bí mật, tài khoản thật, mật khẩu, file service account hoặc dữ liệu sức khỏe thật vào Git.
-
-## 9. Kiểm tra chất lượng
-
-Chạy các lệnh sau trước khi tạo Pull Request:
+Trước khi tạo Pull Request:
 
 ```powershell
-dart format --output=none --set-exit-if-changed .
+dart format --output=none --set-exit-if-changed lib test
 flutter analyze
 flutter test
 ```
 
-Các nhóm test ưu tiên:
+Test hiện có bao phủ:
 
-- Validation đăng ký, đăng nhập và biểu mẫu.
-- Công thức BMI và tổng hợp volume.
-- Quy tắc Readiness Adjustment.
-- Tạo occurrence từ lịch một lần hoặc lặp hằng tuần.
-- Lưu completion và ngăn trùng kết quả cùng occurrence.
-- Tính báo cáo, streak, kỷ lục và working sets theo nhóm cơ.
-- Widget test cho loading, empty, error và success state.
+- validation đăng nhập và chuyển sang đăng ký;
+- ProgramMatcher, fallback và published-version gate;
+- enrollment ghim phiên bản và sinh lịch tự động;
+- Body Metrics, chuyển đổi dữ liệu và BMI;
+- Active Workout, nghỉ, pause/resume, checkpoint và completion idempotent;
+- Squat PoseRuleEngine, confidence gate và Web fallback;
+- thao tác điều hướng, thư viện read-only và layout 360×800/412×915;
+- parser HTTP bài tập và round-trip của các model.
 
-## 10. Phân công nhóm
+Các test tự động không chứng minh Camera Coach chính xác trên mọi thiết bị,
+không thay thế kiểm thử Firebase Rules và không thay thế QA notification/TTS
+khi ứng dụng chạy nền.
 
-| Thành viên | Phạm vi chính | CRUD chính |
-|---|---|---|
-| Thành viên 1 | Tài khoản, hồ sơ, chỉ số cơ thể, dashboard, báo cáo và chuỗi hoạt động | Hồ sơ và bản ghi cân nặng |
-| Thành viên 2 | Thư viện bài mẫu, kho bài cá nhân, bản đồ nhóm cơ và quản trị bài mẫu | Bài tập mẫu và bài tập cá nhân |
-| Thành viên 3 | Kế hoạch, xếp lịch, kết quả, nhắc lịch và Readiness Adjustment | Kế hoạch, lịch tập và kết quả |
+## 9. Giới hạn hiện tại
 
-## 11. Quy trình Git
+- Camera Coach mới hỗ trợ Squat trên Android và chưa có kết quả QA thiết bị
+  thật được lưu trong repository.
+- Voice Coach, notification, deep link và khôi phục sau process death cần kiểm
+  thử trên Android.
+- Web luôn dùng Guided Confirmation và không có local notification hoặc TTS.
+- Chưa có cấu hình và source platform iOS.
+- Chưa có công cụ biên soạn catalog trong ứng dụng người dùng.
+- Xuất dữ liệu và xóa tài khoản hiện tạo request trong Firestore; project chưa
+  có backend worker để đóng gói hoặc xóa toàn bộ dữ liệu.
+- Offline cache chưa có durable sync queue và conflict policy.
+- Google/Facebook login chưa được triển khai.
+- FitTrack không chẩn đoán, điều trị hoặc thay thế bác sĩ hay huấn luyện viên.
 
-- Nhánh ổn định: `main`.
-- Nhánh tích hợp: `develop`.
-- Mỗi thành viên làm việc trên feature branch riêng, ví dụ `feature/auth-profile` hoặc `feature/workout-plan`.
-- Không code trực tiếp trên `main` và `develop`.
-- Mỗi Pull Request cần mô tả thay đổi, ảnh giao diện và kết quả kiểm tra.
-- Đồng bộ `develop` thường xuyên để xử lý xung đột sớm.
-- Chỉ merge vào `main` khi bản tích hợp đã được kiểm tra.
+## 10. Phân công hiện tại
 
-## 12. Kế hoạch phát triển trong 3 tuần
+| Thành viên | Phạm vi |
+|---|---|
+| Lê Tiến Hải | Tài khoản, onboarding, hồ sơ, Body Metrics, tiến độ và thành tích |
+| Minh Thắng | Thư viện bài tập, catalog nội dung, model chương trình và kiểm tra dữ liệu |
+| Võ Việt Anh | Program enrollment, readiness, Active Workout, completion và nhắc lịch |
 
-### Tuần 1 — Chốt chức năng và giao diện
+Khi tích hợp, người phụ trách giao diện review mọi thay đổi trong `screens/`,
+`theme/` và `widgets/`. Thành viên làm logic nên ưu tiên thay đổi `models/`,
+`services/`, `state/` và test tương ứng, đồng thời tránh sửa cùng một màn hình
+trong nhiều branch.
 
-- Thống nhất phạm vi, actor, yêu cầu và tiêu chí nghiệm thu.
-- Hoàn thiện user flow, wireframe và giao diện Figma.
-- Chốt design system, navigation và trạng thái màn hình.
-- Thiết kế entity, Firestore schema và repository contracts ở mức tài liệu.
-- Khởi tạo Flutter/Firebase, cấu trúc thư mục và Git workflow.
+## 11. Tài liệu liên quan
 
-### Tuần 2 — Xây dựng chức năng cốt lõi
-
-- Thành viên 1: auth, onboarding, profile và body metrics.
-- Thành viên 2: thư viện bài tập, yêu thích và bài cá nhân.
-- Thành viên 3: kế hoạch, xếp lịch, Done và lưu completion.
-- Tích hợp Firestore, Storage, Security Rules và kiểm tra CRUD.
-
-### Tuần 3 — Tích hợp, chức năng nâng cao và hoàn thiện
-
-- Hoàn thiện dashboard, báo cáo, streak, reminder, Readiness và muscle balance.
-- Tích hợp các feature qua `develop` và xử lý xung đột.
-- Chạy format, analyze, test và kiểm thử luồng đầu-cuối.
-- Sửa lỗi, tối ưu giao diện, bổ sung trạng thái rỗng/lỗi/loading.
-- Chuẩn bị dữ liệu demo, tài khoản demo, video và tài liệu thuyết trình.
-
-## 13. Tài liệu liên quan
-
-- [Đặc tả yêu cầu hệ thống](./FitTrack_System_Requirements_Specification.md)
-- [Kiến trúc mã nguồn](./FitTrack_Source_Code_Architecture.md)
 - [Đặc tả chức năng và UI](./FitTrack_Dac_ta_chuc_nang_UI.md)
-- [Yêu cầu chi tiết từng màn hình](./FitTrack_Detailed_UI_Screen_Requirements.md)
-- [Yêu cầu giao diện cho Figma AI](./FitTrack_Figma_AI_UI_Requirements.md)
-- [Kế hoạch cộng tác Git](./FitTrack_Git_Collaboration_Plan.md)
-
-## 14. Trạng thái dự án
-
-Dự án đang ở giai đoạn thiết kế và chuẩn bị triển khai. README này là tài liệu tổng quan; khi code được hoàn thiện, nhóm cần cập nhật thêm:
-
-- Link repository và bản thiết kế Figma.
-- Phiên bản Flutter/Dart chính xác.
-- Danh sách dependency thực tế.
-- Ảnh chụp màn hình hoặc video demo.
-- Tài khoản demo và hướng dẫn build APK.
-- Các giới hạn hoặc lỗi đã biết.
-
-
-
-
+- [Đặc tả yêu cầu hệ thống](./FitTrack_System_Requirements_Specification.md)
+- [README của project Flutter](./FitTrack/README.md)
+- [Báo cáo triển khai](./FitTrack/docs/implementation_report.md)

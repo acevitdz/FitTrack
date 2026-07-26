@@ -1,477 +1,485 @@
-# FITTRACK — ĐẶC TẢ YÊU CẦU HỆ THỐNG (SRS)
+# FitTrack — Đặc tả yêu cầu hệ thống theo mã nguồn hiện tại
 
-## 1. Giới thiệu dự án
+## 1. Mục đích tài liệu
 
-### 1.1. Mục tiêu
+FitTrack hướng tới một luồng đơn giản: người dùng khai báo thông tin cơ bản,
+nhận một chương trình có sẵn, tập theo từng hiệp và xem lại kết quả đã được xác
+nhận. Ứng dụng không cho người dùng tự kê prescription hoặc tự nhập một bộ số
+liệu tập luyện phức tạp.
 
-FitTrack giúp người dùng quản lý hồ sơ, bài tập, kế hoạch, lịch tập và kết quả thực tế; theo dõi tiến độ, streak, kỷ lục và mức cân bằng nhóm cơ. Điểm khác biệt là Readiness Adjustment dựa trên luật minh bạch.
+## 2. Phạm vi hệ thống
 
-### 1.2. Luồng sản phẩm
+### 2.1. Phạm vi đang triển khai
 
-```text
-Tạo WorkoutPlan → Xếp WorkoutSchedule → Readiness tùy chọn
-→ Người dùng tự tập ngoài app → Bấm Done → Nhập kết quả
-→ Lưu WorkoutCompletion → Cập nhật Dashboard/Report/Streak/PR/Muscle Balance
-```
+Hệ thống hiện bao gồm:
 
-Không có Active Workout, Rest Timer, Pause hoặc Resume.
+- đăng ký, đăng nhập, đặt lại mật khẩu và đăng xuất bằng email;
+- onboarding và Body Metrics;
+- ghép chương trình deterministic từ catalog đã phát hành;
+- enrollment và lịch tập tự động;
+- readiness cho từng occurrence;
+- Active Workout có checkpoint, nghỉ, pause/resume và completion;
+- Guided Confirmation trên Android/Web;
+- AI Camera Coach cho Squat trên Android;
+- Voice Coach, rung và notification trên Android;
+- thư viện bài tập chỉ đọc cho người dùng;
+- tiến độ, lịch sử, streak, thành tích và biểu đồ cân nặng;
+- hồ sơ, theme, hệ đơn vị và yêu cầu dữ liệu;
+- chế độ chỉ đọc cho dữ liệu legacy;
+- cache cục bộ theo UID và đồng bộ snapshot với Firebase.
 
-### 1.3. Công nghệ
+### 2.2. Phạm vi chưa có
 
-- Flutter/Dart, null safety và Material 3.
-- Firebase Authentication, Cloud Firestore, Storage nếu có ảnh.
-- Local notification cho lịch tập và streak reminder.
-- State management thống nhất (Riverpod/Provider hoặc tương đương).
-- Android là nền tảng chính; Chrome dùng kiểm tra khi phù hợp.
+Phiên bản hiện tại không bao gồm:
 
-### 1.4. Phạm vi ngoài hệ thống
+- đăng nhập Google hoặc Facebook;
+- plan builder, schedule builder hoặc bài tập cá nhân cho người dùng;
+- form nhập actual reps, mức tạ, volume hoặc external load trong workout mới;
+- AI Camera cho bài khác Squat;
+- pose detection, local notification hoặc Text-to-Speech trên Web;
+- source và cấu hình iOS;
+- công cụ biên soạn catalog trong ứng dụng người dùng;
+- backend đóng gói export hoặc xóa toàn bộ dữ liệu;
+- hàng đợi đồng bộ offline bền vững;
+- wearable, Health Connect, mạng xã hội, thanh toán hoặc live coach.
 
-- Chẩn đoán y khoa/chấn thương.
-- AI tạo giáo án hoặc chatbot.
-- Theo dõi buổi tập theo thời gian thực.
-- Health Connect, thiết bị đeo, thanh toán và mạng xã hội.
+## 3. Actor và quyền truy cập
 
-## 2. Phân tích yêu cầu
+### Khách
 
-### 2.1. Actor
+Khách là trạng thái chưa đăng nhập, không phải một role được lưu. Khách chỉ
+truy cập splash, đăng nhập, đăng ký và quên mật khẩu.
 
-- **Khách:** đăng ký, đăng nhập, quên mật khẩu.
-- **User:** quản lý dữ liệu của chính mình; đọc bài mẫu đang hoạt động.
-- **Admin:** quản lý bài mẫu; không mặc nhiên đọc dữ liệu sức khỏe người khác.
+### Người dùng
 
-### 2.2. Ràng buộc
+Người dùng quản lý hồ sơ và dữ liệu của chính mình, theo chương trình, thực hiện
+workout, xem tiến độ và thay đổi cài đặt. Ứng dụng người dùng không được sửa
+catalog chung hoặc dữ liệu của tài khoản khác.
 
-- Mọi dữ liệu cá nhân gắn UID từ Firebase Auth.
-- UI không gọi Firebase trực tiếp.
-- Plan không có cờ Done toàn cục.
-- Completion thuộc một occurrence/ngày và lưu snapshot.
-- Readiness không sửa plan gốc.
-- Không commit secret/dữ liệu cá nhân thật.
-
-### 2.3. Ưu tiên
-
-**Must:** Auth, Profile, Body Metrics, Exercises, Plan, Schedule, Done/Completion, Dashboard cơ bản, Firebase Rules, test.
-
-**Should:** Reports, Streak, Reminder, PR, Readiness, Muscle Balance.
-
-**Could:** Dark theme, avatar upload, báo cáo nâng cao, song ngữ.
-
-## 3. Functional Requirements
-
-### 3.1. Quản lý tài khoản
-
-| ID | Yêu cầu |
-|---|---|
-| FR-01.1 | Đăng ký bằng họ tên, email, mật khẩu hợp lệ. |
-| FR-01.2 | Đăng nhập, duy trì phiên và đăng xuất. |
-| FR-01.3 | Gửi email đặt lại mật khẩu. |
-| FR-01.4 | Điều hướng theo auth state; route riêng tư cần xác thực. |
-
-### 3.2. Quản lý hồ sơ
-
-| ID | Yêu cầu |
-|---|---|
-| FR-02.1 | Xem/cập nhật thông tin cá nhân và avatar. |
-| FR-02.2 | Chọn mục tiêu luyện tập và số buổi/tuần 1–7. |
-| FR-02.3 | Chỉ chủ tài khoản đọc/sửa hồ sơ. |
-
-### 3.3. Chỉ số cơ thể
-
-| ID | Yêu cầu |
-|---|---|
-| FR-03.1 | Cập nhật chiều cao và CRUD cân nặng. |
-| FR-03.2 | Tính `BMI = kg/m²` từ dữ liệu hợp lệ. |
-| FR-03.3 | Hiển thị lịch sử/biểu đồ theo thời gian tăng dần. |
-| FR-03.4 | BMI có disclaimer “mang tính tham khảo”. |
-
-### 3.4. Thư viện bài tập mẫu
-
-| ID | Yêu cầu |
-|---|---|
-| FR-04.1 | Xem danh sách/chi tiết bài mẫu đang hoạt động. |
-| FR-04.2 | Tìm kiếm tên không phân biệt hoa/thường. |
-| FR-04.3 | Lọc nhóm cơ và kết hợp/đặt lại bộ lọc. |
-| FR-04.4 | Thêm/bỏ yêu thích theo UID. |
-
-### 3.5. Kho bài tập cá nhân
-
-| ID | Yêu cầu |
-|---|---|
-| FR-05.1 | CRUD bài cá nhân. |
-| FR-05.2 | Xem bài tự tạo, yêu thích và đã dùng. |
-| FR-05.3 | Tính số lần tập, lần gần nhất và PR từ completed sets. |
-| FR-05.4 | Xóa/sửa bài không thay đổi snapshot lịch sử. |
-
-### 3.6. Quản lý kế hoạch luyện tập
-
-| ID | Yêu cầu |
-|---|---|
-| FR-06.1 | CRUD/sao chép WorkoutPlan; thêm/reorder bài. |
-| FR-06.2 | Cấu hình target sets, rep range, weight, rest và note. |
-| FR-06.3 | Plan hợp lệ có tên và ít nhất một bài; không có `isDone`. |
-| FR-06.4 | Tạo WorkoutSchedule None/Once/Weekly. |
-| FR-06.5 | Weekly chọn weekdays, start/end; once chọn date; time tùy chọn. |
-| FR-06.6 | Hiển thị occurrence theo ngày và trạng thái scheduled/completed/partial/overdue. |
-| FR-06.7 | Bấm Done mở form nhập actual sets/reps/weight, duration và note. |
-| FR-06.8 | Chỉ completed set tính volume; bodyweight cho phép 0 kg. |
-| FR-06.9 | Completion lưu snapshot và không sửa plan gốc. |
-| FR-06.10 | Không tạo hai completion cho cùng schedule occurrence. |
-| FR-06.11 | User xem, sửa, xóa completion; thống kê phải cập nhật lại. |
-
-### 3.7. Dashboard và mục tiêu
-
-| ID | Yêu cầu |
-|---|---|
-| FR-07.1 | Hiển thị lịch hôm nay và tiến độ buổi/tuần. |
-| FR-07.2 | Hiển thị duration, sets, volume, BMI và PR gần nhất. |
-| FR-07.3 | Chỉ completion completed/partial được tính. |
-| FR-07.4 | Một card lỗi không khóa toàn Dashboard. |
-
-### 3.8. Báo cáo
-
-| ID | Yêu cầu |
-|---|---|
-| FR-08.1 | Lọc tuần, tháng hoặc khoảng ngày. |
-| FR-08.2 | Tổng hợp số buổi, sets, volume, thời gian và top exercises. |
-| FR-08.3 | Dùng completion thực tế; không dùng kế hoạch dự kiến. |
-| FR-08.4 | Sửa/xóa completion cập nhật báo cáo. |
-
-### 3.9. Chuỗi hoạt động
-
-| ID | Yêu cầu |
-|---|---|
-| FR-09.1 | Login streak tăng tối đa một lần/ngày theo Asia/Ho_Chi_Minh. |
-| FR-09.2 | Workout streak chỉ tính ngày có completion hợp lệ. |
-| FR-09.3 | Current/longest streak và heatmap được hiển thị tách biệt. |
-| FR-09.4 | Xóa completion phải tính lại workout streak. |
-
-### 3.10. Nhắc lịch tập
-
-| ID | Yêu cầu |
-|---|---|
-| FR-10.1 | Lên lịch notification từ schedule ngày/giờ. |
-| FR-10.2 | Sửa/xóa/tắt schedule hủy notification liên quan. |
-| FR-10.3 | Nhấn notification mở đúng plan nếu đã xác thực. |
-| FR-10.4 | Local reminder nhắc duy trì streak nếu chưa check-in trên thiết bị. |
-| FR-10.5 | Từ chối quyền không làm app crash và có lối mở Settings. |
-
-### 3.11. Readiness Adjustment
-
-| ID | Yêu cầu |
-|---|---|
-| FR-11.1 | Thu thập energy, soreness, sore muscles, time và equipment. |
-| FR-11.2 | Rule engine xác định none/light/moderate/recovery. |
-| FR-11.3 | Giảm sets/bài, loại xung đột soreness/dụng cụ và khớp thời gian. |
-| FR-11.4 | Hiển thị before/after và reasons. |
-| FR-11.5 | User dùng adjusted snapshot hoặc giữ plan gốc. |
-| FR-11.6 | Không sửa WorkoutPlan; Done dùng snapshot đã chọn. |
-
-### 3.12. Bản đồ cân bằng nhóm cơ
-
-| ID | Yêu cầu |
-|---|---|
-| FR-12.1 | Tính working sets từ completed sets theo tuần/tháng. |
-| FR-12.2 | Primary nhận 1; secondary nhận trọng số cấu hình nếu áp dụng. |
-| FR-12.3 | Phân loại neutral/low/balanced/high bằng ngưỡng cấu hình. |
-| FR-12.4 | Không có dữ liệu không bị kết luận mất cân bằng. |
-
-### 3.13. Admin bài mẫu
-
-| ID | Yêu cầu |
-|---|---|
-| FR-13.1 | Admin thêm/sửa/upload ảnh/ẩn-hiện bài mẫu. |
-| FR-13.2 | User thường chỉ đọc bài đang hoạt động. |
-| FR-13.3 | Quyền được kiểm tra trong Security Rules. |
-
-## 4. Non-Functional Requirements
-
-### Hiệu năng
-
-- Không chặn main isolate; danh sách dùng lazy builder.
-- Không query Firebase trong `build()`.
-- Ảnh có cache/placeholder; dashboard tải từng vùng khi phù hợp.
-
-### Tin cậy
-
-- Không tạo dữ liệu trùng do double tap/retry.
-- Completion snapshot không đổi khi plan/exercise thay đổi.
-- Transaction/idempotency cho streak và completion uniqueness.
-- Mất mạng/dữ liệu thiếu trường không làm crash.
-
-### Bảo mật
-
-- `request.auth != null` và `request.auth.uid == uid` cho dữ liệu cá nhân.
-- Chỉ admin được ghi collection bài mẫu.
-- Storage chỉ cho chủ sở hữu/avatar hoặc admin/template image theo Rules.
-- Rules test chứng minh User A không truy cập dữ liệu User B.
-
-### UI/UX
-
-- Material 3, navy blue, responsive 360×800 và 412×915.
-- Contrast hướng WCAG AA; touch target khoảng 48 dp.
-- Loading/success/empty/error/offline; form có validation/submitting/unsaved guard.
-
-### Chất lượng mã
-
-- Feature-first; presentation/domain/data.
-- Dart thuần cho business rules; unit/widget test.
-- `dart format`, `flutter analyze`, `flutter test` đạt.
-
-## 5. Use Case
-
-| Mã | Use case | Actor |
-|---|---|---|
-| UC-01 | Đăng ký/đăng nhập/quên mật khẩu | Khách |
-| UC-02 | Quản lý hồ sơ và chỉ số | User |
-| UC-03 | Khám phá/quản lý bài tập | User |
-| UC-04 | Tạo nội dung kế hoạch | User |
-| UC-05 | Xếp lịch once/weekly | User |
-| UC-06 | Kiểm tra readiness và chọn snapshot | User |
-| UC-07 | Bấm Done và lưu kết quả | User |
-| UC-08 | Xem/sửa/xóa lịch sử kết quả | User |
-| UC-09 | Xem Dashboard/Report/Streak/Muscle Balance | User |
-| UC-10 | Quản lý reminder | User |
-| UC-11 | Quản lý bài mẫu | Admin |
-
-### UC-04 đến UC-07 — luồng trung tâm
-
-- **Tiền điều kiện:** đã đăng nhập; có bài tập hợp lệ.
-- **Luồng:** tạo plan → thêm/cấu hình bài → xếp lịch → chọn occurrence → readiness tùy chọn → tự tập → Done → nhập actual results → summary → lưu completion.
-- **Ngoại lệ:** plan rỗng; schedule sai; form result không có completed set; mất mạng; duplicate submit.
-- **Hậu điều kiện:** completion duy nhất có snapshot; dashboard/report consumers được làm mới; plan gốc không đổi.
-
-## 6. Kiến trúc hệ thống
+## 4. Luồng nghiệp vụ chính
 
 ```text
-Flutter Presentation
-Screen • Widget • Controller • State
-             ↓
-Domain
-Entity • Repository Contract • Rule • UseCase
-             ↓
-Data
-Model • Repository Implementation • Service
-       ↙                         ↘
-Firebase Auth/Firestore/Storage   Device Local Notification/Preferences
+Đăng ký/đăng nhập
+        ↓
+Onboarding và Body Metrics
+        ↓
+ProgramMatcher
+        ↓
+ProgramEnrollment + WorkoutOccurrence
+        ↓
+Trang chủ + Readiness
+        ↓
+Active Workout
+  ├── Guided Confirmation
+  └── AI Camera Squat trên Android
+        ↓
+WorkoutCompletion
+        ↓
+Tiến độ, streak và thành tích
 ```
 
-Các feature chính:
+Catalog chỉ phân phối nội dung đã phát hành:
 
 ```text
-authentication, profile, body_metrics,
-exercise_library, personal_exercises,
-workout_plans, workout_schedules, workout_completion,
-dashboard, reports, streaks, reminders,
-readiness, muscle_balance, admin_exercises, settings
+draft → published → retired
+                  ↘ recalled
 ```
 
-## 7. Database
+Chỉ version `published` được phân phối cho người dùng. Một version đã
+`published` không được sửa nội dung và không được đưa trở lại `draft`.
+
+## 5. Yêu cầu chức năng
+
+### FR-01 — Khởi động ứng dụng
+
+1. Ứng dụng phải khởi tạo locale tiếng Việt trước khi render giao diện.
+2. Ứng dụng phải thử khởi tạo Firebase nhưng không được crash nếu Firebase
+   không khả dụng.
+3. Notification service và AppState phải được khởi tạo trước `runApp`.
+4. Sau splash, ứng dụng phải điều hướng theo auth state và trạng thái
+   onboarding.
+5. Theme phải phản ánh lựa chọn hệ thống, sáng hoặc tối đã lưu.
+
+### FR-02 — Tài khoản và phiên đăng nhập
+
+1. Hệ thống phải hỗ trợ đăng ký bằng tên, email và mật khẩu.
+2. Form phải kiểm tra email, mật khẩu tối thiểu 8 ký tự, xác nhận mật khẩu và
+   đồng ý điều khoản.
+3. Hệ thống phải hỗ trợ đăng nhập, đăng xuất và yêu cầu đặt lại mật khẩu.
+4. Khi Firebase hoạt động, tài khoản chỉ được vào ứng dụng nếu document người
+   dùng có trạng thái `active`.
+5. Ứng dụng phải theo dõi trạng thái tài khoản đang đăng nhập và đóng phiên nếu
+   tài khoản bị khóa.
+6. Phiên và cache local phải được scope theo UID. Dữ liệu của UID cũ không được
+   gán lại cho UID mới.
+7. Khi Firebase không hoạt động, adapter local có thể tạo UID demo theo email
+   để phát triển; cơ chế này không được coi là xác thực production.
+8. Đăng nhập Google/Facebook phải thông báo chưa hỗ trợ thay vì giả thành công.
+
+### FR-03 — Onboarding và Body Metrics
+
+1. Tài khoản mới phải hoàn thành onboarding trước khi vào MainShell.
+2. Người dùng phải nhập tên hiển thị, chiều cao và cân nặng.
+3. Chiều cao phải tương đương 100–250 cm.
+4. Cân nặng phải lớn hơn 0 và không quá 500 kg.
+5. Hệ thống phải nhận `cm/kg` và `in/lb`, sau đó lưu canonical value bằng
+   `cm/kg`.
+6. BMI phải được tính từ chiều cao và cân nặng, không cho nhập trực tiếp.
+7. Mỗi lần cập nhật Body Metrics phải tạo một `WeightEntry` có thời điểm và
+   snapshot chiều cao.
+8. Không được lưu lần đo có thời điểm ở tương lai.
+9. Người dùng phải chọn population, goal, experience, equipment, số buổi và
+   audience preference.
+10. Population ngoài phạm vi hỗ trợ không được vượt qua safety gate của
+    ProgramMatcher.
+
+### FR-04 — Ghép chương trình và tạo lịch
+
+1. ProgramMatcher chỉ được xét `ProgramVersion.published`.
+2. Population, experience và equipment là hard gate.
+3. Goal là hard gate của match thông thường; fallback được phép nới goal nhưng
+   không được nới các safety gate còn lại.
+4. Audience và số buổi mong muốn dùng để xếp hạng, không phải safety gate.
+5. Kết quả hòa phải được xử lý deterministic theo score, ngày phát hành và ID.
+6. Khi có kết quả, hệ thống phải tạo `ProgramEnrollment` ghim vào version ID.
+7. Hệ thống phải tạo occurrence từ các session theo cadence và ngày ưu tiên.
+8. Gọi ghép lại khi enrollment hiện tại vẫn hợp lệ không được tạo enrollment
+   hoặc occurrence trùng.
+9. Khi preferences thay đổi, các occurrence mở của enrollment cũ phải bị hủy
+   trước khi ghép lại.
+10. Không cho đổi preferences khi còn Active Workout draft.
+
+### FR-05 — Trang chủ và readiness
+
+1. Trang chủ phải ưu tiên hiển thị draft đang dở trước occurrence mới.
+2. Nếu có occurrence, hệ thống phải hiển thị tên session, tuần, thời lượng, số
+   hiệp và số block.
+3. Người dùng phải chọn một trong ba readiness: ready, reduceToday hoặc
+   recovery.
+4. Mỗi readiness chỉ được dùng block của variant thuộc đúng session/version.
+5. Người dùng có thể dời occurrence sang ngày trống tiếp theo.
+6. Người dùng có thể bỏ qua occurrence sau xác nhận.
+7. Không được bắt đầu occurrence đã completed, skipped hoặc cancelled.
+8. Không được mở occurrence thứ hai khi còn draft của occurrence khác.
+
+### FR-06 — Active Workout
+
+1. Controller phải bắt đầu ở phase `preparing`.
+2. Start phải chuyển sang `working` và ghi thời điểm bắt đầu.
+3. Complete set phải tạo `SetEvent.completed` và chuyển con trỏ.
+4. Redo phải tạo `SetEvent.redone` nhưng không chuyển con trỏ.
+5. Skip phải yêu cầu lý do không rỗng và tạo `SetEvent.skipped`.
+6. Sau một set có rest, controller phải dùng `restEndsAt`.
+7. Người dùng có thể cộng 15 giây hoặc bỏ qua phần nghỉ.
+8. Pause phải đóng băng active duration và rest remaining.
+9. Resume phải trở lại working hoặc phần rest còn lại.
+10. Mỗi transition phải đổi `phaseId`. Callback có phase ID cũ không được sửa
+    state hiện tại.
+11. Draft phải lưu snapshot nội dung, con trỏ, event và timestamp theo UID.
+12. Back khỏi working/resting phải pause và checkpoint, không tự tạo
+    completion.
+13. Finish phải chuyển qua `finishing` trước khi `completed`.
+14. Completion phải có idempotency key ổn định để retry không tạo bản ghi
+    trùng.
+15. Draft chỉ bị xóa sau khi completion đã được lưu hoặc người dùng discard.
+16. Completion thiếu hoặc có set bị skip phải có trạng thái
+    `partiallyCompleted`.
+
+### FR-07 — Chế độ xác nhận
+
+1. Guided Confirmation phải luôn có cho workout.
+2. Guided không được lưu detected rep count hoặc confidence.
+3. AI evidence chỉ được chấp nhận khi confirmation mode là `aiCamera`.
+4. Người dùng phải có thể đổi từ AI sang Guided trong khi tập.
+5. Bài không hỗ trợ AI phải tiếp tục bằng Guided, không chặn workout.
+
+### FR-08 — AI Camera Coach
+
+1. Camera Coach hiện chỉ được coi là hỗ trợ với các ID Squat đã định nghĩa.
+2. Tính năng chỉ khởi tạo trên Android khi prescription có `squat_pose_v1`.
+3. Camera phải tắt audio và chỉ cho một inference hoạt động tại một thời điểm.
+4. Frame và `InputImage` chỉ được giữ trong thời gian inference.
+5. Service không được lưu hoặc upload frame/video/landmark.
+6. PoseRuleEngine phải chọn bên cơ thể có chất lượng landmark tốt hơn.
+7. Landmark thiếu, visibility thấp, confidence thấp, frame cũ hoặc sai thứ tự
+   không được làm tăng rep.
+8. Rep chỉ được đếm sau chu kỳ ổn định
+   `standing → descending → bottom → ascending → standing`.
+9. Một squat chưa đủ sâu phải đưa cue phù hợp, không tạo rep.
+10. Khi camera, quyền, model, nền tảng hoặc độ tin cậy không đáp ứng, hệ thống
+    phải fallback sang Guided Confirmation.
+11. Người dùng phải có thể đổi camera và chủ động tắt camera.
+
+### FR-09 — Tiến độ, streak và thành tích
+
+1. Hệ thống phải tổng hợp completion mới theo 7 ngày, 30 ngày hoặc toàn bộ.
+2. Báo cáo phải có số buổi, thời gian, hiệp hoàn tất và độ chuyên cần.
+3. Hệ thống phải thống kê bài tập thường xuyên và phân bổ nhóm cơ từ completed
+   sets.
+4. Chi tiết completion phải giữ ProgramVersion, source, snapshot và
+   confirmation mode.
+5. Workout streak và Body Metrics streak phải dùng hai tập ngày riêng.
+6. Nhiều event cùng loại trong một ngày chỉ được tính một ngày.
+7. Thành tích phải được mở theo các mốc completion và streak đã cấu hình.
+8. Legacy completion không được trộn vào báo cáo workout mới.
+
+### FR-10 — Thư viện bài tập
+
+1. Người dùng chỉ được thấy bài template `isActive`.
+2. Thư viện phải tìm theo tên tiếng Việt hoặc tiếng Anh.
+3. Thư viện phải lọc theo nhóm cơ.
+4. Người dùng có thể yêu thích và bỏ yêu thích.
+5. Trang chi tiết phải hiển thị mô tả, độ khó, dụng cụ, hướng dẫn và lỗi thường
+   gặp.
+6. Người dùng không được tạo/sửa bài, thêm bài vào plan hoặc sửa prescription.
+
+### FR-11 — Hồ sơ và cài đặt
+
+1. Người dùng có thể đổi tên và ảnh đại diện.
+2. Ảnh người dùng không được lớn hơn 5 MB.
+3. Người dùng có thể đổi theme và hệ đơn vị.
+4. Người dùng có thể bật/tắt Voice Coach và haptic.
+5. Người dùng có thể bật notification, chọn giờ và chọn nhắc trước 0, 15, 30
+   hoặc 60 phút.
+6. Notification bị từ chối không được chặn workout.
+7. Người dùng phải xem được danh sách occurrence sắp tới.
+8. Người dùng có thể gửi request export hoặc deletion.
+9. Deletion trong app chỉ tạo request và đăng xuất; backend mới chịu trách
+   nhiệm xóa dữ liệu.
+
+### FR-12 — Notification và Voice Coach
+
+1. Notification chỉ được lập lịch sau khi người dùng bật và cấp quyền.
+2. Lịch nhắc phải được tạo từ occurrence đang scheduled/postponed.
+3. Occurrence completed, skipped, cancelled hoặc inProgress không được giữ
+   notification lịch cũ.
+4. Khi rest ở background, hệ thống có thể lập notification hết giờ nghỉ.
+5. Payload `today:` và `active:` phải được route an toàn theo state hiện tại.
+6. Voice Coach chỉ đọc cue đã có; service không tự sinh lời khuyên.
+7. TTS hoặc notification lỗi không được thay đổi state machine của workout.
+
+### FR-13 — Dữ liệu legacy
+
+1. Kế hoạch, lịch và completion schema cũ có thể được deserialize để xem.
+2. UI legacy phải có nhãn chỉ đọc.
+3. AppState phải từ chối mọi thao tác tạo, sửa, xóa, sao chép hoặc dùng lại dữ
+   liệu legacy.
+4. Dữ liệu parse lỗi không được làm ứng dụng crash khi khởi động.
+
+## 6. Quy tắc nghiệp vụ trọng tâm
+
+| Mã | Quy tắc |
+|---|---|
+| BR-01 | Dữ liệu riêng phải được phân tách theo UID |
+| BR-02 | Chỉ catalog published/active được phân phối cho user |
+| BR-03 | Enrollment và completion phải ghim version/snapshot |
+| BR-04 | Người dùng không tự sửa prescription |
+| BR-05 | Guided Confirmation không suy ra số liệu AI |
+| BR-06 | Chỉ event đã xác nhận được tính vào completion |
+| BR-07 | Completion retry phải idempotent |
+| BR-08 | Weight streak và workout streak không được trộn |
+| BR-09 | Published ProgramVersion là bất biến về nội dung |
+| BR-10 | Camera không được lưu hoặc upload frame theo mặc định |
+| BR-11 | Legacy chỉ đọc và không tham gia analytics mới |
+| BR-12 | FitTrack không đưa ra chẩn đoán y khoa |
+
+## 7. Mô hình dữ liệu
+
+### Tài khoản và hồ sơ
+
+- `UserProfile`: UID, email, tên, chiều cao, cân nặng hiện tại, mục tiêu, số buổi
+  tuần, audience, avatar và onboarding state.
+
+### Chương trình
+
+- `UserTrainingPreferences`
+- `Program`
+- `ProgramVersion`
+- `ProgramWeek`
+- `ProgramSession`
+- `ProgramBlock`
+- `ExercisePrescription`
+- `ReadinessVariant`
+- `ProgramEnrollment`
+- `WorkoutOccurrence`
+
+`ProgramVersion` chứa cadence, nguồn, safety copy, accessibility label,
+readiness variants và toàn bộ cây nội dung được phát hành.
+
+### Active Workout
+
+- `WorkoutSessionSnapshot`
+- `WorkoutExerciseSnapshot`
+- `WorkoutTargetContext`
+- `ActiveWorkoutDraft`
+- `SetEvent`
+- `WorkoutCompletion`
+
+Schema workout mới nằm trong `models/active_workout.dart`. Các model
+`WorkoutPlan`, `WorkoutSchedule` và `models/workout_completion.dart` được giữ
+chủ yếu để đọc dữ liệu legacy.
+
+### Sức khỏe và thư viện
+
+- `WeightEntry`: cân nặng, snapshot chiều cao, thời điểm và BMI suy ra.
+- `Achievement`: mốc mở khóa.
+- `Exercise`: metadata bài, hướng dẫn, lỗi thường gặp, media và trạng thái.
+
+### Pose
+
+- `PoseFrame` và `NormalizedPoseLandmark` chỉ là dữ liệu tạm trong pipeline.
+- `PoseCoachResult` chứa status, phase, rep count, confidence và feedback.
+- `SquatRuleConfiguration` chứa ngưỡng, smoothing và debounce.
+
+## 8. Lưu trữ và đồng bộ
+
+### Local
+
+`LocalStore` dùng SharedPreferences:
+
+- snapshot state được scope bằng UID;
+- session flag và authenticated UID được lưu riêng;
+- state cũ chỉ được migrate khi profile ID trùng UID hiện tại.
+
+`ActiveWorkoutDraftStore` dùng một key riêng cho mỗi UID. Draft lỗi định dạng
+không được làm crash app và không được tự gán cho tài khoản khác.
+
+### Firebase
+
+Các đường dẫn chính:
 
 ```text
 users/{uid}
-users/{uid}/weightEntries/{entryId}
-users/{uid}/personalExercises/{exerciseId}
-users/{uid}/favorites/{exerciseId}
-users/{uid}/workoutPlans/{planId}
-users/{uid}/workoutSchedules/{scheduleId}
-users/{uid}/workoutCompletions/{completionId}
-users/{uid}/reminders/{reminderId}
-users/{uid}/activeDays/{yyyy-MM-dd}
-users/{uid}/readinessEntries/{entryId}
+users/{uid}/appState/current
+users/{uid}/weightActivityDays/{yyyy-mm-dd}
+users/{uid}/workoutActivityDays/{yyyy-mm-dd}
 exercises/{exerciseId}
+programs/{programId}
+programVersions/{versionId}
+dataExportRequests/{uid}
+accountDeletionRequests/{uid}
 ```
 
-### Entity trọng tâm
+Ảnh người dùng nằm trong `users/{uid}/...`; ảnh bài tập mẫu nằm trong
+`exercise-templates/{exerciseId}/...`.
 
-```text
-WorkoutPlan:
-id, userId, name, description?, exercises[], estimatedDuration,
-isActive, createdAt, updatedAt
+Khi cloud sync lỗi, `_commit()` giữ bản local và không làm mất thao tác người
+dùng. Tuy nhiên, hệ thống chưa có durable retry queue hoặc conflict resolution.
 
-PlanExercise:
-exerciseId, exerciseSnapshot, order, targetSets,
-minReps, maxReps, targetWeightKg, restSeconds, note?
+## 9. Yêu cầu phi chức năng
 
-WorkoutSchedule:
-id, userId, planId, type, scheduledDate?, weekdays[],
-startDate?, endDate?, hour?, minute?, reminderEnabled, isEnabled
+### An toàn và riêng tư
 
-WorkoutCompletion:
-id, userId, planId, scheduleId?, occurrenceDate,
-planSnapshot, exerciseResults[], status, actualDuration,
-totalVolume, perceivedDifficulty?, note?, completedAt
+- Không lưu hoặc upload camera frame/video/landmark.
+- Dữ liệu tài khoản phải được scope theo UID.
+- Security Rules phải phân tách dữ liệu theo UID và không dựa riêng vào UI.
+- Ảnh người dùng tối đa 5 MB; media catalog tối đa 25 MB theo Storage Rules.
+- BMI phải có lời giải thích là chỉ số tham khảo.
+- Mọi màn tập phải nhắc dừng khi đau, chóng mặt, khó thở hoặc khó chịu bất
+  thường.
+- Không commit service account, mật khẩu hoặc dữ liệu sức khỏe thật vào Git.
 
-CompletedSet:
-setNumber, actualReps, actualWeightKg, isCompleted
-```
+### Tin cậy
 
-## 8. API và repository contracts
+- Firebase init lỗi không được làm ứng dụng crash.
+- Draft phải khôi phục được sau khi app mở lại.
+- Timer nghỉ phải dựa trên timestamp.
+- Callback cũ phải bị chặn bằng phase ID.
+- Completion phải idempotent.
+- Notification và TTS là enhancement; lỗi của chúng không được chặn workout.
 
-Không bắt buộc REST API ngoài. Backend dùng Firebase SDK và contracts nội bộ:
+### Hiệu năng
 
-```dart
-abstract interface class WorkoutPlanRepository {
-  Stream<List<WorkoutPlan>> watchPlans();
-  Future<WorkoutPlan?> getPlan(String id);
-  Future<void> createPlan(WorkoutPlan value);
-  Future<void> updatePlan(WorkoutPlan value);
-  Future<void> deletePlan(String id);
-}
+- Pose detector chỉ xử lý một inference tại một thời điểm.
+- Exercise search debounce 250 ms.
+- Camera, detector và TTS phải được giải phóng khi không còn sử dụng.
+- Danh sách thư viện phải đổi số cột theo chiều rộng để tránh layout quá dài.
 
-abstract interface class WorkoutScheduleRepository {
-  Stream<List<ScheduledOccurrence>> watchOccurrences(DateRange range);
-  Future<void> createSchedule(WorkoutSchedule value);
-  Future<void> updateSchedule(WorkoutSchedule value);
-  Future<void> deleteSchedule(String id);
-}
+### Khả dụng và accessibility
 
-abstract interface class WorkoutCompletionRepository {
-  Stream<List<WorkoutCompletion>> watchCompletions(DateRange range);
-  Future<void> createCompletion(WorkoutCompletion value);
-  Future<void> updateCompletion(WorkoutCompletion value);
-  Future<void> deleteCompletion(String id);
-}
-```
+- Các tác vụ chính phải có nhãn text, không chỉ có icon.
+- Trạng thái đúng/sai không chỉ biểu đạt bằng màu.
+- Feedback camera dùng live region cho screen reader.
+- Các màn hình chính không được overflow ở 360×800 và 412×915.
+- Empty, loading, permission denied và error state phải có lời giải thích.
 
-Lỗi Firebase được map thành Auth/Data/Permission/Network/Validation failure; UI không hiển thị stack trace.
+### Khả năng bảo trì
 
-## 9. Giao diện
+- Code phải qua `flutter analyze`.
+- Các luật deterministic phải có unit test.
+- Các màn hình và hành động chính phải có widget test.
+- Thành viên không tự thêm dependency hoặc đổi contract chung mà chưa thống
+  nhất.
 
-### Design system
+## 10. Bảo mật Firebase hiện có
 
-- Navy `#071A3D`, `#0A2758`; action `#1557B0`; accent `#2672D9`; background `#F4F7FB`.
-- Font Inter/Roboto; radius card 16, input/button 12.
-- Bottom navigation: Tổng quan, Kế hoạch, Bài tập, Hồ sơ.
+Firestore Rules hiện thực hiện các kiểm tra chính:
 
-### Màn hình bắt buộc
+- người dùng chỉ đọc/ghi app state và activity day của chính mình;
+- người dùng không sửa các trường quyền và trạng thái tài khoản;
+- ứng dụng người dùng không được ghi catalog;
+- người dùng đã đăng nhập chỉ đọc exercise active và program/version published;
+- export/deletion request phải thuộc UID đang đăng nhập.
 
-- Auth: Splash/Login/Register/Forgot Password.
-- Profile/Body: Setup/Profile/Edit/BMI/Weight Form.
-- Exercise: Library/Detail/Filter/Personal/Form/Progress.
-- Plan: List/Detail/Form Content/Form Schedule/Exercise Selection.
-- Completion: Result Form/Summary/Success/History/Detail/Edit/Delete.
-- Progress: Dashboard/Reports/Streak/Muscle Balance/Muscle Detail.
-- Readiness: Wizard/Evaluating/Comparison.
-- Reminder: Permission/List/Form.
-- Admin: List/Form.
+Storage Rules:
 
-## 10. Phân công nhóm
+- người dùng chỉ thao tác file dưới UID của chính mình;
+- file người dùng phải là ảnh và nhỏ hơn 5 MB;
+- ứng dụng người dùng không được ghi media catalog;
+- người dùng chỉ đọc media của nội dung đang active/published.
 
-| Thành viên | Chức năng | CRUD chính |
-|---|---|---|
-| TV1 | 1, 2, 3, 7, 8, 9 | Profile, WeightEntry |
-| TV2 | 4, 5, 12, 13 | TemplateExercise, PersonalExercise |
-| TV3 | 6, 10, 11 | WorkoutPlan, WorkoutSchedule, WorkoutCompletion |
+Security Rules chưa có bằng chứng Firebase Emulator test trong repository, vì
+vậy vẫn là hạng mục cần nghiệm thu trước khi phát hành.
 
-TV3 cung cấp completion data cho TV1/TV2; TV2 cung cấp ExerciseSnapshot cho TV3; TV1 cung cấp auth UID/profile.
+## 11. Tương thích nền tảng
 
-## 11. Kế hoạch phát triển trong 3 tuần
+| Thành phần | Android | Web |
+|---|---:|---:|
+| Firebase Auth/Firestore/Storage | Có cấu hình | Có cấu hình |
+| Guided Confirmation | Có | Có |
+| Camera + ML Kit | Có code path | Không khởi tạo |
+| Android TTS MethodChannel | Có code path | Không |
+| Local notification | Có code path | Không |
+| Theme, chart và history | Có | Có |
 
-Kế hoạch áp dụng cho nhóm ba thành viên làm song song. Tuần 1 chỉ dùng để chốt yêu cầu chức năng và giao diện; chưa triển khai mã nguồn nghiệp vụ. Lập trình bắt đầu từ tuần 2.
+Project chưa có platform directory iOS và Firebase iOS chưa được cấu hình.
 
-### Tuần 1 — Chốt chức năng và giao diện
+## 12. Tiêu chí nghiệm thu hệ thống
 
-#### Mục tiêu chung
+Phiên bản hiện tại được xem là đạt ở mức source khi:
 
-- Chốt chính thức 13 nhóm chức năng và phạm vi MVP.
-- Chốt luồng trung tâm `Plan → Schedule → Readiness → Done → Completion`.
-- Chốt việc không triển khai Active Workout, Rest Timer, Pause hoặc Resume.
-- Hoàn thiện user flow, navigation map và danh sách màn hình.
-- Hoàn thiện Figma design system màu xanh dương đậm.
-- Thiết kế đủ màn hình chính và các trạng thái loading, empty, error, validation, submitting và success.
-- Chốt entity, Firestore schema và repository contracts ở mức thiết kế để tránh thay đổi lớn khi lập trình.
-- Chốt phân công TV1, TV2 và TV3; tạo backlog và tiêu chí chấp nhận cho từng chức năng.
+1. `dart format --output=none --set-exit-if-changed lib test` thành công.
+2. `flutter analyze` không báo lỗi.
+3. `flutter test` thành công.
+4. Đăng ký mới đi qua onboarding và ghép chương trình.
+5. Published-version gate, fallback và enrollment không tạo trùng.
+6. Active Workout đi qua working/resting/paused/finishing/completed.
+7. Draft khôi phục đúng con trỏ và completion retry không tạo trùng.
+8. Guided không lưu AI evidence.
+9. Squat rule không đếm rep từ frame thiếu tin cậy hoặc chuyển động chưa đủ.
+10. Người dùng không thấy mutation route của plan/prescription/legacy.
+11. MainShell và các màn chính không overflow ở kích thước đã test.
 
-#### Phân công
+Trước khi phát hành Android còn cần:
 
-| Thành viên | Công việc tuần 1 |
+1. Device QA camera trước/sau, quyền camera và ML Kit latency.
+2. QA TTS, notification, deep link, background và process death.
+3. Firebase Emulator test cho Auth, Rules, UID isolation và catalog read-only.
+4. Kiểm tra network/privacy để xác nhận frame camera không rời thiết bị.
+5. Accessibility, hiệu năng, pin và nhiều cấu hình Android hơn.
+
+## 13. Truy vết yêu cầu vào source
+
+| Nhóm yêu cầu | Source chính |
 |---|---|
-| TV1 | Chốt luồng Authentication, Profile, Body Metrics, Dashboard, Reports và Streak; thiết kế các frame tương ứng. |
-| TV2 | Chốt luồng Exercise Library, Personal Exercises, Muscle Balance và Admin; thiết kế các frame tương ứng. |
-| TV3 | Chốt logic Plan, Schedule, Done/Completion, Reminder và Readiness; thiết kế các frame tương ứng. |
-| Cả nhóm | Review chéo user flow, component, thuật ngữ, responsive và tính nhất quán giữa các màn hình. |
-
-#### Sản phẩm bàn giao cuối tuần 1
-
-- Danh sách chức năng cuối cùng, không còn yêu cầu mâu thuẫn.
-- Figma có design system, component và prototype các luồng chính.
-- Danh sách màn hình và trạng thái UI đầy đủ.
-- SRS, database schema, architecture blueprint và phân công được duyệt.
-- Backlog tuần 2–3 có người phụ trách và Definition of Done.
-
-**Điều kiện chuyển sang tuần 2:** không bắt đầu code một feature khi user flow, dữ liệu đầu vào/đầu ra và acceptance criteria của feature đó chưa được chốt.
-
-### Tuần 2 — Xây dựng chức năng cốt lõi
-
-#### Mục tiêu chung
-
-- Khởi tạo Flutter project, Firebase, theme, router và state management.
-- Xây dựng các CRUD chính và luồng Plan–Schedule–Done bằng dữ liệu thật.
-- Hoàn thành Security Rules nền và các repository contracts dùng chung.
-
-#### Phân công
-
-| Thành viên | Công việc tuần 2 |
-|---|---|
-| TV1 | Authentication; Profile CRUD; WeightEntry CRUD; BMI; khung Dashboard/Reports/Streak bằng mock rồi nối dữ liệu sẵn có. |
-| TV2 | Exercise Library; tìm kiếm/lọc/yêu thích; PersonalExercise CRUD; Admin CRUD cơ bản; seed bài tập mẫu. |
-| TV3 | WorkoutPlan CRUD; WorkoutSchedule once/weekly; occurrence theo ngày; Done form; WorkoutCompletion CRUD và volume. |
-| Cả nhóm | Tích hợp auth UID, ExerciseSnapshot và Completion contracts; hoàn thiện loading/empty/error cho luồng cốt lõi. |
-
-#### Sản phẩm bàn giao cuối tuần 2
-
-- Người dùng đăng nhập, quản lý hồ sơ và cân nặng được.
-- Người dùng xem/tìm/lọc bài mẫu và quản lý bài cá nhân được.
-- Người dùng tạo kế hoạch, xếp lịch, bấm Done, nhập kết quả và lưu completion được.
-- Completion lưu snapshot, tính volume đúng và không tạo trùng do double tap.
-- Firebase Security Rules bảo vệ dữ liệu theo UID và quyền admin cơ bản.
-
-### Tuần 3 — Tích hợp, chức năng nâng cao và bàn giao
-
-#### Mục tiêu chung
-
-- Nối dữ liệu completion vào Dashboard, Reports, Streak, PR và Muscle Balance.
-- Hoàn thiện Reminder và Readiness Adjustment.
-- Kiểm thử, sửa lỗi, tối ưu responsive và hoàn thiện tài liệu.
-
-#### Phân công
-
-| Thành viên | Công việc tuần 3 |
-|---|---|
-| TV1 | Hoàn thiện Dashboard, Reports, Login/Workout Streak và streak reminder; test BMI, report và streak. |
-| TV2 | Hoàn thiện PR, Muscle Balance và Admin/Security Rules; test filter, record và muscle workload. |
-| TV3 | Hoàn thiện plan reminder, Readiness Wizard, rule engine, adjusted snapshot và luồng Readiness → Done; test plan, schedule, completion và readiness. |
-| Cả nhóm | Integration test, Rules test, offline/error states, kiểm tra 360×800 và 412×915, format/analyze/test, README, test matrix, báo cáo và video demo. |
-
-#### Mốc kiểm soát
-
-- **Giữa tuần 3:** feature freeze; không bổ sung chức năng mới.
-- **Cuối tuần 3:** có release candidate chạy trên Android, `flutter analyze` sạch và test cốt lõi đạt.
-
-#### Quy tắc cắt giảm khi chậm tiến độ
-
-Giữ bắt buộc: Authentication → Exercise Library → Plan/Schedule → Done/Completion → Dashboard cơ bản → Security Rules và correctness tests.
-
-Cắt giảm theo thứ tự:
-
-1. Animation, dark theme và song ngữ.
-2. Upload ảnh nâng cao; dùng ảnh mặc định.
-3. Reports chỉ giữ tuần/tháng và KPI chính.
-4. Muscle Balance dùng bar chart thay body map.
-5. Readiness chỉ giữ giảm sets, loại xung đột sore muscle/dụng cụ và adjusted snapshot.
-
-Không được cắt validation, chống double submit, completion snapshot, phân quyền Firebase hoặc test các quy tắc nghiệp vụ cốt lõi.
-
-
-## 12. Correctness properties và nghiệm thu
-
-1. Completion không sửa plan gốc.
-2. Sửa plan không đổi completion snapshot.
-3. Volume chỉ tính completed set và không âm.
-4. Một occurrence chỉ có tối đa một completion.
-5. Login streak tăng tối đa một lần/ngày.
-6. Readiness không tăng sets hoặc sửa plan.
-7. Muscle balance chỉ tính completed sets đúng khoảng lọc.
-8. User A không truy cập dữ liệu User B; user thường không ghi bài mẫu.
-
-Nghiệm thu khi app chạy Android, luồng Must hoạt động, state lỗi/rỗng/tải đầy đủ, Rules/test đạt, analyze sạch và có README/Figma/schema/test matrix/phân công.
+| Bootstrap và route guard | `lib/main.dart`, `lib/app.dart` |
+| Tài khoản và state | `lib/state/app_state.dart`, `lib/services/firebase_gateway.dart` |
+| Program matching | `lib/services/program_matcher.dart` |
+| Active Workout | `lib/services/active_workout_controller.dart` |
+| Draft và local state | `lib/services/active_workout_draft_store.dart`, `lib/services/local_store.dart` |
+| Camera Coach | `lib/widgets/camera_coach_panel.dart`, `lib/services/pose_rule_engine.dart` |
+| ML Kit adapter | `lib/services/mlkit_pose_detection_service.dart` |
+| Notification/TTS | `lib/services/notification_service.dart`, `lib/services/speech_cue_service.dart` |
+| Giao diện | `lib/screens/` |
+| Phân quyền dữ liệu | `firestore.rules`, `storage.rules` |
+| Kiểm thử | `test/` |
