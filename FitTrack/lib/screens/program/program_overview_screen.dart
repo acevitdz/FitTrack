@@ -123,18 +123,14 @@ class ProgramOverviewScreen extends StatelessWidget {
                                 size: 18,
                               ),
                               label: Text(
-                                state.trainingPreferences.equipmentKeys.contains(
-                                      'gym',
-                                    )
+                                state.trainingPreferences.equipmentKeys
+                                        .contains('gym')
                                     ? 'Có phòng gym'
                                     : 'Không dụng cụ',
                               ),
                             ),
                             Chip(
-                              avatar: const Icon(
-                                Icons.trending_up,
-                                size: 18,
-                              ),
+                              avatar: const Icon(Icons.trending_up, size: 18),
                               label: Text(
                                 state.trainingPreferences.experienceKey ==
                                         'intermediate'
@@ -151,7 +147,7 @@ class ProgramOverviewScreen extends StatelessWidget {
                             'Bạn chọn ${state.trainingPreferences.sessionsPerWeek} buổi/tuần; '
                             'phiên bản đã phát hành phù hợp gần nhất có '
                             '${version.cadence.sessionsPerWeek} buổi/tuần. '
-                            'FitTrack giữ nguyên nội dung đã được Admin duyệt và không tự sinh thêm buổi.',
+                            'FitTrack giữ nguyên nội dung chương trình đã phát hành và không tự sinh thêm buổi.',
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                         ],
@@ -205,7 +201,7 @@ class ProgramOverviewScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 const Text(
-                  'Nội dung chương trình do Admin quản lý và được ghim theo phiên bản. Người dùng không tự thêm bài, số hiệp hoặc lịch tập.',
+                  'Nội dung chương trình được ghim theo phiên bản. Người dùng không tự thêm bài, số hiệp hoặc lịch tập.',
                   style: TextStyle(color: AppColors.textMuted, fontSize: 12),
                 ),
               ],

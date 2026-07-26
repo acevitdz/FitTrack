@@ -22,7 +22,6 @@ class CameraCoachPanel extends StatefulWidget {
     required this.onFallbackRequested,
     this.exerciseId = 'squat',
     this.initialRepCount = 0,
-    this.featureEnabled = true,
     this.poseRulePublished = true,
     this.deviceAllowed = true,
     this.initialLensDirection = CameraLensDirection.front,
@@ -38,7 +37,6 @@ class CameraCoachPanel extends StatefulWidget {
   final String exerciseId;
   final int targetReps;
   final int initialRepCount;
-  final bool featureEnabled;
   final bool poseRulePublished;
   final bool deviceAllowed;
   final CameraLensDirection initialLensDirection;
@@ -97,7 +95,6 @@ class _CameraCoachPanelState extends State<CameraCoachPanel>
       _targetReachedNotified = false;
     }
     if (widget.exerciseId != oldWidget.exerciseId ||
-        widget.featureEnabled != oldWidget.featureEnabled ||
         widget.poseRulePublished != oldWidget.poseRulePublished ||
         widget.deviceAllowed != oldWidget.deviceAllowed) {
       unawaited(_restartCamera());
@@ -126,9 +123,6 @@ class _CameraCoachPanelState extends State<CameraCoachPanel>
   }
 
   PoseCapabilityUnavailableReason? _gateReason() {
-    if (!widget.featureEnabled) {
-      return PoseCapabilityUnavailableReason.featureDisabled;
-    }
     if (!widget.poseRulePublished ||
         !CameraCoachPanel.supportsExercise(widget.exerciseId)) {
       return PoseCapabilityUnavailableReason.exerciseUnsupported;
@@ -424,9 +418,25 @@ class _CameraCoachPanelState extends State<CameraCoachPanel>
       PoseCoachStatus.uncertain => const Color(0xFFDC2626),
       null => const Color(0xFF2563EB),
     };
-    final previewRatio = controller.value.aspectRatio > 0
-        ? controller.value.aspectRatio
-        : 3 / 4;
+    final isPortrait =
+        MediaQuery.of(context).orientation == Orientation.portrait;
+    var previewRatio = controller.value.aspectRatio;
+    if (previewRatio <= 0) {
+      previewRatio = 3 / 4;
+    } else if (isPortrait && previewRatio > 1) {
+      previewRatio = 1 / previewRatio;
+    } else if (!isPortrait && previewRatio < 1) {
+      previewRatio = 1 / previewRatio;
+    }
+
+    final previewSize = controller.value.previewSize;
+    final previewWidth = previewSize != null
+        ? (isPortrait ? previewSize.height : previewSize.width)
+        : 3.0;
+    final previewHeight = previewSize != null
+        ? (isPortrait ? previewSize.width : previewSize.height)
+        : 4.0;
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
       child: ColoredBox(
@@ -436,7 +446,14 @@ class _CameraCoachPanelState extends State<CameraCoachPanel>
           child: Stack(
             fit: StackFit.expand,
             children: [
-              CameraPreview(controller),
+              FittedBox(
+                fit: BoxFit.cover,
+                child: SizedBox(
+                  width: previewWidth,
+                  height: previewHeight,
+                  child: CameraPreview(controller),
+                ),
+              ),
               const IgnorePointer(child: _BodyGuideOverlay()),
               Positioned(
                 top: 12,
@@ -556,8 +573,6 @@ class _CameraCoachPanelState extends State<CameraCoachPanel>
           'Bản Web sử dụng Guided Confirmation.',
         PoseCapabilityUnavailableReason.unsupportedPlatform =>
           'Camera Coach hiện chỉ hỗ trợ Android.',
-        PoseCapabilityUnavailableReason.featureDisabled =>
-          'Tính năng đang được tắt bởi cấu hình hệ thống.',
         PoseCapabilityUnavailableReason.exerciseUnsupported =>
           'Bài tập này chưa có pose rule được hỗ trợ.',
         PoseCapabilityUnavailableReason.deviceUnsupported =>

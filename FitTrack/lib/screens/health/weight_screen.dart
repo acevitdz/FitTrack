@@ -173,10 +173,7 @@ class _WeightScreenState extends State<WeightScreen> {
                             title: 'Chưa đủ dữ liệu',
                             message: 'Cần ít nhất hai lần đo trong kỳ đã chọn.',
                           )
-                        : _BodyMetricChart(
-                            entries: chartEntries,
-                            unit: unit,
-                          ),
+                        : _BodyMetricChart(entries: chartEntries, unit: unit),
                   ),
                 ],
               ),
@@ -205,9 +202,7 @@ class _WeightScreenState extends State<WeightScreen> {
                         backgroundColor: AppColors.input,
                         child: Icon(Icons.straighten),
                       ),
-                      title: Text(
-                        unit.formatWeight(entries[index].weightKg),
-                      ),
+                      title: Text(unit.formatWeight(entries[index].weightKg)),
                       subtitle: Text(
                         '${entries[index].heightCm == null ? '—' : unit.formatHeight(entries[index].heightCm!)} • '
                         'BMI ${entries[index].bmi?.toStringAsFixed(1) ?? '—'} • '
@@ -296,12 +291,8 @@ class _BodyMetricEntryScreenState extends State<BodyMetricEntryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final heightCm = _unit.heightToCentimeters(
-      _parseOrZero(_height.text),
-    );
-    final weightKg = _unit.weightToKilograms(
-      _parseOrZero(_weight.text),
-    );
+    final heightCm = _unit.heightToCentimeters(_parseOrZero(_height.text));
+    final weightKg = _unit.weightToKilograms(_parseOrZero(_weight.text));
     final meters = heightCm / 100;
     final bmi = meters > 0 && weightKg > 0
         ? weightKg / (meters * meters)

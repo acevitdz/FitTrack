@@ -1,11 +1,9 @@
-import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import '../data/program_seed_data.dart';
 import '../data/seed_data.dart';
 import '../models/active_workout.dart' as target;
-import '../models/admin_models.dart';
 import '../models/exercise.dart';
 import '../models/health_models.dart';
 import '../models/measurement_units.dart';
@@ -23,34 +21,6 @@ import '../services/program_matcher.dart';
 import '../services/speech_cue_service.dart';
 
 class AppState extends ChangeNotifier {
-  static const List<FeatureFlag> _defaultFeatureFlags = [
-    FeatureFlag(
-      key: 'target_programs',
-      enabled: true,
-      description: 'Catalog, matching và enrollment theo phiên bản',
-    ),
-    FeatureFlag(
-      key: 'active_workout',
-      enabled: true,
-      description: 'Buổi tập có state machine và resume',
-    ),
-    FeatureFlag(
-      key: 'voice_coach',
-      enabled: true,
-      description: 'Cue bằng giọng nói trên thiết bị',
-    ),
-    FeatureFlag(
-      key: 'pose_coach',
-      enabled: true,
-      description: 'AI Camera Coach theo allowlist thiết bị và bài tập',
-    ),
-    FeatureFlag(
-      key: 'admin_console',
-      enabled: true,
-      description: 'Khu vực quản trị nội dung và người dùng',
-    ),
-  ];
-
   AppState({
     required this.firebaseAvailable,
     required NotificationService notificationService,
@@ -71,8 +41,6 @@ class AppState extends ChangeNotifier {
   final ActiveWorkoutDraftStore _workoutDraftStore;
   final SpeechCueService _speech;
   final FirebaseGateway _firebase;
-  StreamSubscription<bool>? _accountStatusSubscription;
-  bool _handlingAccountDeactivation = false;
 
   bool isAuthenticated = false;
   bool busy = false;
@@ -89,7 +57,6 @@ class AppState extends ChangeNotifier {
   bool hapticsEnabled = true;
   String unit = MeasurementUnitSystem.metric.storageKey;
   String uid = 'demo-user';
-  bool adminRole = false;
   String? _pendingNotificationPayload;
 
   String? takePendingNotificationPayload() {
@@ -136,10 +103,6 @@ class AppState extends ChangeNotifier {
   target.ActiveWorkoutDraft? activeWorkoutDraft;
   ProgramMatchStatus? lastProgramMatchStatus;
 
-  final List<ManagedUserAccount> managedUsers = [];
-  List<FeatureFlag> featureFlags = List.of(_defaultFeatureFlags);
-  final List<AdminAuditEntry> adminAuditLog = [];
-
   int longestStreak = 0;
   String? lastActiveDate;
   final Set<String> workoutDays = {};
@@ -160,8 +123,6 @@ class AppState extends ChangeNotifier {
       : (List<WeightEntry>.of(
           weightEntries,
         )..sort((a, b) => b.recordedAt.compareTo(a.recordedAt))).first;
-
-  bool get isAdmin => adminRole;
 
   ProgramVersion? get activeProgramVersion {
     final versionId = enrollment?.programVersionId;
@@ -208,10 +169,6 @@ class AppState extends ChangeNotifier {
           .where((item) => item.id == occurrence.programVersionId)
           .firstOrNull
           ?.sessionById(occurrence.sessionId);
-
-  bool featureEnabled(String key) =>
-      featureFlags.where((item) => item.key == key).firstOrNull?.enabled ??
-      false;
 
   int get targetWorkoutsThisWeek {
     final currentEnrollment = enrollment;
@@ -313,25 +270,12 @@ class AppState extends ChangeNotifier {
     String? sessionUid;
     if (firebaseAvailable) {
       sessionUid = _firebase.currentUid;
-      if (sessionUid != null) {
-        try {
-          if (!await _firebase.ensureCurrentAccountActive()) {
-            sessionUid = null;
-            errorMessage = 'Tài khoản đã bị khóa.';
-          }
-        } on Object {
-          await _firebase.signOut();
-          sessionUid = null;
-          errorMessage = 'Không thể xác minh trạng thái tài khoản.';
-        }
-      }
     } else if (storedSession) {
       sessionUid = await _store.loadAuthenticatedUid();
     }
 
     if (sessionUid == null) {
       isAuthenticated = false;
-      adminRole = false;
       _store.clearScope();
       await _store.saveAuthenticated(false);
       await _store.saveAuthenticatedUid(null);
@@ -384,7 +328,6 @@ class AppState extends ChangeNotifier {
     await _mergeRemoteActivityDays();
 
     profile = profile.copyWith(id: uid);
-    adminRole = await _firebase.isCurrentUserAdmin();
     isAuthenticated = true;
     await _store.saveAuthenticated(true);
     await _store.saveAuthenticatedUid(uid);
@@ -396,7 +339,6 @@ class AppState extends ChangeNotifier {
     }
     await _initializeMessagingIfOptedIn();
     await _store.saveState(_toJson());
-    await _startAccountStatusWatch();
   }
 
   void _prepareAccountState({
@@ -407,7 +349,6 @@ class AppState extends ChangeNotifier {
     bool includeSamples = false,
   }) {
     uid = accountUid;
-    adminRole = false;
     themeMode = ThemeMode.system;
     notificationsEnabled = false;
     notificationPermissionRequested = false;
@@ -446,9 +387,6 @@ class AppState extends ChangeNotifier {
     workoutCompletions.clear();
     activeWorkoutDraft = null;
     lastProgramMatchStatus = null;
-    managedUsers.clear();
-    featureFlags = List.of(_defaultFeatureFlags);
-    adminAuditLog.clear();
     longestStreak = 0;
     lastActiveDate = null;
     workoutDays.clear();
@@ -491,38 +429,13 @@ class AppState extends ChangeNotifier {
       ]);
     _rebuildWeightActivityDays();
     _rebuildWorkoutActivityDays();
-    managedUsers
-      ..clear()
-      ..addAll([
-        ManagedUserAccount(
-          uid: 'demo-user',
-          email: 'demo@fittrack.vn',
-          name: 'Người dùng FitTrack',
-          role: AccountRole.user,
-          status: AccountStatus.active,
-          createdAt: now.subtract(const Duration(days: 30)),
-        ),
-        ManagedUserAccount(
-          uid: 'demo-admin',
-          email: 'admin@fittrack.vn',
-          name: 'Quản trị viên FitTrack',
-          role: AccountRole.admin,
-          status: AccountStatus.active,
-          createdAt: now.subtract(const Duration(days: 30)),
-        ),
-      ]);
   }
 
   Future<bool> signIn(String email, String password) =>
       _authenticate(email, password, register: false);
 
   Future<bool> register(String name, String email, String password) =>
-      _authenticate(
-        email,
-        password,
-        register: true,
-        displayName: name.trim(),
-      );
+      _authenticate(email, password, register: true, displayName: name.trim());
 
   Future<bool> _authenticate(
     String email,
@@ -570,7 +483,6 @@ class AppState extends ChangeNotifier {
 
       profile = profile.copyWith(id: uid, email: email.trim());
       await _mergeRemoteActivityDays();
-      adminRole = await _firebase.isCurrentUserAdmin();
       await _refreshRemoteDomain();
       await _refreshTemplateExercises();
       isAuthenticated = true;
@@ -582,19 +494,15 @@ class AppState extends ChangeNotifier {
       }
       await _initializeMessagingIfOptedIn();
       await _commit();
-      await _startAccountStatusWatch();
       return true;
     } on Object catch (error) {
       errorMessage = _friendlyError(error);
-      await _accountStatusSubscription?.cancel();
-      _accountStatusSubscription = null;
       try {
         await _firebase.signOut();
       } on Object {
         // Authentication already failed; continue clearing the local session.
       }
       isAuthenticated = false;
-      adminRole = false;
       await _store.saveAuthenticated(false);
       await _store.saveAuthenticatedUid(null);
       _store.clearScope();
@@ -619,9 +527,7 @@ class AppState extends ChangeNotifier {
   Future<void> _refreshTemplateExercises() async {
     if (!firebaseAvailable || uid == 'demo-user') return;
     try {
-      final templates = await _firebase.loadTemplateExercises(
-        includeInactive: isAdmin,
-      );
+      final templates = await _firebase.loadTemplateExercises();
       final personal = exercises
           .where((exercise) => exercise.ownerId == uid)
           .toList();
@@ -634,40 +540,21 @@ class AppState extends ChangeNotifier {
   Future<void> _refreshRemoteDomain() async {
     if (!firebaseAvailable || uid == 'demo-user') return;
     try {
-      final remotePrograms = await _firebase.loadPrograms(
-        includeUnpublished: isAdmin,
-      );
-      final remoteVersions = await _firebase.loadProgramVersions(
-        includeUnpublished: isAdmin,
-      );
-      final remoteFlags = await _firebase.loadFeatureFlags();
+      final remotePrograms = await _firebase.loadPrograms();
+      final remoteVersions = await _firebase.loadProgramVersions();
       programs = remotePrograms;
       programVersions = remoteVersions;
-      featureFlags = remoteFlags;
-      if (isAdmin) {
-        final remoteUsers = await _firebase.loadManagedUsers();
-        final remoteAudit = await _firebase.loadAdminAuditLogs();
-        managedUsers
-          ..clear()
-          ..addAll(remoteUsers);
-        adminAuditLog
-          ..clear()
-          ..addAll(remoteAudit);
-      }
     } on Object {
       // Keep the last verified local cache while offline.
     }
   }
 
   Future<void> signOut() async {
-    await _accountStatusSubscription?.cancel();
-    _accountStatusSubscription = null;
     await _speech.stop();
     await _notifications.cancelAll();
     await _workoutDraftStore.clear(uid);
     await _firebase.signOut();
     isAuthenticated = false;
-    adminRole = false;
     await _store.saveAuthenticated(false);
     await _store.saveAuthenticatedUid(null);
     _store.clearScope();
@@ -684,15 +571,12 @@ class AppState extends ChangeNotifier {
   Future<void> requestDataExport() => _firebase.requestDataExport();
 
   Future<void> deleteAccountData() async {
-    await _accountStatusSubscription?.cancel();
-    _accountStatusSubscription = null;
     await _speech.stop();
     await _notifications.cancelAll();
     await _workoutDraftStore.clear(uid);
     await _firebase.deleteCurrentAccount();
     await _store.clear();
     isAuthenticated = false;
-    adminRole = false;
     _store.clearScope();
     _prepareAccountState(
       accountUid: 'demo-user',
@@ -702,53 +586,6 @@ class AppState extends ChangeNotifier {
       includeSamples: true,
     );
     notifyListeners();
-  }
-
-  Future<void> _startAccountStatusWatch() async {
-    await _accountStatusSubscription?.cancel();
-    _accountStatusSubscription = null;
-    if (!firebaseAvailable || !isAuthenticated) return;
-    _accountStatusSubscription = _firebase
-        .watchCurrentAccountActive()
-        .listen((active) {
-          if (!active) unawaited(_deactivateCurrentSession());
-        });
-  }
-
-  Future<void> _deactivateCurrentSession() async {
-    if (_handlingAccountDeactivation || !isAuthenticated) return;
-    _handlingAccountDeactivation = true;
-    try {
-      await _accountStatusSubscription?.cancel();
-      _accountStatusSubscription = null;
-      await _speech.stop();
-      await _notifications.cancelAll();
-      await _workoutDraftStore.clear(uid);
-      await _firebase.signOut();
-      isAuthenticated = false;
-      adminRole = false;
-      await _store.saveAuthenticated(false);
-      await _store.saveAuthenticatedUid(null);
-      _store.clearScope();
-      _prepareAccountState(
-        accountUid: 'demo-user',
-        email: 'demo@fittrack.vn',
-        name: 'Người dùng FitTrack',
-        onboardingCompleted: true,
-        includeSamples: true,
-      );
-      errorMessage =
-          'Phiên đăng nhập đã kết thúc vì tài khoản không còn hoạt động.';
-      notifyListeners();
-    } finally {
-      _handlingAccountDeactivation = false;
-    }
-  }
-
-  @override
-  void dispose() {
-    _accountStatusSubscription?.cancel();
-    super.dispose();
   }
 
   Future<void> recordDailyActivity({DateTime? at}) async {
@@ -769,10 +606,7 @@ class AppState extends ChangeNotifier {
     if (activeDays.contains(dateKey)) return;
     if (firebaseAvailable && uid != 'demo-user') {
       try {
-        await _firebase.recordWeightActivityDay(
-          uid: uid,
-          dateKey: dateKey,
-        );
+        await _firebase.recordWeightActivityDay(uid: uid, dateKey: dateKey);
       } on Object {
         // The local day remains authoritative until the next snapshot sync.
       }
@@ -788,10 +622,7 @@ class AppState extends ChangeNotifier {
     if (workoutDays.contains(dateKey)) return;
     if (firebaseAvailable && uid != 'demo-user') {
       try {
-        await _firebase.recordWorkoutActivityDay(
-          uid: uid,
-          dateKey: dateKey,
-        );
+        await _firebase.recordWorkoutActivityDay(uid: uid, dateKey: dateKey);
       } on Object {
         // The completion and local day are synced together by the next commit.
       }
@@ -863,12 +694,9 @@ class AppState extends ChangeNotifier {
     Set<String> dayKeys, {
     required bool requireRecentDay,
   }) {
-    final days = dayKeys
-        .map(_parseDayKey)
-        .whereType<DateTime>()
-        .toSet()
-        .toList()
-      ..sort();
+    final days =
+        dayKeys.map(_parseDayKey).whereType<DateTime>().toSet().toList()
+          ..sort();
     if (days.isEmpty) return (current: 0, longest: 0, lastDate: null);
 
     var longest = 1;
@@ -893,11 +721,7 @@ class AppState extends ChangeNotifier {
         current++;
       }
     }
-    return (
-      current: current,
-      longest: longest,
-      lastDate: _dateKey(days.last),
-    );
+    return (current: current, longest: longest, lastDate: _dateKey(days.last));
   }
 
   DateTime? _parseDayKey(String value) {
@@ -1023,10 +847,7 @@ class AppState extends ChangeNotifier {
         .toList(growable: false);
     for (final occurrence in open) {
       await _notifications.cancelProgramOccurrence(occurrence.id);
-      _replaceOccurrence(
-        occurrence,
-        status: WorkoutOccurrenceStatus.cancelled,
-      );
+      _replaceOccurrence(occurrence, status: WorkoutOccurrenceStatus.cancelled);
     }
   }
 
@@ -1234,8 +1055,7 @@ class AppState extends ChangeNotifier {
     final savedCompletion = workoutCompletions
         .where(
           (item) =>
-              item.idempotencyKey ==
-              controller.draft.completionIdempotencyKey,
+              item.idempotencyKey == controller.draft.completionIdempotencyKey,
         )
         .firstOrNull;
     if (savedCompletion != null) {
@@ -1360,7 +1180,7 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> speakCue(String cue) async {
-    if (!voiceCoachEnabled || !featureEnabled('voice_coach')) return;
+    if (!voiceCoachEnabled) return;
     await _speech.speak(cue, rate: voiceCoachRate);
   }
 
@@ -1387,115 +1207,6 @@ class AppState extends ChangeNotifier {
       favoriteExerciseIds.remove(exerciseId);
     }
     _commit();
-  }
-
-  Future<void> saveExercise(Exercise value) async {
-    if (value.isPersonal) {
-      throw UnsupportedError('Kho bài tập cá nhân là dữ liệu legacy chỉ đọc.');
-    }
-    if (!value.isPersonal && !isAdmin) {
-      throw StateError('Chỉ quản trị viên được sửa bài tập mẫu.');
-    }
-    if (value.isPersonal && value.ownerId != uid) {
-      throw StateError('Không thể sửa bài tập cá nhân của người dùng khác.');
-    }
-    final index = exercises.indexWhere((exercise) => exercise.id == value.id);
-    final action = index < 0 ? 'create' : 'update';
-    if (index < 0) {
-      exercises.add(value);
-    } else {
-      exercises[index] = value;
-    }
-    await _firebase.saveExercise(value);
-    final audit = _recordAudit(
-      action: action,
-      entityType: 'exercise',
-      entityId: value.id,
-      details: {'isActive': value.isActive},
-    );
-    await _firebase.appendAdminAudit(audit);
-    await _commit();
-  }
-
-  Future<void> deleteExercise(String id) async {
-    final exercise = exercises.where((item) => item.id == id).firstOrNull;
-    if (exercise == null) return;
-    if (exercise.isPersonal) {
-      throw UnsupportedError('Kho bài tập cá nhân là dữ liệu legacy chỉ đọc.');
-    }
-    if (!exercise.isPersonal && !isAdmin) {
-      throw StateError('Chỉ quản trị viên được xóa bài tập mẫu.');
-    }
-    if (exercise.isPersonal && exercise.ownerId != uid) {
-      throw StateError('Không thể xóa bài tập cá nhân của người dùng khác.');
-    }
-    exercises.removeWhere((exercise) => exercise.id == id);
-    favoriteExerciseIds.remove(id);
-    await _firebase.deleteExercise(exercise);
-    final audit = _recordAudit(
-      action: 'delete',
-      entityType: 'exercise',
-      entityId: id,
-    );
-    await _firebase.appendAdminAudit(audit);
-    await _commit();
-  }
-
-  Future<void> savePersonalExercise(Exercise value) async {
-    if (_legacyMutationsDisabled) {
-      throw UnsupportedError(
-        'Người dùng không tạo bài tập cá nhân trong FitTrack mới.',
-      );
-    }
-    if (value.name.trim().isEmpty || value.muscleGroup.trim().isEmpty) {
-      throw ArgumentError('Tên và nhóm cơ chính là bắt buộc.');
-    }
-    final normalized = value.name.trim().toLowerCase();
-    final duplicate = personalExercises.any(
-      (item) =>
-          item.id != value.id && item.name.trim().toLowerCase() == normalized,
-    );
-    if (duplicate) {
-      throw ArgumentError('Bạn đã có bài tập cá nhân trùng tên.');
-    }
-    await saveExercise(value.copyWith(ownerId: uid));
-  }
-
-  Future<void> setExerciseActive(String id, bool value) async {
-    if (!isAdmin) {
-      throw StateError('Chỉ quản trị viên được ẩn hoặc hiện bài tập mẫu.');
-    }
-    final index = exercises.indexWhere((exercise) => exercise.id == id);
-    if (index < 0) return;
-    exercises[index] = exercises[index].copyWith(isActive: value);
-    await _firebase.saveExercise(exercises[index]);
-    final audit = _recordAudit(
-      action: value ? 'publish' : 'hide',
-      entityType: 'exercise',
-      entityId: id,
-    );
-    await _firebase.appendAdminAudit(audit);
-    await _commit();
-  }
-
-  Future<String> uploadTemplateImage(
-    String exerciseId,
-    Uint8List bytes,
-    String extension,
-  ) async {
-    if (!isAdmin) {
-      throw StateError('Chỉ quản trị viên được tải ảnh bài tập mẫu.');
-    }
-    if (bytes.length > 5 * 1024 * 1024) {
-      throw ArgumentError('Ảnh không được lớn hơn 5 MB.');
-    }
-    return _firebase.uploadTemplateImage(
-      exerciseId: exerciseId,
-      bytes: bytes,
-      contentType: extension.toLowerCase() == 'png'
-          ? 'image/png'
-          : 'image/jpeg',
-    );
   }
 
   Future<void> savePlan(WorkoutPlan value) async {
@@ -1919,318 +1630,6 @@ class AppState extends ChangeNotifier {
     await _commit();
   }
 
-  Future<void> setManagedAccountStatus(
-    String targetUid,
-    AccountStatus status,
-  ) async {
-    _requireAdmin();
-    if (targetUid == uid) {
-      throw StateError('Không thể khóa chính tài khoản đang quản trị.');
-    }
-    final index = managedUsers.indexWhere((item) => item.uid == targetUid);
-    if (index < 0) throw ArgumentError('Không tìm thấy người dùng.');
-    final now = DateTime.now();
-    await _firebase.setManagedAccountStatus(
-      targetUid: targetUid,
-      status: status,
-      actorUid: uid,
-    );
-    managedUsers[index] = managedUsers[index].copyWith(
-      status: status,
-      lockedAt: status == AccountStatus.locked ? now : null,
-      lockedBy: status == AccountStatus.locked ? uid : null,
-    );
-    final audit = _recordAudit(
-      action: status == AccountStatus.locked ? 'lock' : 'unlock',
-      entityType: 'user',
-      entityId: targetUid,
-    );
-    await _firebase.appendAdminAudit(audit);
-    await _commit();
-  }
-
-  Future<void> setFeatureFlag(String key, bool enabled) async {
-    _requireAdmin();
-    final index = featureFlags.indexWhere((item) => item.key == key);
-    if (index < 0) throw ArgumentError('Feature flag không tồn tại.');
-    final nextFlag = featureFlags[index].copyWith(enabled: enabled);
-    await _firebase.saveFeatureFlag(nextFlag);
-    featureFlags[index] = nextFlag;
-    final audit = _recordAudit(
-      action: enabled ? 'enable' : 'disable',
-      entityType: 'feature_flag',
-      entityId: key,
-    );
-    await _firebase.appendAdminAudit(audit);
-    await _commit();
-  }
-
-  Future<void> saveProgram(Program value) async {
-    _requireAdmin();
-    if (value.title.trim().isEmpty || value.description.trim().isEmpty) {
-      throw ArgumentError('Tên và mô tả chương trình là bắt buộc.');
-    }
-    await _firebase.saveProgram(value);
-    final index = programs.indexWhere((item) => item.id == value.id);
-    if (index < 0) {
-      programs.add(value);
-    } else {
-      programs[index] = value;
-    }
-    final audit = _recordAudit(
-      action: index < 0 ? 'create' : 'update',
-      entityType: 'program',
-      entityId: value.id,
-    );
-    await _firebase.appendAdminAudit(audit);
-    await _commit();
-  }
-
-  Future<void> saveProgramVersion(ProgramVersion value) async {
-    _requireAdmin();
-    if (!programs.any((item) => item.id == value.programId)) {
-      throw ArgumentError('Chương trình gốc không tồn tại.');
-    }
-    final index = programVersions.indexWhere((item) => item.id == value.id);
-    if (index < 0 && value.status != ProgramLifecycleStatus.draft) {
-      throw StateError('Phiên bản mới phải được tạo ở trạng thái nháp.');
-    }
-    if (index >= 0 && programVersions[index].isPublished) {
-      throw StateError(
-        'Phiên bản đã phát hành là bất biến; hãy tạo phiên bản mới.',
-      );
-    }
-    await _firebase.saveProgramVersion(value);
-    if (index < 0) {
-      programVersions.add(value);
-    } else {
-      programVersions[index] = value;
-    }
-    final audit = _recordAudit(
-      action: index < 0 ? 'create_version' : 'update_version',
-      entityType: 'program_version',
-      entityId: value.id,
-    );
-    await _firebase.appendAdminAudit(audit);
-    await _commit();
-  }
-
-  Future<void> changeProgramVersionStatus(
-    String versionId,
-    ProgramLifecycleStatus status,
-  ) async {
-    _requireAdmin();
-    final index = programVersions.indexWhere((item) => item.id == versionId);
-    if (index < 0) throw ArgumentError('Phiên bản không tồn tại.');
-    final current = programVersions[index];
-    if (status == ProgramLifecycleStatus.draft &&
-        current.status != ProgramLifecycleStatus.draft) {
-      throw StateError('Không thể đưa phiên bản đã phát hành về bản nháp.');
-    }
-    if (status == ProgramLifecycleStatus.published) {
-      if (current.status != ProgramLifecycleStatus.draft) {
-        throw StateError('Chỉ bản nháp mới có thể phát hành.');
-      }
-      final validationErrors = _validateProgramVersionForPublish(current);
-      if (validationErrors.isNotEmpty) {
-        throw StateError(
-          'Không thể phát hành:\n• ${validationErrors.join('\n• ')}',
-        );
-      }
-    } else if (current.status == ProgramLifecycleStatus.draft) {
-      throw StateError('Bản nháp chỉ có thể chuyển sang trạng thái published.');
-    } else if (current.status != ProgramLifecycleStatus.published) {
-      throw StateError('Phiên bản đã kết thúc vòng đời không thể đổi lại.');
-    }
-    final now = DateTime.now();
-    final nextVersion = ProgramVersion(
-      id: current.id,
-      programId: current.programId,
-      version: current.version,
-      status: status,
-      populationKeys: current.populationKeys,
-      audienceTags: current.audienceTags,
-      goalKeys: current.goalKeys,
-      experienceKeys: current.experienceKeys,
-      equipmentKeys: current.equipmentKeys,
-      cadence: current.cadence,
-      sourceRefs: current.sourceRefs,
-      changelog: current.changelog,
-      safetyCopy: current.safetyCopy,
-      accessibilityLabel: current.accessibilityLabel,
-      guidedConfirmationAvailable: current.guidedConfirmationAvailable,
-      weeks: current.weeks,
-      matchingPriority: current.matchingPriority,
-      createdBy: current.createdBy,
-      createdAt: current.createdAt,
-      publishedBy: status == ProgramLifecycleStatus.published
-          ? uid
-          : current.publishedBy,
-      publishedAt: status == ProgramLifecycleStatus.published
-          ? now
-          : current.publishedAt,
-      retiredBy: status == ProgramLifecycleStatus.retired
-          ? uid
-          : current.retiredBy,
-      retiredAt: status == ProgramLifecycleStatus.retired
-          ? now
-          : current.retiredAt,
-      recalledBy: status == ProgramLifecycleStatus.recalled
-          ? uid
-          : current.recalledBy,
-      recalledAt: status == ProgramLifecycleStatus.recalled
-          ? now
-          : current.recalledAt,
-    );
-    await _firebase.saveProgramVersion(nextVersion);
-    programVersions[index] = nextVersion;
-    final audit = _recordAudit(
-      action: status.name,
-      entityType: 'program_version',
-      entityId: versionId,
-    );
-    await _firebase.appendAdminAudit(audit);
-    if (status == ProgramLifecycleStatus.recalled &&
-        enrollment?.programVersionId == versionId) {
-      await _cancelOpenOccurrences(enrollment?.id);
-      if (activeWorkoutDraft?.programVersionId == versionId) {
-        await _notifications.cancelRestSession(
-          activeWorkoutDraft!.sessionId,
-        );
-        await _workoutDraftStore.clear(uid);
-        activeWorkoutDraft = null;
-      }
-      enrollment = null;
-      errorMessage =
-          'Chương trình đang theo đã được thu hồi; các buổi chưa hoàn thành đã bị hủy.';
-    }
-    await _commit();
-  }
-
-  List<String> _validateProgramVersionForPublish(ProgramVersion version) {
-    final errors = <String>[];
-    if (version.populationKeys.isEmpty ||
-        version.goalKeys.isEmpty ||
-        version.experienceKeys.isEmpty) {
-      errors.add('Thiếu population, mục tiêu hoặc mức kinh nghiệm.');
-    }
-    if (version.audienceTags.isEmpty) {
-      errors.add('Thiếu audience tag.');
-    }
-    if (version.changelog.trim().isEmpty) {
-      errors.add('Thiếu changelog.');
-    }
-    if (version.safetyCopy.trim().isEmpty) {
-      errors.add('Thiếu nội dung an toàn.');
-    }
-    if (version.accessibilityLabel.trim().isEmpty) {
-      errors.add('Thiếu mô tả accessibility.');
-    }
-    if (!version.guidedConfirmationAvailable) {
-      errors.add('Guided Confirmation phải luôn khả dụng.');
-    }
-    if (version.sourceRefs.isEmpty ||
-        version.sourceRefs.any(
-          (source) =>
-              source.title.trim().isEmpty ||
-              source.publisher.trim().isEmpty ||
-              source.url.trim().isEmpty,
-        )) {
-      errors.add('Nguồn tham khảo chưa đầy đủ.');
-    }
-    final weekdays = version.cadence.preferredWeekdays;
-    if (weekdays.length < version.cadence.sessionsPerWeek ||
-        weekdays.toSet().length != weekdays.length ||
-        weekdays.any((day) => day < DateTime.monday || day > DateTime.sunday)) {
-      errors.add('Cadence hoặc ngày tập không hợp lệ.');
-    }
-    if (version.weeks.isEmpty) {
-      errors.add('Chưa có tuần tập.');
-      return errors;
-    }
-    final weekNumbers = <int>{};
-    for (final week in version.weeks) {
-      if (!weekNumbers.add(week.weekNumber)) {
-        errors.add('Số tuần ${week.weekNumber} bị trùng.');
-      }
-      if (week.programVersionId != version.id) {
-        errors.add('Tuần ${week.weekNumber} không trỏ đúng phiên bản.');
-      }
-      if (week.sessions.length != version.cadence.sessionsPerWeek) {
-        errors.add(
-          'Tuần ${week.weekNumber} phải có đúng '
-          '${version.cadence.sessionsPerWeek} buổi theo cadence.',
-        );
-      }
-      for (final session in week.sessions) {
-        if (session.title.trim().isEmpty || session.blocks.isEmpty) {
-          errors.add('Một buổi ở tuần ${week.weekNumber} thiếu tên hoặc block.');
-          continue;
-        }
-        final readinessChoices = session.readinessVariants
-            .map((variant) => variant.choice)
-            .toSet();
-        if (!readinessChoices.containsAll(ReadinessChoice.values)) {
-          errors.add(
-            'Buổi ${session.title} thiếu biến thể readiness đã định nghĩa.',
-          );
-        }
-        for (final block in session.blocks) {
-          if (block.prescriptions.isEmpty) {
-            errors.add('Buổi ${session.title} có block rỗng.');
-          }
-          for (final prescription in block.prescriptions) {
-            final exercise = exercises
-                .where((item) => item.id == prescription.exerciseId)
-                .firstOrNull;
-            if (exercise == null || exercise.isPersonal || !exercise.isActive) {
-              errors.add(
-                'Bài ${prescription.exerciseId} không tồn tại hoặc chưa phát hành.',
-              );
-            }
-            if (prescription.cues.isEmpty ||
-                prescription.prescriptionVersion.trim().isEmpty ||
-                prescription.mediaVersion.trim().isEmpty ||
-                prescription.cueVersion.trim().isEmpty ||
-                prescription.prescriptionVersion == 'unknown' ||
-                prescription.mediaVersion == 'unknown' ||
-                prescription.cueVersion == 'unknown') {
-              errors.add(
-                'Prescription ${prescription.id} thiếu cue hoặc metadata phiên bản.',
-              );
-            }
-          }
-        }
-      }
-    }
-    return errors.toSet().toList(growable: false);
-  }
-
-  void _requireAdmin() {
-    if (!isAdmin) {
-      throw StateError('Chỉ Admin được thực hiện thao tác này.');
-    }
-  }
-
-  AdminAuditEntry _recordAudit({
-    required String action,
-    required String entityType,
-    required String entityId,
-    Map<String, Object?> details = const {},
-  }) {
-    final entry = AdminAuditEntry(
-      id: _newId('audit'),
-      actorUid: uid,
-      action: action,
-      entityType: entityType,
-      entityId: entityId,
-      timestamp: DateTime.now(),
-      details: details,
-    );
-    adminAuditLog.insert(0, entry);
-    return entry;
-  }
-
   void _unlockAchievements() {
     final completed = workoutCompletions.length;
     // Achievement eligibility may use the better independent streak, but the
@@ -2316,11 +1715,6 @@ class AppState extends ChangeNotifier {
           .map((item) => item.toJson())
           .toList(),
       'lastProgramMatchStatus': lastProgramMatchStatus?.name,
-    },
-    'admin': {
-      'managedUsers': managedUsers.map((item) => item.toJson()).toList(),
-      'featureFlags': featureFlags.map((item) => item.toJson()).toList(),
-      'auditLog': adminAuditLog.map((item) => item.toJson()).toList(),
     },
   };
 
@@ -2514,38 +1908,12 @@ class AppState extends ChangeNotifier {
     final storedWorkoutStreak = json['workoutStreak'] as Map?;
     if (storedWorkoutStreak?['source'] == 'workout_completion') {
       workoutDays.addAll(
-        (json['workoutDays'] as List? ?? const [])
-            .whereType<String>()
-            .where((dayKey) => _parseDayKey(dayKey) != null),
+        (json['workoutDays'] as List? ?? const []).whereType<String>().where(
+          (dayKey) => _parseDayKey(dayKey) != null,
+        ),
       );
       _recalculateWorkoutStreak();
     }
-
-    final adminState = json['admin'] as Map<String, dynamic>? ?? const {};
-    managedUsers
-      ..clear()
-      ..addAll(
-        (adminState['managedUsers'] as List? ?? const []).map(
-          (item) => ManagedUserAccount.fromJson(
-            Map<String, dynamic>.from(item as Map),
-          ),
-        ),
-      );
-    final savedFlags = (adminState['featureFlags'] as List? ?? const [])
-        .map(
-          (item) =>
-              FeatureFlag.fromJson(Map<String, dynamic>.from(item as Map)),
-        )
-        .toList();
-    if (savedFlags.isNotEmpty) featureFlags = savedFlags;
-    adminAuditLog
-      ..clear()
-      ..addAll(
-        (adminState['auditLog'] as List? ?? const []).map(
-          (item) =>
-              AdminAuditEntry.fromJson(Map<String, dynamic>.from(item as Map)),
-        ),
-      );
   }
 
   String _dateKey(DateTime date) =>
@@ -2566,10 +1934,6 @@ class AppState extends ChangeNotifier {
     }
     if (message.contains('email-already-in-use')) {
       return 'Email này đã được sử dụng.';
-    }
-    if (message.contains('account-locked') ||
-        message.contains('account-inactive')) {
-      return 'Tài khoản không hoạt động hoặc đã bị Admin khóa. Hãy liên hệ hỗ trợ.';
     }
     if (message.contains('network')) {
       return 'Không thể kết nối mạng. Hãy thử lại.';

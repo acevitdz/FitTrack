@@ -116,9 +116,7 @@ class NotificationService {
     });
     final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
     final initialPayload = initialMessage?.data['payload'] as String?;
-    if (_pushEnabled() &&
-        initialPayload != null &&
-        initialPayload.isNotEmpty) {
+    if (_pushEnabled() && initialPayload != null && initialPayload.isNotEmpty) {
       _dispatchPayload(initialPayload);
     }
   }
@@ -267,9 +265,7 @@ class NotificationService {
     if (kIsWeb || !_initialized) return;
     final pending = await _plugin.pendingNotificationRequests();
     for (final notification in pending) {
-      if (notification.payload?.startsWith(
-            'active:$sessionId:$phaseId:',
-          ) ??
+      if (notification.payload?.startsWith('active:$sessionId:$phaseId:') ??
           false) {
         await _plugin.cancel(id: notification.id);
       }
@@ -296,8 +292,7 @@ class NotificationService {
     await _plugin.cancelAll();
   }
 
-  int _notificationId(String id, int weekday) =>
-      _stableId('$id:$weekday');
+  int _notificationId(String id, int weekday) => _stableId('$id:$weekday');
 
   int _stableId(String identity) {
     var hash = 0x811c9dc5;

@@ -78,9 +78,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                             Duration.zero,
                             (total, item) =>
                                 total +
-                                Duration(
-                                  seconds: item.actualDurationSeconds,
-                                ),
+                                Duration(seconds: item.actualDurationSeconds),
                           ),
                         ),
                         icon: Icons.timer_outlined,
@@ -240,17 +238,17 @@ class _HistoryScreenState extends State<HistoryScreen> {
     DateTime? start,
   ) {
     final now = DateTime.now();
-    return state.occurrences.where((occurrence) {
-      final date = occurrence.scheduledDate;
-      if (date.isAfter(now)) return false;
-      if (start != null && date.isBefore(start)) return false;
-      return occurrence.status != WorkoutOccurrenceStatus.cancelled;
-    }).toList(growable: false);
+    return state.occurrences
+        .where((occurrence) {
+          final date = occurrence.scheduledDate;
+          if (date.isAfter(now)) return false;
+          if (start != null && date.isBefore(start)) return false;
+          return occurrence.status != WorkoutOccurrenceStatus.cancelled;
+        })
+        .toList(growable: false);
   }
 
-  List<_RankedMetric> _topExercises(
-    List<WorkoutCompletion> completions,
-  ) {
+  List<_RankedMetric> _topExercises(List<WorkoutCompletion> completions) {
     final names = <String, String>{};
     final counts = <String, int>{};
     for (final completion in completions) {
@@ -259,7 +257,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
       }
       for (final event in completion.setEvents) {
         if (event.status != SetEventStatus.completed) continue;
-        counts.update(event.exerciseId, (value) => value + 1, ifAbsent: () => 1);
+        counts.update(
+          event.exerciseId,
+          (value) => value + 1,
+          ifAbsent: () => 1,
+        );
       }
     }
     return counts.entries
@@ -273,9 +275,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       ..sort((left, right) => right.value.compareTo(left.value));
   }
 
-  List<_RankedMetric> _muscleBalance(
-    List<WorkoutCompletion> completions,
-  ) {
+  List<_RankedMetric> _muscleBalance(List<WorkoutCompletion> completions) {
     final counts = <String, int>{};
     for (final completion in completions) {
       final groups = {
@@ -291,9 +291,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       }
     }
     return counts.entries
-        .map(
-          (entry) => _RankedMetric(label: entry.key, value: entry.value),
-        )
+        .map((entry) => _RankedMetric(label: entry.key, value: entry.value))
         .toList()
       ..sort((left, right) => right.value.compareTo(left.value));
   }
@@ -375,7 +373,10 @@ class _StreakSummaryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Hai loại streak', style: Theme.of(context).textTheme.titleLarge),
+          Text(
+            'Hai loại streak',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
           const SizedBox(height: 14),
           _StreakRow(
             icon: Icons.monitor_weight_outlined,
@@ -442,10 +443,7 @@ class _StreakRow extends StatelessWidget {
 }
 
 class _ActivityHeatmap extends StatelessWidget {
-  const _ActivityHeatmap({
-    required this.weightDays,
-    required this.workoutDays,
-  });
+  const _ActivityHeatmap({required this.weightDays, required this.workoutDays});
 
   final Set<String> weightDays;
   final Set<String> workoutDays;
@@ -532,7 +530,9 @@ class _HeatmapRow extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: activeDays.contains(_dayKey(day))
                           ? color
-                          : Theme.of(context).colorScheme.surfaceContainerHighest,
+                          : Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ),

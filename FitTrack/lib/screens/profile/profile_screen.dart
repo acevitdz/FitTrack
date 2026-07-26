@@ -7,7 +7,6 @@ import '../../state/app_state.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/common_widgets.dart';
 import '../../widgets/design_system.dart';
-import '../admin/admin_console_screen.dart';
 import '../exercises/exercise_library_screen.dart';
 import '../health/weight_screen.dart';
 import '../history/legacy_data_screen.dart';
@@ -91,7 +90,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           style: const TextStyle(color: AppColors.textMuted),
                         ),
                         const SizedBox(height: 4),
-                        Text(state.isAdmin ? 'Admin' : 'Người dùng'),
+                        const Text('Người dùng'),
                       ],
                     ),
                   ),
@@ -104,17 +103,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
           ),
-          if (state.isAdmin && state.featureEnabled('admin_console')) ...[
-            const SizedBox(height: 12),
-            Card(
-              child: _MenuTile(
-                icon: Icons.admin_panel_settings_outlined,
-                title: 'Quản trị FitTrack',
-                subtitle: 'Người dùng, nội dung, chương trình và cấu hình',
-                onTap: () => _open(AdminConsoleScreen(state: state)),
-              ),
-            ),
-          ],
           const SizedBox(height: 16),
           _Section(
             title: 'Luyện tập',
@@ -129,7 +117,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _MenuTile(
                 icon: Icons.menu_book_outlined,
                 title: 'Thư viện bài tập',
-                subtitle: 'Nội dung đã được Admin phát hành, chỉ đọc',
+                subtitle: 'Nội dung có sẵn, chỉ đọc',
                 onTap: () => _open(ExerciseLibraryScreen(state: state)),
               ),
               _MenuTile(
@@ -157,9 +145,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 title: const Text('Voice Coach'),
                 subtitle: const Text('Đọc cue và chuyển pha trên thiết bị'),
                 value: state.voiceCoachEnabled,
-                onChanged: state.featureEnabled('voice_coach')
-                    ? state.setVoiceCoachEnabled
-                    : null,
+                onChanged: state.setVoiceCoachEnabled,
               ),
               SwitchListTile(
                 secondary: const Icon(Icons.vibration),
@@ -305,9 +291,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) setState(() {});
     } on Object catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Không thể cập nhật ảnh: $error')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Không thể cập nhật ảnh: $error')));
     }
   }
 
@@ -326,9 +312,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
     } on Object catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Không thể gửi yêu cầu: $error')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Không thể gửi yêu cầu: $error')));
     }
   }
 
@@ -339,7 +325,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       content: const SingleChildScrollView(
         child: Text(
           '• Camera Coach xử lý khung hình trên thiết bị và không lưu hoặc tải video lên mặc định.\n\n'
-          '• Chiều cao, cân nặng và lịch sử tập là dữ liệu riêng của tài khoản; Admin chỉ xem thông tin tài khoản tối thiểu để hỗ trợ.\n\n'
+          '• Chiều cao, cân nặng và lịch sử tập là dữ liệu riêng, được bảo vệ theo tài khoản của bạn.\n\n'
           '• AI Camera Coach chỉ hỗ trợ kỹ thuật cho bài có rule đã phát hành, có thể không chắc chắn và luôn có Guided Confirmation.\n\n'
           '• BMI và gợi ý tập chỉ mang tính tham khảo, không thay thế tư vấn hoặc chẩn đoán y khoa.\n\n'
           '• Nguồn của từng chương trình được hiển thị trong màn Chương trình và lịch sử phiên bản.',
@@ -472,8 +458,7 @@ class _ProgramPreferencesScreenState extends State<ProgramPreferencesScreen> {
                 ChoiceChip(
                   label: Text('$value buổi'),
                   selected: _sessionsPerWeek == value,
-                  onSelected: (_) =>
-                      setState(() => _sessionsPerWeek = value),
+                  onSelected: (_) => setState(() => _sessionsPerWeek = value),
                 ),
             ],
           ),

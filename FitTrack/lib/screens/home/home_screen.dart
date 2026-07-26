@@ -395,7 +395,10 @@ class _ResumeCardState extends State<_ResumeCard> {
   Future<void> _finish() async {
     final draft = widget.state.activeWorkoutDraft;
     final occurrence = _occurrenceForDraft();
-    if (draft == null || draft.startedAt == null || occurrence == null || _busy) {
+    if (draft == null ||
+        draft.startedAt == null ||
+        occurrence == null ||
+        _busy) {
       return;
     }
     final confirmed = await confirmAction(
