@@ -20,6 +20,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController(text: 'demo@fittrack.vn');
   final _passwordController = TextEditingController(text: 'FitTrack123!');
   final _confirmController = TextEditingController();
+
   var _register = false;
   var _obscurePassword = true;
   var _obscureConfirm = true;
@@ -43,6 +44,7 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       return;
     }
+
     final success = _register
         ? await widget.state.register(
             _nameController.text,
@@ -53,6 +55,7 @@ class _LoginScreenState extends State<LoginScreen> {
             _emailController.text,
             _passwordController.text,
           );
+
     if (!success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(widget.state.errorMessage ?? 'Có lỗi xảy ra.')),
@@ -80,283 +83,269 @@ class _LoginScreenState extends State<LoginScreen> {
     return AnimatedBuilder(
       animation: widget.state,
       builder: (context, _) => Scaffold(
-        body: Stack(
-          children: [
-            const Positioned(
-              top: -150,
-              right: -110,
-              child: _BackgroundGlow(size: 360),
-            ),
-            const Positioned(
-              bottom: -180,
-              left: -100,
-              child: _BackgroundGlow(size: 330),
-            ),
-            FitTrackPage(
-              maxWidth: 440,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 32),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const FitTrackLogo(showWordmark: true),
-                    if (!_register) ...[
-                      const SizedBox(height: 18),
-                      Text(
-                        'Chào mừng trở lại',
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.headlineSmall
-                            ?.copyWith(color: AppColors.primary),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Tiếp tục hành trình thể lực của bạn cùng FitTrack.',
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                    const SizedBox(height: 30),
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            if (_register) ...[
-                              Text(
-                                'Tạo tài khoản mới',
-                                textAlign: TextAlign.center,
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.headlineSmall,
+        body: FitTrackPage(
+          maxWidth: 390,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 32),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Align(
+                  alignment: Alignment.center,
+                  child: FitTrackLogo(size: 48),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  _register ? 'Tạo tài khoản mới' : 'Chào mừng trở lại',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    color: AppColors.text,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  _register
+                      ? 'Điền thông tin bên dưới để bắt đầu với FitTrack.'
+                      : 'Theo dõi sức khỏe, tập luyện và tiến bộ mỗi ngày.',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
+                ),
+                const SizedBox(height: 28),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (_register) ...[
+                          AppFormLabel(
+                            label: 'Họ và tên',
+                            child: TextFormField(
+                              controller: _nameController,
+                              textInputAction: TextInputAction.next,
+                              autofillHints: const [AutofillHints.name],
+                              decoration: const InputDecoration(
+                                hintText: 'Nhập họ và tên',
+                                prefixIcon: Icon(Icons.person_outline),
                               ),
-                              const SizedBox(height: 4),
-                              const Text(
-                                'Điền thông tin dưới đây để đăng ký',
-                                textAlign: TextAlign.center,
-                              ),
-                              const SizedBox(height: 24),
-                              AppFormLabel(
-                                label: 'Họ và tên',
-                                child: TextFormField(
-                                  controller: _nameController,
-                                  textInputAction: TextInputAction.next,
-                                  autofillHints: const [AutofillHints.name],
-                                  decoration: const InputDecoration(
-                                    hintText: 'Nhập họ và tên của bạn',
-                                    prefixIcon: Icon(Icons.person_outline),
-                                  ),
-                                  validator: (value) =>
-                                      value == null || value.trim().isEmpty
-                                      ? 'Họ tên không được rỗng'
-                                      : null,
-                                ),
-                              ),
-                              const SizedBox(height: 18),
+                              validator: (value) =>
+                                  value == null || value.trim().isEmpty
+                                  ? 'Họ tên không được để trống'
+                                  : null,
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                        ],
+                        AppFormLabel(
+                          label: 'Email',
+                          child: TextFormField(
+                            controller: _emailController,
+                            keyboardType: TextInputType.emailAddress,
+                            textInputAction: TextInputAction.next,
+                            autofillHints: const [AutofillHints.email],
+                            decoration: const InputDecoration(
+                              hintText: 'Nhập địa chỉ email',
+                              prefixIcon: Icon(Icons.email_outlined, size: 20),
+                            ),
+                            validator: _emailValidator,
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        AppFormLabel(
+                          label: 'Mật khẩu',
+                          child: TextFormField(
+                            controller: _passwordController,
+                            obscureText: _obscurePassword,
+                            textInputAction: _register
+                                ? TextInputAction.next
+                                : TextInputAction.done,
+                            autofillHints: [
+                              _register
+                                  ? AutofillHints.newPassword
+                                  : AutofillHints.password,
                             ],
-                            AppFormLabel(
-                              label: 'Email',
-                              child: TextFormField(
-                                controller: _emailController,
-                                keyboardType: TextInputType.emailAddress,
-                                textInputAction: TextInputAction.next,
-                                autofillHints: const [AutofillHints.email],
-                                decoration: InputDecoration(
-                                  hintText: _register
-                                      ? 'ví dụ: ten@email.com'
-                                      : 'nhap@email.com',
-                                  prefixIcon: const Icon(Icons.email_outlined),
+                            onFieldSubmitted: (_) =>
+                                _register ? null : _submit(),
+                            decoration: InputDecoration(
+                              hintText: 'Nhập mật khẩu',
+                              prefixIcon: const Icon(
+                                Icons.lock_outline,
+                                size: 20,
+                              ),
+                              suffixIcon: IconButton(
+                                tooltip: _obscurePassword
+                                    ? 'Hiện mật khẩu'
+                                    : 'Ẩn mật khẩu',
+                                onPressed: () => setState(
+                                  () => _obscurePassword = !_obscurePassword,
                                 ),
-                                validator: _emailValidator,
+                                icon: Icon(
+                                  _obscurePassword
+                                      ? Icons.visibility_outlined
+                                      : Icons.visibility_off_outlined,
+                                  size: 20,
+                                ),
                               ),
                             ),
-                            const SizedBox(height: 18),
-                            Row(
-                              children: [
-                                const Expanded(
-                                  child: Text(
-                                    'Mật khẩu',
-                                    style: TextStyle(fontSize: 12),
-                                  ),
+                            validator: (value) =>
+                                value == null || value.length < 8
+                                ? 'Mật khẩu cần ít nhất 8 ký tự'
+                                : null,
+                          ),
+                        ),
+                        if (!_register)
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              onPressed: widget.state.busy
+                                  ? null
+                                  : () => Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (_) => ForgotPasswordScreen(
+                                          state: widget.state,
+                                          initialEmail: _emailController.text,
+                                        ),
+                                      ),
+                                    ),
+                              style: TextButton.styleFrom(
+                                minimumSize: const Size(0, 40),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 4,
                                 ),
-                                if (!_register)
-                                  TextButton(
-                                    onPressed: widget.state.busy
-                                        ? null
-                                        : () => Navigator.of(context).push(
-                                            MaterialPageRoute(
-                                              builder: (_) =>
-                                                  ForgotPasswordScreen(
-                                                    state: widget.state,
-                                                    initialEmail:
-                                                        _emailController.text,
-                                                  ),
-                                            ),
-                                          ),
-                                    child: const Text('Quên mật khẩu?'),
-                                  ),
-                              ],
+                              ),
+                              child: const Text('Quên mật khẩu?'),
                             ),
-                            TextFormField(
-                              controller: _passwordController,
-                              obscureText: _obscurePassword,
-                              textInputAction: _register
-                                  ? TextInputAction.next
-                                  : TextInputAction.done,
-                              autofillHints: [
-                                _register
-                                    ? AutofillHints.newPassword
-                                    : AutofillHints.password,
-                              ],
-                              onFieldSubmitted: (_) =>
-                                  _register ? null : _submit(),
+                          ),
+                        if (_register) ...[
+                          const SizedBox(height: 14),
+                          AppFormLabel(
+                            label: 'Xác nhận mật khẩu',
+                            child: TextFormField(
+                              controller: _confirmController,
+                              obscureText: _obscureConfirm,
+                              textInputAction: TextInputAction.done,
+                              onFieldSubmitted: (_) => _submit(),
                               decoration: InputDecoration(
-                                hintText: _register
-                                    ? 'Tạo mật khẩu'
-                                    : '••••••••',
-                                prefixIcon: const Icon(Icons.lock_outline),
+                                hintText: 'Nhập lại mật khẩu',
+                                prefixIcon: const Icon(Icons.lock_reset),
                                 suffixIcon: IconButton(
-                                  tooltip: _obscurePassword
+                                  tooltip: _obscureConfirm
                                       ? 'Hiện mật khẩu'
                                       : 'Ẩn mật khẩu',
                                   onPressed: () => setState(
-                                    () => _obscurePassword = !_obscurePassword,
+                                    () => _obscureConfirm = !_obscureConfirm,
                                   ),
                                   icon: Icon(
-                                    _obscurePassword
+                                    _obscureConfirm
                                         ? Icons.visibility_outlined
                                         : Icons.visibility_off_outlined,
                                   ),
                                 ),
                               ),
                               validator: (value) =>
-                                  value == null || value.length < 8
-                                  ? 'Mật khẩu cần ít nhất 8 ký tự'
+                                  value != _passwordController.text
+                                  ? 'Mật khẩu xác nhận chưa trùng khớp'
                                   : null,
                             ),
-                            if (_register) ...[
-                              const Padding(
-                                padding: EdgeInsets.only(top: 6),
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.info_outline, size: 16),
-                                    SizedBox(width: 6),
-                                    Text(
-                                      'Ít nhất 8 ký tự',
-                                      style: TextStyle(fontSize: 12),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 18),
-                              AppFormLabel(
-                                label: 'Xác nhận mật khẩu',
-                                child: TextFormField(
-                                  controller: _confirmController,
-                                  obscureText: _obscureConfirm,
-                                  textInputAction: TextInputAction.done,
-                                  onFieldSubmitted: (_) => _submit(),
-                                  decoration: InputDecoration(
-                                    hintText: 'Nhập lại mật khẩu',
-                                    prefixIcon: const Icon(Icons.lock_reset),
-                                    suffixIcon: IconButton(
-                                      tooltip: _obscureConfirm
-                                          ? 'Hiện mật khẩu'
-                                          : 'Ẩn mật khẩu',
-                                      onPressed: () => setState(
-                                        () =>
-                                            _obscureConfirm = !_obscureConfirm,
-                                      ),
-                                      icon: Icon(
-                                        _obscureConfirm
-                                            ? Icons.visibility_outlined
-                                            : Icons.visibility_off_outlined,
-                                      ),
-                                    ),
+                          ),
+                          CheckboxListTile(
+                            value: _acceptedTerms,
+                            onChanged: widget.state.busy
+                                ? null
+                                : (value) => setState(
+                                    () => _acceptedTerms = value ?? false,
                                   ),
-                                  validator: (value) =>
-                                      value != _passwordController.text
-                                      ? 'Mật khẩu xác nhận chưa trùng khớp'
-                                      : null,
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              CheckboxListTile(
-                                value: _acceptedTerms,
-                                onChanged: widget.state.busy
-                                    ? null
-                                    : (value) => setState(
-                                        () => _acceptedTerms = value ?? false,
-                                      ),
-                                controlAffinity:
-                                    ListTileControlAffinity.leading,
-                                contentPadding: EdgeInsets.zero,
-                                title: const Text(
-                                  'Tôi đồng ý với các Điều khoản dịch vụ và Chính sách bảo mật',
-                                  style: TextStyle(fontSize: 13),
-                                ),
-                              ),
-                            ],
-                            const SizedBox(height: 20),
-                            AppPrimaryButton(
-                              label: _register ? 'Đăng ký' : 'Đăng nhập',
-                              loading: widget.state.busy,
-                              onPressed: _submit,
+                            controlAffinity: ListTileControlAffinity.leading,
+                            contentPadding: EdgeInsets.zero,
+                            title: const Text(
+                              'Tôi đồng ý với Điều khoản dịch vụ và Chính sách bảo mật',
+                              style: TextStyle(fontSize: 13),
                             ),
-                            if (!_register) ...[
-                              const SizedBox(height: 20),
-                              const Row(
-                                children: [
-                                  Expanded(child: Divider()),
-                                  Padding(
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                    ),
-                                    child: Text('HOẶC'),
+                          ),
+                        ],
+                        const SizedBox(height: 12),
+                        AppPrimaryButton(
+                          label: _register ? 'Đăng ký' : 'Đăng nhập',
+                          loading: widget.state.busy,
+                          onPressed: _submit,
+                        ),
+                        if (!_register) ...[
+                          const SizedBox(height: 18),
+                          const Row(
+                            children: [
+                              Expanded(child: Divider()),
+                              Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 12),
+                                child: Text(
+                                  'Hoặc',
+                                  style: TextStyle(
+                                    color: AppColors.textMuted,
+                                    fontSize: 12,
                                   ),
-                                  Expanded(child: Divider()),
-                                ],
+                                ),
                               ),
-                              const SizedBox(height: 16),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: OutlinedButton.icon(
-                                      onPressed: _unsupportedSocial,
-                                      icon: const Icon(Icons.g_mobiledata),
-                                      label: const Text('Google'),
+                              Expanded(child: Divider()),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: _unsupportedSocial,
+                                  icon: const Text(
+                                    'G',
+                                    style: TextStyle(
+                                      color: Color(0xFF4285F4),
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w800,
                                     ),
                                   ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: OutlinedButton.icon(
-                                      onPressed: _unsupportedSocial,
-                                      icon: const Icon(Icons.facebook),
-                                      label: const Text('Facebook'),
-                                    ),
+                                  label: const Text('Google'),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: _unsupportedSocial,
+                                  icon: const Icon(
+                                    Icons.facebook,
+                                    color: Color(0xFF1877F2),
+                                    size: 20,
                                   ),
-                                ],
+                                  label: const Text('Facebook'),
+                                ),
                               ),
                             ],
-                          ],
-                        ),
-                      ),
+                          ),
+                        ],
+                      ],
                     ),
-                    const SizedBox(height: 22),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Text(
+                      _register ? 'Đã có tài khoản?' : 'Bạn chưa có tài khoản?',
+                      style: const TextStyle(color: AppColors.textMuted),
+                    ),
                     TextButton(
                       onPressed: widget.state.busy ? null : _toggleMode,
-                      child: Text(
-                        _register
-                            ? 'Đã có tài khoản? Đăng nhập'
-                            : 'Chưa có tài khoản? Đăng ký',
-                      ),
+                      child: Text(_register ? 'Đăng nhập' : 'Đăng ký ngay'),
                     ),
-                    OfflineBanner(visible: !widget.state.firebaseAvailable),
                   ],
                 ),
-              ),
+                OfflineBanner(visible: !widget.state.firebaseAvailable),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -365,25 +354,8 @@ class _LoginScreenState extends State<LoginScreen> {
   void _unsupportedSocial() {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Bản hiện tại chỉ hỗ trợ đăng nhập bằng email/mật khẩu.'),
+        content: Text('Bản hiện tại chỉ hỗ trợ email và mật khẩu.'),
       ),
     );
   }
-}
-
-class _BackgroundGlow extends StatelessWidget {
-  const _BackgroundGlow({required this.size});
-  final double size;
-
-  @override
-  Widget build(BuildContext context) => IgnorePointer(
-    child: Container(
-      width: size,
-      height: size,
-      decoration: const BoxDecoration(
-        shape: BoxShape.circle,
-        color: Color(0x2ED8E2FF),
-      ),
-    ),
-  );
 }
