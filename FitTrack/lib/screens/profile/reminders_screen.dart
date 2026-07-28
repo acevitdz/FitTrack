@@ -56,17 +56,114 @@ class _RemindersScreenState extends State<RemindersScreen> {
     if (mounted) setState(() {});
   }
 
+  Future<void> _editOccurrenceReminder(WorkoutOccurrence occurrence) async {
+    var enabled = occurrence.reminderEnabled;
+    var minutesBefore =
+        occurrence.reminderMinutesBefore ??
+        widget.state.programReminderMinutesBefore;
+    var time = TimeOfDay(
+      hour: occurrence.scheduledHour ?? widget.state.programReminderHour,
+      minute: occurrence.scheduledMinute ?? widget.state.programReminderMinute,
+    );
+    final shouldSave = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Nhắc riêng cho buổi này'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Bật nhắc nhở'),
+                value: enabled,
+                onChanged: (value) => setDialogState(() => enabled = value),
+              ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.schedule),
+                title: Text(time.format(context)),
+                subtitle: const Text('Giờ bắt đầu buổi tập'),
+                onTap: () async {
+                  final selected = await showTimePicker(
+                    context: dialogContext,
+                    initialTime: time,
+                  );
+                  if (selected != null) {
+                    setDialogState(() => time = selected);
+                  }
+                },
+              ),
+              DropdownButtonFormField<int>(
+                initialValue: minutesBefore,
+                decoration: const InputDecoration(labelText: 'Thông báo'),
+                items: const [0, 15, 30, 60, 120]
+                    .map(
+                      (minutes) => DropdownMenuItem(
+                        value: minutes,
+                        child: Text(
+                          minutes == 0 ? 'Đúng giờ' : 'Trước $minutes phút',
+                        ),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    setDialogState(() => minutesBefore = value);
+                  }
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Hủy'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Lưu'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (shouldSave != true || !mounted) return;
+    try {
+      await widget.state.setOccurrenceReminder(
+        occurrence,
+        enabled: enabled,
+        hour: time.hour,
+        minute: time.minute,
+        minutesBefore: minutesBefore,
+      );
+      if (mounted) setState(() {});
+    } on Object catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.toString())));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = widget.state;
-    final upcoming = state.occurrences
-        .where(
-          (item) =>
-              item.status == WorkoutOccurrenceStatus.scheduled ||
-              item.status == WorkoutOccurrenceStatus.postponed,
-        )
-        .take(5)
-        .toList();
+    final upcoming =
+        state.occurrences
+            .where(
+              (item) =>
+                  item.status == WorkoutOccurrenceStatus.scheduled ||
+                  item.status == WorkoutOccurrenceStatus.postponed,
+            )
+            .toList()
+          ..sort((left, right) {
+            final date = left.scheduledDate.compareTo(right.scheduledDate);
+            if (date != 0) return date;
+            return (left.scheduledHour ?? state.programReminderHour).compareTo(
+              right.scheduledHour ?? state.programReminderHour,
+            );
+          });
     final time = TimeOfDay(
       hour: state.programReminderHour,
       minute: state.programReminderMinute,
@@ -157,7 +254,11 @@ class _RemindersScreenState extends State<RemindersScreen> {
             for (final occurrence in upcoming)
               Card(
                 child: ListTile(
-                  leading: const Icon(Icons.event_outlined),
+                  leading: Icon(
+                    occurrence.reminderEnabled
+                        ? Icons.notifications_active_outlined
+                        : Icons.notifications_off_outlined,
+                  ),
                   title: Text(
                     state.sessionForOccurrence(occurrence)?.title ??
                         'Buổi tập FitTrack',
@@ -165,8 +266,12 @@ class _RemindersScreenState extends State<RemindersScreen> {
                   subtitle: Text(
                     '${occurrence.scheduledDate.day.toString().padLeft(2, '0')}/'
                     '${occurrence.scheduledDate.month.toString().padLeft(2, '0')}/'
-                    '${occurrence.scheduledDate.year} • ${time.format(context)}',
+                    '${occurrence.scheduledDate.year} • '
+                    '${TimeOfDay(hour: occurrence.scheduledHour ?? state.programReminderHour, minute: occurrence.scheduledMinute ?? state.programReminderMinute).format(context)}'
+                    '${occurrence.reminderEnabled ? ' • trước ${occurrence.reminderMinutesBefore ?? state.programReminderMinutesBefore} phút' : ' • đã tắt nhắc'}',
                   ),
+                  trailing: const Icon(Icons.edit_outlined),
+                  onTap: () => _editOccurrenceReminder(occurrence),
                 ),
               ),
           const SizedBox(height: 16),

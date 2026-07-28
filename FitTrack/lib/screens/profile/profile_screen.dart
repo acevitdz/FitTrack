@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../models/account.dart';
 import '../../models/measurement_units.dart';
 import '../../models/program.dart';
 import '../../state/app_state.dart';
@@ -90,7 +91,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           style: const TextStyle(color: AppColors.textMuted),
                         ),
                         const SizedBox(height: 4),
-                        const Text('Người dùng'),
+                        Text(
+                          state.accountAccess.status == AccountStatus.active
+                              ? 'Tài khoản đang hoạt động'
+                              : state.accountAccess.status.name,
+                        ),
                       ],
                     ),
                   ),
@@ -152,6 +157,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 title: const Text('Phản hồi rung'),
                 value: state.hapticsEnabled,
                 onChanged: state.setHapticsEnabled,
+              ),
+              SwitchListTile(
+                secondary: const Icon(Icons.notifications_active_outlined),
+                title: const Text('Âm thanh đếm ngược'),
+                subtitle: const Text(
+                  'Beep ở 3–2–1 giây cuối của thời gian nghỉ và timed set',
+                ),
+                value: state.countdownSoundsEnabled,
+                onChanged: state.setCountdownSoundsEnabled,
               ),
               _MenuTile(
                 icon: Icons.alarm_outlined,
@@ -216,12 +230,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 title: 'Quyền riêng tư, an toàn và nguồn',
                 subtitle: 'Giới hạn AI, dữ liệu camera và lưu trữ sức khỏe',
                 onTap: _showSafetyAndPrivacy,
-              ),
-              _MenuTile(
-                icon: Icons.download_outlined,
-                title: 'Yêu cầu xuất dữ liệu',
-                subtitle: 'Tạo yêu cầu nhận bản sao dữ liệu tài khoản',
-                onTap: _requestDataExport,
               ),
               if (state.plans.isNotEmpty || state.completions.isNotEmpty)
                 _MenuTile(
@@ -297,27 +305,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  Future<void> _requestDataExport() async {
-    try {
-      await widget.state.requestDataExport();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            widget.state.firebaseAvailable
-                ? 'Đã gửi yêu cầu xuất dữ liệu.'
-                : 'Bản demo chỉ lưu dữ liệu trên thiết bị; chưa có máy chủ để xử lý yêu cầu.',
-          ),
-        ),
-      );
-    } on Object catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Không thể gửi yêu cầu: $error')));
-    }
-  }
-
   Future<void> _showSafetyAndPrivacy() => showDialog<void>(
     context: context,
     builder: (context) => AlertDialog(
@@ -361,14 +348,55 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _deleteAccount() async {
-    final accepted = await confirmAction(
-      context,
-      title: 'Gửi yêu cầu xóa tài khoản?',
-      message:
-          'FitTrack sẽ ghi nhận yêu cầu, đăng xuất và xóa bản dữ liệu cục bộ của tài khoản này. Dữ liệu máy chủ được xóa theo quy trình chính sách.',
-      confirmLabel: 'Gửi yêu cầu',
+    final confirmation = TextEditingController();
+    final accepted = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Xóa tài khoản và dữ liệu?'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Yêu cầu sẽ xóa hồ sơ, lịch tập, lịch sử, ảnh người dùng và tài khoản đăng nhập. Sau khi gửi, tài khoản bị chặn đăng nhập trong lúc máy chủ xử lý.',
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: confirmation,
+              autofocus: true,
+              decoration: const InputDecoration(
+                labelText: 'Nhập XÓA để xác nhận',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Hủy'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+            onPressed: () => Navigator.pop(
+              dialogContext,
+              confirmation.text.trim().toUpperCase() == 'XÓA',
+            ),
+            child: const Text('Gửi yêu cầu xóa'),
+          ),
+        ],
+      ),
     );
-    if (accepted) await widget.state.deleteAccountData();
+    confirmation.dispose();
+    if (accepted == true) {
+      try {
+        await widget.state.deleteAccountData();
+      } on Object catch (error) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Không thể gửi yêu cầu xóa: $error')),
+        );
+      }
+    }
   }
 }
 
@@ -387,6 +415,7 @@ class _ProgramPreferencesScreenState extends State<ProgramPreferencesScreen> {
   late String _equipment;
   late int _sessionsPerWeek;
   late ProgramAudiencePreference _audience;
+  late Set<int> _weekdays;
   bool _saving = false;
 
   @override
@@ -396,12 +425,23 @@ class _ProgramPreferencesScreenState extends State<ProgramPreferencesScreen> {
     _goal = current.goalKey;
     _experience = current.experienceKey;
     _sessionsPerWeek = current.sessionsPerWeek;
+    _weekdays = current.preferredWeekdays.length == _sessionsPerWeek
+        ? current.preferredWeekdays.toSet()
+        : _recommendedWeekdays(_sessionsPerWeek);
     _equipment = current.equipmentKeys.contains('gym') ? 'gym' : 'bodyweight';
     _audience = current.programAudiencePreference;
   }
 
   Future<void> _save() async {
     if (_saving) return;
+    if (_weekdays.length != _sessionsPerWeek) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Hãy chọn đúng $_sessionsPerWeek ngày tập trong tuần.'),
+        ),
+      );
+      return;
+    }
     setState(() => _saving = true);
     try {
       final current = widget.state.trainingPreferences;
@@ -415,6 +455,7 @@ class _ProgramPreferencesScreenState extends State<ProgramPreferencesScreen> {
               ? const ['bodyweight', 'gym']
               : const ['bodyweight'],
           sessionsPerWeek: _sessionsPerWeek,
+          preferredWeekdays: _weekdays.toList()..sort(),
         ),
       );
       if (mounted) Navigator.pop(context);
@@ -458,7 +499,29 @@ class _ProgramPreferencesScreenState extends State<ProgramPreferencesScreen> {
                 ChoiceChip(
                   label: Text('$value buổi'),
                   selected: _sessionsPerWeek == value,
-                  onSelected: (_) => setState(() => _sessionsPerWeek = value),
+                  onSelected: (_) => setState(() {
+                    _sessionsPerWeek = value;
+                    _weekdays = _recommendedWeekdays(value);
+                  }),
+                ),
+            ],
+          ),
+          _label('Ngày tập mong muốn'),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (var day = DateTime.monday; day <= DateTime.sunday; day++)
+                FilterChip(
+                  label: Text(_weekdayLabel(day)),
+                  selected: _weekdays.contains(day),
+                  onSelected: (selected) => setState(() {
+                    if (selected && _weekdays.length < _sessionsPerWeek) {
+                      _weekdays.add(day);
+                    } else if (!selected) {
+                      _weekdays.remove(day);
+                    }
+                  }),
                 ),
             ],
           ),
@@ -533,6 +596,34 @@ class _ProgramPreferencesScreenState extends State<ProgramPreferencesScreen> {
     selected: value == selected,
     onTap: () => setState(() => update(value)),
   );
+
+  Set<int> _recommendedWeekdays(int frequency) => switch (frequency) {
+    2 => {DateTime.monday, DateTime.thursday},
+    3 => {DateTime.monday, DateTime.wednesday, DateTime.friday},
+    4 => {
+      DateTime.monday,
+      DateTime.tuesday,
+      DateTime.thursday,
+      DateTime.saturday,
+    },
+    _ => {
+      DateTime.monday,
+      DateTime.tuesday,
+      DateTime.wednesday,
+      DateTime.friday,
+      DateTime.saturday,
+    },
+  };
+
+  String _weekdayLabel(int day) => switch (day) {
+    DateTime.monday => 'T2',
+    DateTime.tuesday => 'T3',
+    DateTime.wednesday => 'T4',
+    DateTime.thursday => 'T5',
+    DateTime.friday => 'T6',
+    DateTime.saturday => 'T7',
+    _ => 'CN',
+  };
 }
 
 class _Section extends StatelessWidget {

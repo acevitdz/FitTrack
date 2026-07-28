@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -6,6 +8,35 @@ import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
 import '../models/health_models.dart';
+
+Map<String, dynamic>? decodeFitTrackNotificationPayload(String payload) {
+  try {
+    final decoded = jsonDecode(payload);
+    if (decoded is! Map) return null;
+    final value = Map<String, dynamic>.from(decoded);
+    final type = value['type'];
+    if (type == 'today' &&
+        value['occurrenceId'] is String &&
+        (value['occurrenceId'] as String).isNotEmpty) {
+      return value;
+    }
+    if (type == 'active' &&
+        value['sessionId'] is String &&
+        value['phaseId'] is String &&
+        value['restEndsAt'] is int) {
+      return value;
+    }
+  } on FormatException {
+    // Fall through to the only unambiguous legacy payload.
+  }
+  if (payload.startsWith('today:') && payload.length > 'today:'.length) {
+    return {
+      'type': 'today',
+      'occurrenceId': payload.substring('today:'.length),
+    };
+  }
+  return null;
+}
 
 class NotificationService {
   static const _settingsChannel = MethodChannel('fittrack/settings');
@@ -223,7 +254,7 @@ class NotificationService {
         ),
       ),
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-      payload: 'today:$occurrenceId',
+      payload: jsonEncode({'type': 'today', 'occurrenceId': occurrenceId}),
     );
   }
 
@@ -253,8 +284,12 @@ class NotificationService {
         ),
       ),
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-      payload:
-          'active:$sessionId:$phaseId:${restEndsAt.millisecondsSinceEpoch}',
+      payload: jsonEncode({
+        'type': 'active',
+        'sessionId': sessionId,
+        'phaseId': phaseId,
+        'restEndsAt': restEndsAt.millisecondsSinceEpoch,
+      }),
     );
   }
 
@@ -265,8 +300,12 @@ class NotificationService {
     if (kIsWeb || !_initialized) return;
     final pending = await _plugin.pendingNotificationRequests();
     for (final notification in pending) {
-      if (notification.payload?.startsWith('active:$sessionId:$phaseId:') ??
-          false) {
+      final route = notification.payload == null
+          ? null
+          : decodeFitTrackNotificationPayload(notification.payload!);
+      if (route?['type'] == 'active' &&
+          route?['sessionId'] == sessionId &&
+          route?['phaseId'] == phaseId) {
         await _plugin.cancel(id: notification.id);
       }
     }
@@ -276,7 +315,10 @@ class NotificationService {
     if (kIsWeb || !_initialized) return;
     final pending = await _plugin.pendingNotificationRequests();
     for (final notification in pending) {
-      if (notification.payload?.startsWith('active:$sessionId:') ?? false) {
+      final route = notification.payload == null
+          ? null
+          : decodeFitTrackNotificationPayload(notification.payload!);
+      if (route?['type'] == 'active' && route?['sessionId'] == sessionId) {
         await _plugin.cancel(id: notification.id);
       }
     }
