@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import '../../models/active_workout.dart';
 import '../../models/pose_coach.dart';
 import '../../services/active_workout_controller.dart';
+import '../../services/workout_timer_cue.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/common_widgets.dart';
@@ -33,11 +34,13 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   Timer? _ticker;
   WorkoutCompletion? _completion;
   PoseCoachResult? _lastPoseResult;
+  final _cameraEvidence = _CameraEvidenceAccumulator();
+  final _timerCueTracker = WorkoutTimerCueTracker();
   bool _saving = false;
   bool _aiCompletionInFlight = false;
+  bool _tickInFlight = false;
   bool _finishAttempted = false;
   String? _finishError;
-  int? _lastCountdownSecond;
   AppLifecycleState _lifecycleState = AppLifecycleState.resumed;
 
   ActiveWorkoutController get controller => widget.controller;
@@ -48,37 +51,40 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     WidgetsBinding.instance.addObserver(this);
     _lifecycleState =
         WidgetsBinding.instance.lifecycleState ?? AppLifecycleState.resumed;
-    final reconciled = controller.reconcile();
+    final reconciled = controller.reconcile() || controller.reconcileTimedSet();
     controller.addListener(_changed);
     if (reconciled) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (!mounted) return;
-        await widget.state.checkpointWorkout(controller);
-        if (_lifecycleState == AppLifecycleState.resumed) {
-          await widget.state.speakCue(_workingCue);
-        }
+        await _afterSetAdvanced();
       });
     }
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) async {
-      if (!mounted) return;
-      final transitioned = controller.reconcile();
-      if (transitioned) {
-        _lastCountdownSecond = null;
-        await widget.state.checkpointWorkout(controller);
-        if (_lifecycleState == AppLifecycleState.resumed) {
-          await widget.state.speakCue(_workingCue);
+      if (!mounted || _tickInFlight) return;
+      _tickInFlight = true;
+      try {
+        final transitioned =
+            controller.reconcile() || controller.reconcileTimedSet();
+        if (transitioned) {
+          _timerCueTracker.reset();
+          await _afterSetAdvanced();
+        } else if (controller.phase == WorkoutPhase.countingDown &&
+            _lifecycleState == AppLifecycleState.resumed) {
+          _playTimerCueFor(controller.preparationRemaining);
+        } else if (controller.phase == WorkoutPhase.working &&
+            controller.isTimedSetRunning &&
+            _lifecycleState == AppLifecycleState.resumed) {
+          _playTimerCueFor(controller.timedSetRemaining);
+        } else if (controller.phase == WorkoutPhase.resting &&
+            _lifecycleState == AppLifecycleState.resumed) {
+          _playTimerCueFor(controller.restRemaining);
+        } else {
+          _timerCueTracker.reset();
         }
-      } else if (controller.phase == WorkoutPhase.resting &&
-          _lifecycleState == AppLifecycleState.resumed) {
-        final seconds = controller.restRemaining.inSeconds;
-        if (seconds >= 1 && seconds <= 3 && seconds != _lastCountdownSecond) {
-          _lastCountdownSecond = seconds;
-          await widget.state.speakCue('$seconds');
-        }
-      } else {
-        _lastCountdownSecond = null;
+        if (mounted) setState(() {});
+      } finally {
+        _tickInFlight = false;
       }
-      if (mounted) setState(() {});
     });
   }
 
@@ -95,9 +101,10 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     _lifecycleState = state;
     if (state != AppLifecycleState.resumed) return;
-    final transitioned = controller.reconcile();
+    final transitioned =
+        controller.reconcile() || controller.reconcileTimedSet();
     if (transitioned) {
-      unawaited(widget.state.checkpointWorkout(controller));
+      unawaited(_afterSetAdvanced());
     }
   }
 
@@ -108,39 +115,133 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   String get _workingCue {
     final exercise = controller.currentExercise;
     final set = controller.setIndex + 1;
-    return '${exercise.name}. Hiệp $set trên ${exercise.setCount}. ${exercise.target.label}.';
+    final cue = StringBuffer(
+      '${exercise.name}. Hiệp $set trên ${exercise.setCount}. '
+      '${controller.confirmationMode == WorkoutConfirmationMode.aiCamera ? exercise.target.label : 'Tập ${exercise.workDurationSeconds} giây'}.',
+    );
+    if (set == exercise.setCount) {
+      cue.write(' Đây là hiệp cuối của bài này.');
+    }
+    if (controller.exerciseIndex ==
+            controller.draft.snapshot.exercises.length - 1 &&
+        set == exercise.setCount) {
+      cue.write(' Đây là hiệp cuối của buổi tập.');
+    }
+    return cue.toString();
+  }
+
+  String get _preparationCue {
+    final exercise = controller.currentExercise;
+    return 'Chuẩn bị ${exercise.name}, hiệp ${controller.setIndex + 1} trên '
+        '${exercise.setCount}. Bắt đầu sau ${exercise.preparationSeconds} giây.';
+  }
+
+  void _playTimerCueFor(Duration remaining) {
+    final seconds = _remainingSeconds(remaining);
+    final cue = _timerCueTracker.next(seconds);
+    if (cue != null) unawaited(_playTimerCue(cue, seconds));
+  }
+
+  Future<void> _playTimerCue(WorkoutTimerCue cue, int seconds) async {
+    if (widget.state.countdownSoundsEnabled) {
+      try {
+        await SystemSound.play(
+          cue == WorkoutTimerCue.tick
+              ? SystemSoundType.click
+              : SystemSoundType.alert,
+        );
+      } on MissingPluginException {
+        // The visual timer and optional voice remain authoritative.
+      } on PlatformException {
+        // System sound is an enhancement and must never block a workout.
+      }
+    }
+    if (cue == WorkoutTimerCue.tick) return;
+    if (widget.state.hapticsEnabled) {
+      if (seconds == 1) {
+        await HapticFeedback.mediumImpact();
+      } else {
+        await HapticFeedback.lightImpact();
+      }
+    }
+    await widget.state.speakCue('$seconds');
   }
 
   Future<void> _mutate(bool Function() action, {String? cue}) async {
     final changed = action();
     if (!changed) return;
+    _timerCueTracker.reset();
     if (widget.state.hapticsEnabled) HapticFeedback.selectionClick();
     await widget.state.checkpointWorkout(controller);
     if (cue != null) await widget.state.speakCue(cue);
   }
 
   Future<void> _start() async {
-    await _mutate(controller.start, cue: _workingCue);
+    await _mutate(controller.start, cue: _preparationCue);
   }
 
-  Future<void> _completeSet() async {
-    await _mutate(controller.completeSet);
-    if (controller.phase == WorkoutPhase.resting) {
+  Future<void> _afterSetAdvanced({String? completionCue}) async {
+    await widget.state.checkpointWorkout(controller);
+    if (controller.phase == WorkoutPhase.finishing) {
+      await _finish();
+      return;
+    }
+    if (_lifecycleState != AppLifecycleState.resumed) return;
+    if (controller.phase == WorkoutPhase.countingDown) {
+      await widget.state.speakCue(_preparationCue);
+    } else if (controller.phase == WorkoutPhase.resting) {
+      final prefix = completionCue == null ? '' : '$completionCue ';
       await widget.state.speakCue(
-        'Nghỉ ${controller.restRemaining.inSeconds} giây.',
+        '${prefix}Nghỉ ${_remainingSeconds(controller.restRemaining)} giây.',
       );
     } else if (controller.phase == WorkoutPhase.working) {
+      if (widget.state.countdownSoundsEnabled) {
+        try {
+          await SystemSound.play(SystemSoundType.alert);
+        } on Object {
+          // Voice and the visual state remain authoritative.
+        }
+      }
       await widget.state.speakCue(_workingCue);
-    } else if (controller.phase == WorkoutPhase.finishing) {
-      await _finish();
     }
   }
 
-  Future<void> _completeGuidedSet() async {
-    if (controller.confirmationMode == WorkoutConfirmationMode.aiCamera) {
-      await _useGuidedFallback();
-    }
-    await _completeSet();
+  Future<void> _selectAlternative() async {
+    final exercise = controller.currentExercise;
+    final selectedId = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Chọn bài thay thế',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 8),
+            for (final option in exercise.alternatives)
+              ListTile(
+                leading: Icon(
+                  option.exerciseId == exercise.exerciseId
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_off,
+                ),
+                title: Text(option.name),
+                subtitle: Text(
+                  [
+                    option.muscleGroup,
+                    option.equipment,
+                  ].where((value) => value.trim().isNotEmpty).join(' • '),
+                ),
+                onTap: () => Navigator.pop(context, option.exerciseId),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (selectedId == null || selectedId == exercise.exerciseId) return;
+    await _mutate(() => controller.selectAlternative(selectedId));
   }
 
   Future<void> _completeAiSet() async {
@@ -150,19 +251,35 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       return;
     }
     final result = _lastPoseResult;
-    if (result == null) return;
+    final exercise = controller.currentExercise;
+    final evidence = _cameraEvidence.build(
+      setKey: _cameraSetKey,
+      ruleVersionId: exercise.poseRuleVersionId ?? 'unknown',
+    );
+    final requiredReps = exercise.target.minimum ?? 1;
+    if (result == null ||
+        !result.isCalibrated ||
+        result.repCount < requiredReps ||
+        evidence == null ||
+        evidence.reliableFrameCount < 4 ||
+        evidence.reliableFrameRatio < .5 ||
+        evidence.averageConfidence < .65) {
+      return;
+    }
     _aiCompletionInFlight = true;
     try {
       final changed = controller.completeSet(
         detectedRepCount: result.repCount,
         confidence: result.confidence,
+        cameraEvidence: evidence,
       );
       if (!changed) return;
+      _resetCameraEvidence();
       if (widget.state.hapticsEnabled) HapticFeedback.mediumImpact();
       await widget.state.checkpointWorkout(controller);
       if (controller.phase == WorkoutPhase.resting) {
         await widget.state.speakCue(
-          'Đã nhận diện ${result.repCount} lần. Nghỉ ${controller.restRemaining.inSeconds} giây.',
+          'Đã nhận diện ${result.repCount} lần. Nghỉ ${_remainingSeconds(controller.restRemaining)} giây.',
         );
       } else if (controller.phase == WorkoutPhase.working) {
         await widget.state.speakCue(_workingCue);
@@ -180,6 +297,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
         controller.phase != WorkoutPhase.resting) {
       return;
     }
+    _resetCameraEvidence();
     await _mutate(
       () => controller.setConfirmationMode(WorkoutConfirmationMode.guided),
       cue: 'Đã chuyển sang xác nhận có hướng dẫn.',
@@ -265,7 +383,8 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
   Future<bool> _leave() async {
     if (_completion != null || controller.isTerminal) return true;
-    if (controller.phase == WorkoutPhase.working ||
+    if (controller.phase == WorkoutPhase.countingDown ||
+        controller.phase == WorkoutPhase.working ||
         controller.phase == WorkoutPhase.resting) {
       controller.pause();
       await widget.state.checkpointWorkout(controller);
@@ -326,6 +445,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
   Widget _phaseContent() => switch (controller.phase) {
     WorkoutPhase.preparing => _preparing(),
+    WorkoutPhase.countingDown => _countingDown(),
     WorkoutPhase.working => _working(),
     WorkoutPhase.resting => _resting(),
     WorkoutPhase.paused => _paused(),
@@ -333,8 +453,74 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     WorkoutPhase.completed || WorkoutPhase.discarded => const SizedBox.shrink(),
   };
 
+  Widget _countingDown() {
+    final exercise = controller.currentExercise;
+    final seconds = _remainingSeconds(controller.preparationRemaining);
+    return FitTrackPage(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.hourglass_top_rounded,
+            size: 64,
+            color: AppColors.primary,
+          ),
+          const SizedBox(height: 16),
+          Text('Chuẩn bị', style: Theme.of(context).textTheme.headlineSmall),
+          const SizedBox(height: 8),
+          Text(
+            exercise.name,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.headlineMedium,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Hiệp ${controller.setIndex + 1}/${exercise.setCount} • '
+            '${controller.confirmationMode == WorkoutConfirmationMode.aiCamera ? exercise.target.label : '${exercise.workDurationSeconds} giây'}',
+            style: const TextStyle(color: AppColors.textMuted),
+          ),
+          const SizedBox(height: 24),
+          Semantics(
+            liveRegion: true,
+            label: 'Bắt đầu sau $seconds giây',
+            child: Text(
+              '$seconds',
+              style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                color: seconds <= 3 ? AppColors.warning : AppColors.primary,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text('Vào tư thế an toàn và sẵn sàng bắt đầu.'),
+          const SizedBox(height: 28),
+          AppPrimaryButton(
+            label: 'Bắt đầu ngay',
+            icon: Icons.play_arrow,
+            onPressed: () =>
+                _mutate(controller.skipPreparation, cue: _workingCue),
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: () => _mutate(controller.pause),
+            icon: const Icon(Icons.pause),
+            label: const Text('Tạm dừng'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _preparing() {
     final snapshot = controller.draft.snapshot;
+    final cameraAvailable =
+        CameraCoachPanel.platformSupported &&
+        snapshot.exercises.any(
+          (exercise) => CameraCoachPanel.supportsRule(
+            exercise.exerciseId,
+            exercise.poseRuleVersionId,
+          ),
+        );
     return FitTrackPage(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -357,14 +543,15 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
               leading: CircleAvatar(child: Text('${index + 1}')),
               title: Text(snapshot.exercises[index].name),
               subtitle: Text(
-                '${snapshot.exercises[index].setCount} hiệp • ${snapshot.exercises[index].target.label}',
+                '${snapshot.exercises[index].setCount} hiệp • '
+                '${controller.confirmationMode == WorkoutConfirmationMode.aiCamera ? snapshot.exercises[index].target.label : '${snapshot.exercises[index].workDurationSeconds} giây/hiệp'}',
               ),
             ),
           const SizedBox(height: 12),
           SegmentedButton<WorkoutConfirmationMode>(
             showSelectedIcon: false,
-            segments: const [
-              ButtonSegment(
+            segments: [
+              const ButtonSegment(
                 value: WorkoutConfirmationMode.guided,
                 icon: Icon(Icons.touch_app_outlined),
                 label: Text('Hướng dẫn'),
@@ -373,6 +560,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                 value: WorkoutConfirmationMode.aiCamera,
                 icon: Icon(Icons.camera_alt_outlined),
                 label: Text('AI Camera'),
+                enabled: cameraAvailable,
               ),
             ],
             selected: {controller.confirmationMode},
@@ -443,6 +631,25 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.headlineMedium,
               ),
+              if (exercise.isAlternative) ...[
+                const SizedBox(height: 6),
+                const Chip(
+                  avatar: Icon(Icons.swap_horiz, size: 18),
+                  label: Text('Đang dùng bài thay thế'),
+                ),
+              ],
+              if (exercise.alternatives.length > 1) ...[
+                const SizedBox(height: 8),
+                TextButton.icon(
+                  onPressed:
+                      controller.isTimedSetRunning ||
+                          controller.draft.timedSetElapsedMilliseconds > 0
+                      ? null
+                      : _selectAlternative,
+                  icon: const Icon(Icons.swap_horiz),
+                  label: const Text('Đổi bài tương đương'),
+                ),
+              ],
               const SizedBox(height: 10),
               Text(
                 'Hiệp ${controller.setIndex + 1}/${exercise.setCount}',
@@ -453,31 +660,55 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
               ),
               const SizedBox(height: 10),
               Text(
-                exercise.target.label,
+                controller.confirmationMode == WorkoutConfirmationMode.aiCamera
+                    ? exercise.target.label
+                    : 'Tập trong ${exercise.workDurationSeconds} giây',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
+              if (controller.usesGuidedTimer) ...[
+                const SizedBox(height: 14),
+                Semantics(
+                  liveRegion: true,
+                  label:
+                      'Còn ${_remainingSeconds(controller.timedSetRemaining)} giây',
+                  child: Text(
+                    _duration(controller.timedSetRemaining),
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
               const SizedBox(height: 24),
               if (controller.confirmationMode ==
                       WorkoutConfirmationMode.aiCamera &&
                   cameraSupported)
                 CameraCoachPanel(
-                  key: ValueKey(
-                    '${controller.exerciseIndex}:${controller.setIndex}',
-                  ),
+                  key: ValueKey('$_cameraSetKey:${exercise.exerciseId}'),
                   exerciseId: exercise.exerciseId,
+                  poseRuleVersionId: exercise.poseRuleVersionId,
                   targetReps: exercise.target.minimum ?? 1,
                   poseRulePublished:
                       exercise.poseRuleVersionId == 'squat_pose_v1',
                   deviceAllowed: true,
                   onResult: (result) {
                     _lastPoseResult = result;
+                    _cameraEvidence.observe(_cameraSetKey, result);
                     if (result.announceFeedback &&
                         result.feedbackCode != null) {
                       widget.state.speakCue(
                         _poseFeedback(result.feedbackCode!),
                       );
                     }
+                  },
+                  onUnavailable: (reason) {
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(_cameraUnavailable(reason))),
+                    );
                   },
                   onFallbackRequested: _useGuidedFallback,
                   onTargetReached: _completeAiSet,
@@ -494,7 +725,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                                 WorkoutConfirmationMode.aiCamera &&
                             !cameraSupported) ...[
                           const Text(
-                            'AI Camera chưa hỗ trợ bài này; hiệp hiện tại dùng Guided Confirmation.',
+                            'Camera Coach chưa hỗ trợ bài này. Chế độ Camera Coach vẫn được giữ; hãy bấm chuyển sang Hướng dẫn nếu muốn tiếp tục hiệp này.',
                             style: TextStyle(color: AppColors.warning),
                           ),
                           const SizedBox(height: 8),
@@ -524,20 +755,25 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                   ),
                 ),
               const SizedBox(height: 22),
-              if (controller.confirmationMode ==
-                      WorkoutConfirmationMode.aiCamera &&
-                  cameraSupported)
+              if (controller.usesGuidedTimer)
+                Card(
+                  color: AppColors.paleBlue.withValues(alpha: .45),
+                  child: const ListTile(
+                    leading: Icon(Icons.autorenew),
+                    title: Text('Đồng hồ đang tự chạy'),
+                    subtitle: Text(
+                      'Hết thời gian, FitTrack sẽ tự chuyển sang nghỉ.',
+                    ),
+                  ),
+                )
+              else if (controller.confirmationMode ==
+                  WorkoutConfirmationMode.aiCamera)
                 OutlinedButton.icon(
                   onPressed: _useGuidedFallback,
                   icon: const Icon(Icons.touch_app_outlined),
                   label: const Text('Chuyển sang Guided Confirmation'),
                 )
               else ...[
-                AppPrimaryButton(
-                  label: 'Đã hoàn thành hiệp',
-                  icon: Icons.check,
-                  onPressed: _completeGuidedSet,
-                ),
                 if (cameraSupported) ...[
                   const SizedBox(height: 8),
                   OutlinedButton.icon(
@@ -599,7 +835,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
           const SizedBox(height: 16),
           Semantics(
             liveRegion: true,
-            label: 'Còn ${remaining.inSeconds} giây',
+            label: 'Còn ${_remainingSeconds(remaining)} giây',
             child: Text(
               _duration(remaining),
               style: Theme.of(context).textTheme.displayMedium?.copyWith(
@@ -718,17 +954,33 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   String _duration(Duration value) {
-    final seconds = value.inSeconds < 0 ? 0 : value.inSeconds;
+    final seconds = _remainingSeconds(value);
     final minutes = seconds ~/ 60;
     final remainder = seconds % 60;
     return '${minutes.toString().padLeft(2, '0')}:${remainder.toString().padLeft(2, '0')}';
   }
 
+  int _remainingSeconds(Duration value) {
+    if (value <= Duration.zero) return 0;
+    return (value.inMilliseconds + 999) ~/ Duration.millisecondsPerSecond;
+  }
+
   bool _cameraSupported(WorkoutExerciseSnapshot exercise) =>
+      CameraCoachPanel.platformSupported &&
       exercise.target.type == 'repetitions' &&
       exercise.target.minimum != null &&
-      exercise.poseRuleVersionId == 'squat_pose_v1' &&
-      CameraCoachPanel.supportsExercise(exercise.exerciseId);
+      CameraCoachPanel.supportsRule(
+        exercise.exerciseId,
+        exercise.poseRuleVersionId,
+      );
+
+  String get _cameraSetKey =>
+      '${controller.exerciseIndex}:${controller.setIndex}';
+
+  void _resetCameraEvidence() {
+    _lastPoseResult = null;
+    _cameraEvidence.reset();
+  }
 
   String _poseFeedback(PoseFeedbackCode code) => switch (code) {
     PoseFeedbackCode.positionFullBody => 'Hãy đưa toàn thân vào khung hình.',
@@ -736,9 +988,77 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     PoseFeedbackCode.staleFrame => 'Camera chưa theo kịp chuyển động.',
     PoseFeedbackCode.standTall => 'Hãy đứng thẳng để bắt đầu.',
     PoseFeedbackCode.lowerHips => 'Hãy hạ thấp thêm.',
+    PoseFeedbackCode.onePersonOnly =>
+      'Chỉ để một người trong khung hình để tránh nhận nhầm.',
     PoseFeedbackCode.detectorUnavailable =>
-      'Camera Coach chưa khả dụng. Chuyển sang hướng dẫn.',
+      'Camera Coach chưa khả dụng. Bạn có thể thử lại hoặc tự chuyển sang Hướng dẫn.',
   };
+
+  String _cameraUnavailable(PoseCapabilityUnavailableReason reason) =>
+      switch (reason) {
+        PoseCapabilityUnavailableReason.permissionDenied =>
+          'Chưa có quyền camera. Chế độ Camera Coach vẫn được giữ.',
+        PoseCapabilityUnavailableReason.trackingUnreliable =>
+          'Nhận diện chưa ổn định. Hãy chỉnh ánh sáng hoặc vị trí camera; chế độ sẽ không tự thay đổi.',
+        PoseCapabilityUnavailableReason.exerciseUnsupported =>
+          'Bài tập này chưa có rule Camera Coach đã xuất bản.',
+        _ =>
+          'Camera Coach chưa khả dụng. Hãy thử lại hoặc bấm chuyển sang Hướng dẫn.',
+      };
+}
+
+class _CameraEvidenceAccumulator {
+  String? _setKey;
+  int _evaluatedFrames = 0;
+  int _reliableFrames = 0;
+  int _formCues = 0;
+  double _confidenceTotal = 0;
+  double? _minimumConfidence;
+
+  void observe(String setKey, PoseCoachResult result) {
+    if (_setKey != setKey) {
+      reset();
+      _setKey = setKey;
+    }
+    _evaluatedFrames++;
+    final confidence = result.confidence;
+    final trackable =
+        result.isCalibrated &&
+        confidence != null &&
+        (result.status == PoseCoachStatus.good ||
+            result.status == PoseCoachStatus.needsCue);
+    if (!trackable) return;
+    _reliableFrames++;
+    _confidenceTotal += confidence;
+    _minimumConfidence = _minimumConfidence == null
+        ? confidence
+        : (_minimumConfidence! < confidence ? _minimumConfidence : confidence);
+    if (result.status == PoseCoachStatus.needsCue) _formCues++;
+  }
+
+  CameraSetEvidence? build({
+    required String setKey,
+    required String ruleVersionId,
+  }) {
+    if (_setKey != setKey || _reliableFrames == 0) return null;
+    return CameraSetEvidence(
+      ruleVersionId: ruleVersionId,
+      evaluatedFrameCount: _evaluatedFrames,
+      reliableFrameCount: _reliableFrames,
+      formCueCount: _formCues,
+      averageConfidence: _confidenceTotal / _reliableFrames,
+      minimumConfidence: _minimumConfidence ?? 0,
+    );
+  }
+
+  void reset() {
+    _setKey = null;
+    _evaluatedFrames = 0;
+    _reliableFrames = 0;
+    _formCues = 0;
+    _confidenceTotal = 0;
+    _minimumConfidence = null;
+  }
 }
 
 class _SummaryScreen extends StatelessWidget {
@@ -755,6 +1075,7 @@ class _SummaryScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final partiallyCompleted =
         completion.status == WorkoutCompletionStatus.partiallyCompleted;
+    final abandoned = completion.status == WorkoutCompletionStatus.abandoned;
     final modes = completion.setEvents
         .map((event) => event.confirmationMode)
         .toSet();
@@ -765,20 +1086,30 @@ class _SummaryScreen extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 42,
-              backgroundColor: partiallyCompleted
+              backgroundColor: abandoned
+                  ? AppColors.textMuted.withValues(alpha: .12)
+                  : partiallyCompleted
                   ? AppColors.warning.withValues(alpha: .14)
                   : const Color(0xFFE1F7EC),
               child: Icon(
-                partiallyCompleted ? Icons.flag_outlined : Icons.check,
+                abandoned
+                    ? Icons.block_outlined
+                    : partiallyCompleted
+                    ? Icons.flag_outlined
+                    : Icons.check,
                 size: 48,
-                color: partiallyCompleted
+                color: abandoned
+                    ? AppColors.textMuted
+                    : partiallyCompleted
                     ? AppColors.warning
                     : AppColors.success,
               ),
             ),
             const SizedBox(height: 18),
             Text(
-              partiallyCompleted
+              abandoned
+                  ? 'Buổi tập đã kết thúc với 0 hiệp'
+                  : partiallyCompleted
                   ? 'Đã lưu phần bạn hoàn thành'
                   : 'Đã hoàn thành!',
               textAlign: TextAlign.center,
@@ -977,6 +1308,11 @@ class _ExerciseResultCard extends StatelessWidget {
                             'Mục tiêu: ${event.targetContext.label}',
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
+                          if (event.timedDurationSeconds case final seconds?)
+                            Text(
+                              'Thời gian thực tế: ${seconds}s',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
                           if (event.confirmationMode ==
                                   WorkoutConfirmationMode.aiCamera &&
                               event.detectedRepCount != null)

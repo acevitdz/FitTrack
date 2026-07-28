@@ -16,7 +16,15 @@ class Exercise {
     this.imageUrl,
     this.ownerId,
     this.isActive = true,
-  });
+    this.sourceProvider = 'fittrack_authored',
+    String? sourceExerciseId,
+    this.sourceUrl,
+    this.license = 'fittrack-authored',
+    this.sourceUpdatedAt,
+    this.reviewedAt = '2026-07-20T00:00:00Z',
+    this.reviewedBy = 'system_seed',
+    this.catalogStatus = 'published',
+  }) : sourceExerciseId = sourceExerciseId ?? id;
 
   final String id;
   final String name;
@@ -34,8 +42,25 @@ class Exercise {
   final String? imageUrl;
   final String? ownerId;
   final bool isActive;
+  final String sourceProvider;
+  final String? sourceExerciseId;
+  final String? sourceUrl;
+  final String? license;
+  final String? sourceUpdatedAt;
+  final String? reviewedAt;
+  final String? reviewedBy;
+  final String catalogStatus;
 
   bool get isPersonal => ownerId != null;
+
+  bool get isCatalogApproved =>
+      isActive &&
+      catalogStatus == 'published' &&
+      sourceProvider.trim().isNotEmpty &&
+      (sourceExerciseId?.trim().isNotEmpty ?? false) &&
+      (license?.trim().isNotEmpty ?? false) &&
+      (reviewedAt?.trim().isNotEmpty ?? false) &&
+      (reviewedBy?.trim().isNotEmpty ?? false);
 
   Exercise copyWith({
     String? id,
@@ -54,6 +79,14 @@ class Exercise {
     String? imageUrl,
     String? ownerId,
     bool? isActive,
+    String? sourceProvider,
+    String? sourceExerciseId,
+    String? sourceUrl,
+    String? license,
+    String? sourceUpdatedAt,
+    String? reviewedAt,
+    String? reviewedBy,
+    String? catalogStatus,
   }) => Exercise(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -71,6 +104,14 @@ class Exercise {
     imageUrl: imageUrl ?? this.imageUrl,
     ownerId: ownerId ?? this.ownerId,
     isActive: isActive ?? this.isActive,
+    sourceProvider: sourceProvider ?? this.sourceProvider,
+    sourceExerciseId: sourceExerciseId ?? this.sourceExerciseId,
+    sourceUrl: sourceUrl ?? this.sourceUrl,
+    license: license ?? this.license,
+    sourceUpdatedAt: sourceUpdatedAt ?? this.sourceUpdatedAt,
+    reviewedAt: reviewedAt ?? this.reviewedAt,
+    reviewedBy: reviewedBy ?? this.reviewedBy,
+    catalogStatus: catalogStatus ?? this.catalogStatus,
   );
 
   Map<String, dynamic> toJson() => {
@@ -90,6 +131,14 @@ class Exercise {
     'imageUrl': imageUrl,
     'ownerId': ownerId,
     'isActive': isActive,
+    'sourceProvider': sourceProvider,
+    'sourceExerciseId': sourceExerciseId,
+    'sourceUrl': sourceUrl,
+    'license': license,
+    'sourceUpdatedAt': sourceUpdatedAt,
+    'reviewedAt': reviewedAt,
+    'reviewedBy': reviewedBy,
+    'catalogStatus': catalogStatus,
   };
 
   factory Exercise.fromJson(Map<String, dynamic> json) => Exercise(
@@ -113,5 +162,13 @@ class Exercise {
     imageUrl: json['imageUrl'] as String?,
     ownerId: json['ownerId'] as String?,
     isActive: json['isActive'] as bool? ?? true,
+    sourceProvider: json['sourceProvider'] as String? ?? 'fittrack_authored',
+    sourceExerciseId: json['sourceExerciseId'] as String?,
+    sourceUrl: json['sourceUrl'] as String?,
+    license: json['license'] as String?,
+    sourceUpdatedAt: json['sourceUpdatedAt'] as String?,
+    reviewedAt: json['reviewedAt'] as String?,
+    reviewedBy: json['reviewedBy'] as String?,
+    catalogStatus: json['catalogStatus'] as String? ?? 'published',
   );
 }

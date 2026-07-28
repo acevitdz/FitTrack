@@ -15,9 +15,17 @@ enum WorkoutOccurrenceStatus {
   postponed,
   inProgress,
   completed,
+  abandoned,
+  missed,
   skipped,
   cancelled,
 }
+
+enum OccurrenceRescheduleMode { single, cascade }
+
+/// Determines how the first occurrence is placed when the user has not
+/// explicitly selected weekdays.
+enum ProgramStartPolicy { today, nextPreferredDay }
 
 abstract final class TrainingGoalKey {
   static const fatLoss = 'fat_loss';
@@ -55,6 +63,8 @@ class UserTrainingPreferences {
     required this.experienceKey,
     required this.equipmentKeys,
     this.sessionsPerWeek = 3,
+    this.preferredWeekdays = const [],
+    this.startPolicy = ProgramStartPolicy.today,
   }) : assert(sessionsPerWeek >= 1 && sessionsPerWeek <= 7);
 
   const UserTrainingPreferences.defaults()
@@ -63,7 +73,9 @@ class UserTrainingPreferences {
       goalKey = TrainingGoalKey.generalFitness,
       experienceKey = 'beginner',
       equipmentKeys = const ['bodyweight'],
-      sessionsPerWeek = 3;
+      sessionsPerWeek = 3,
+      preferredWeekdays = const [],
+      startPolicy = ProgramStartPolicy.today;
 
   final String populationKey;
   final ProgramAudiencePreference programAudiencePreference;
@@ -71,6 +83,8 @@ class UserTrainingPreferences {
   final String experienceKey;
   final List<String> equipmentKeys;
   final int sessionsPerWeek;
+  final List<int> preferredWeekdays;
+  final ProgramStartPolicy startPolicy;
 
   Map<String, dynamic> toJson() => {
     'populationKey': populationKey,
@@ -79,6 +93,8 @@ class UserTrainingPreferences {
     'experienceKey': experienceKey,
     'equipmentKeys': equipmentKeys,
     'sessionsPerWeek': sessionsPerWeek,
+    'preferredWeekdays': preferredWeekdays,
+    'startPolicy': startPolicy.name,
   };
 
   factory UserTrainingPreferences.fromJson(Map<String, dynamic> json) =>
@@ -95,6 +111,10 @@ class UserTrainingPreferences {
                     json['weeklyWorkoutGoal'] as num? ??
                     3)
                 .toInt(),
+        preferredWeekdays: _intList(json['preferredWeekdays']),
+        startPolicy: ProgramStartPolicy.values.byName(
+          json['startPolicy'] as String? ?? ProgramStartPolicy.today.name,
+        ),
       );
 }
 
@@ -146,17 +166,59 @@ class TrainingCadence {
     required this.sessionsPerWeek,
     required this.preferredWeekdays,
     this.minimumRestDays = 0,
+    this.supportedSessionsPerWeek = const [],
+    this.weekdayOptions = const {},
   }) : assert(sessionsPerWeek > 0),
        assert(minimumRestDays >= 0);
 
   final int sessionsPerWeek;
   final List<int> preferredWeekdays;
   final int minimumRestDays;
+  final List<int> supportedSessionsPerWeek;
+  final Map<int, List<int>> weekdayOptions;
+
+  List<int> get supportedFrequencies {
+    final result = supportedSessionsPerWeek.isEmpty
+        ? <int>[sessionsPerWeek]
+        : supportedSessionsPerWeek.toSet().toList();
+    result.sort();
+    return result;
+  }
+
+  bool supports(int frequency) => supportedFrequencies.contains(frequency);
+
+  int resolveFrequency(int requested) {
+    final options = supportedFrequencies;
+    options.sort((left, right) {
+      final gap = (left - requested).abs().compareTo((right - requested).abs());
+      return gap != 0 ? gap : right.compareTo(left);
+    });
+    return options.first;
+  }
+
+  List<int> weekdaysFor(int frequency) {
+    final configured = weekdayOptions[frequency];
+    if (configured != null && configured.length >= frequency) {
+      return configured.take(frequency).toList(growable: false);
+    }
+    if (preferredWeekdays.length >= frequency) {
+      return preferredWeekdays.take(frequency).toList(growable: false);
+    }
+    return [
+      for (var index = 0; index < frequency; index++)
+        1 + ((index * 7) ~/ frequency),
+    ];
+  }
 
   Map<String, dynamic> toJson() => {
     'sessionsPerWeek': sessionsPerWeek,
     'preferredWeekdays': preferredWeekdays,
     'minimumRestDays': minimumRestDays,
+    'supportedSessionsPerWeek': supportedFrequencies,
+    'weekdayOptions': {
+      for (final entry in weekdayOptions.entries)
+        entry.key.toString(): entry.value,
+    },
   };
 
   factory TrainingCadence.fromJson(Map<String, dynamic> json) =>
@@ -164,6 +226,8 @@ class TrainingCadence {
         sessionsPerWeek: json['sessionsPerWeek'] as int,
         preferredWeekdays: _intList(json['preferredWeekdays']),
         minimumRestDays: json['minimumRestDays'] as int? ?? 0,
+        supportedSessionsPerWeek: _intList(json['supportedSessionsPerWeek']),
+        weekdayOptions: _weekdayOptionsFromJson(json['weekdayOptions']),
       );
 }
 
@@ -240,15 +304,22 @@ class ExercisePrescription {
     required this.targetType,
     required this.targetRange,
     required this.restSeconds,
+    int? transitionAfterExerciseSeconds,
     required this.cues,
     required this.alternativeExerciseIds,
     required this.prescriptionVersion,
     required this.mediaVersion,
     required this.cueVersion,
     this.poseRuleVersionId,
-  }) : assert(order >= 0),
+  }) : transitionAfterExerciseSeconds =
+           transitionAfterExerciseSeconds ?? restSeconds,
+       assert(order >= 0),
        assert(sets > 0),
-       assert(restSeconds >= 0);
+       assert(restSeconds >= 0),
+       assert(
+         transitionAfterExerciseSeconds == null ||
+             transitionAfterExerciseSeconds >= 0,
+       );
 
   final String id;
   final String exerciseId;
@@ -256,7 +327,16 @@ class ExercisePrescription {
   final int sets;
   final PrescriptionTargetType targetType;
   final PrescriptionTargetRange targetRange;
+
+  /// Rest after a set when another set of the same exercise remains.
+  ///
+  /// Kept under the legacy field name for stored-data compatibility.
   final int restSeconds;
+
+  int get restBetweenSetsSeconds => restSeconds;
+
+  /// Rest after the final set before moving to the next exercise.
+  final int transitionAfterExerciseSeconds;
   final List<String> cues;
   final List<String> alternativeExerciseIds;
 
@@ -283,6 +363,8 @@ class ExercisePrescription {
     'targetType': _prescriptionTargetTypeToJson(targetType),
     'targetRange': targetRange.toJson(),
     'restSeconds': restSeconds,
+    'restBetweenSetsSeconds': restBetweenSetsSeconds,
+    'transitionAfterExerciseSeconds': transitionAfterExerciseSeconds,
     'cues': cues,
     'alternatives': alternativeExerciseIds,
     'prescriptionVersion': prescriptionVersion,
@@ -302,7 +384,13 @@ class ExercisePrescription {
     targetRange: PrescriptionTargetRange.fromJson(
       _jsonMap(json['targetRange']),
     ),
-    restSeconds: json['restSeconds'] as int,
+    restSeconds:
+        (json['restBetweenSetsSeconds'] as num? ??
+                json['restSeconds'] as num? ??
+                0)
+            .toInt(),
+    transitionAfterExerciseSeconds:
+        (json['transitionAfterExerciseSeconds'] as num?)?.toInt(),
     cues: _stringList(json['cues']),
     alternativeExerciseIds: _stringList(json['alternatives']),
     prescriptionVersion: json['prescriptionVersion'] as String? ?? 'unknown',
@@ -410,8 +498,10 @@ class ProgramSession {
     required this.estimatedDurationMinutes,
     required this.blocks,
     required this.readinessVariants,
+    this.minimumSessionsPerWeek = 1,
   }) : assert(order >= 0),
-       assert(estimatedDurationMinutes > 0);
+       assert(estimatedDurationMinutes > 0),
+       assert(minimumSessionsPerWeek > 0);
 
   final String id;
   final String weekId;
@@ -420,6 +510,7 @@ class ProgramSession {
   final int estimatedDurationMinutes;
   final List<ProgramBlock> blocks;
   final List<ReadinessVariant> readinessVariants;
+  final int minimumSessionsPerWeek;
 
   int get totalSets => blocks.fold(0, (sum, block) => sum + block.totalSets);
 
@@ -440,6 +531,7 @@ class ProgramSession {
     'readinessVariants': readinessVariants
         .map((item) => item.toJson())
         .toList(),
+    'minimumSessionsPerWeek': minimumSessionsPerWeek,
   };
 
   factory ProgramSession.fromJson(Map<String, dynamic> json) => ProgramSession(
@@ -452,6 +544,7 @@ class ProgramSession {
     readinessVariants: _jsonMapList(
       json['readinessVariants'],
     ).map(ReadinessVariant.fromJson).toList(),
+    minimumSessionsPerWeek: json['minimumSessionsPerWeek'] as int? ?? 1,
   );
 }
 
@@ -650,6 +743,7 @@ class ProgramEnrollment {
     this.currentWeekNumber = 1,
     this.nextSessionOrder = 0,
     this.endedAt,
+    this.updatedAt,
   }) : assert(currentWeekNumber > 0),
        assert(nextSessionOrder >= 0);
 
@@ -663,6 +757,27 @@ class ProgramEnrollment {
   final int currentWeekNumber;
   final int nextSessionOrder;
   final DateTime? endedAt;
+  final DateTime? updatedAt;
+
+  ProgramEnrollment copyWith({
+    ProgramEnrollmentStatus? status,
+    int? currentWeekNumber,
+    int? nextSessionOrder,
+    Object? endedAt = _programUnset,
+    DateTime? updatedAt,
+  }) => ProgramEnrollment(
+    id: id,
+    userId: userId,
+    programVersionId: programVersionId,
+    startedAt: startedAt,
+    status: status ?? this.status,
+    currentWeekNumber: currentWeekNumber ?? this.currentWeekNumber,
+    nextSessionOrder: nextSessionOrder ?? this.nextSessionOrder,
+    endedAt: identical(endedAt, _programUnset)
+        ? this.endedAt
+        : endedAt as DateTime?,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
 
   Map<String, dynamic> toJson() => {
     'id': id,
@@ -673,6 +788,7 @@ class ProgramEnrollment {
     'currentWeekNumber': currentWeekNumber,
     'nextSessionOrder': nextSessionOrder,
     'endedAt': endedAt?.toIso8601String(),
+    'updatedAt': updatedAt?.toIso8601String(),
   };
 
   factory ProgramEnrollment.fromJson(Map<String, dynamic> json) =>
@@ -685,6 +801,7 @@ class ProgramEnrollment {
         currentWeekNumber: json['currentWeekNumber'] as int? ?? 1,
         nextSessionOrder: json['nextSessionOrder'] as int? ?? 0,
         endedAt: _dateTimeOrNull(json['endedAt']),
+        updatedAt: _dateTimeOrNull(json['updatedAt']),
       );
 }
 
@@ -699,8 +816,15 @@ class WorkoutOccurrence {
     required this.status,
     this.originalScheduledDate,
     this.readinessChoice,
+    this.readinessAssessedAt,
     this.startedAt,
     this.completedAt,
+    this.scheduledHour,
+    this.scheduledMinute,
+    this.reminderEnabled = true,
+    this.reminderMinutesBefore,
+    this.rescheduleReason,
+    this.updatedAt,
   }) : assert(weekNumber > 0);
 
   final String id;
@@ -712,8 +836,86 @@ class WorkoutOccurrence {
   final WorkoutOccurrenceStatus status;
   final DateTime? originalScheduledDate;
   final ReadinessChoice? readinessChoice;
+  final DateTime? readinessAssessedAt;
   final DateTime? startedAt;
   final DateTime? completedAt;
+  final int? scheduledHour;
+  final int? scheduledMinute;
+  final bool reminderEnabled;
+  final int? reminderMinutesBefore;
+  final String? rescheduleReason;
+  final DateTime? updatedAt;
+
+  bool get isOpen =>
+      status == WorkoutOccurrenceStatus.scheduled ||
+      status == WorkoutOccurrenceStatus.postponed ||
+      status == WorkoutOccurrenceStatus.inProgress;
+
+  bool get isTerminal => !isOpen;
+
+  DateTime scheduledAt({
+    required int fallbackHour,
+    required int fallbackMinute,
+  }) => DateTime(
+    scheduledDate.year,
+    scheduledDate.month,
+    scheduledDate.day,
+    scheduledHour ?? fallbackHour,
+    scheduledMinute ?? fallbackMinute,
+  );
+
+  WorkoutOccurrence copyWith({
+    DateTime? scheduledDate,
+    WorkoutOccurrenceStatus? status,
+    Object? originalScheduledDate = _programUnset,
+    Object? readinessChoice = _programUnset,
+    Object? readinessAssessedAt = _programUnset,
+    Object? startedAt = _programUnset,
+    Object? completedAt = _programUnset,
+    Object? scheduledHour = _programUnset,
+    Object? scheduledMinute = _programUnset,
+    bool? reminderEnabled,
+    Object? reminderMinutesBefore = _programUnset,
+    Object? rescheduleReason = _programUnset,
+    DateTime? updatedAt,
+  }) => WorkoutOccurrence(
+    id: id,
+    enrollmentId: enrollmentId,
+    programVersionId: programVersionId,
+    sessionId: sessionId,
+    weekNumber: weekNumber,
+    scheduledDate: scheduledDate ?? this.scheduledDate,
+    status: status ?? this.status,
+    originalScheduledDate: identical(originalScheduledDate, _programUnset)
+        ? this.originalScheduledDate
+        : originalScheduledDate as DateTime?,
+    readinessChoice: identical(readinessChoice, _programUnset)
+        ? this.readinessChoice
+        : readinessChoice as ReadinessChoice?,
+    readinessAssessedAt: identical(readinessAssessedAt, _programUnset)
+        ? this.readinessAssessedAt
+        : readinessAssessedAt as DateTime?,
+    startedAt: identical(startedAt, _programUnset)
+        ? this.startedAt
+        : startedAt as DateTime?,
+    completedAt: identical(completedAt, _programUnset)
+        ? this.completedAt
+        : completedAt as DateTime?,
+    scheduledHour: identical(scheduledHour, _programUnset)
+        ? this.scheduledHour
+        : scheduledHour as int?,
+    scheduledMinute: identical(scheduledMinute, _programUnset)
+        ? this.scheduledMinute
+        : scheduledMinute as int?,
+    reminderEnabled: reminderEnabled ?? this.reminderEnabled,
+    reminderMinutesBefore: identical(reminderMinutesBefore, _programUnset)
+        ? this.reminderMinutesBefore
+        : reminderMinutesBefore as int?,
+    rescheduleReason: identical(rescheduleReason, _programUnset)
+        ? this.rescheduleReason
+        : rescheduleReason as String?,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
 
   Map<String, dynamic> toJson() => {
     'id': id,
@@ -727,8 +929,15 @@ class WorkoutOccurrence {
     'readinessChoice': readinessChoice == null
         ? null
         : _readinessChoiceToJson(readinessChoice!),
+    'readinessAssessedAt': readinessAssessedAt?.toIso8601String(),
     'startedAt': startedAt?.toIso8601String(),
     'completedAt': completedAt?.toIso8601String(),
+    'scheduledHour': scheduledHour,
+    'scheduledMinute': scheduledMinute,
+    'reminderEnabled': reminderEnabled,
+    'reminderMinutesBefore': reminderMinutesBefore,
+    'rescheduleReason': rescheduleReason,
+    'updatedAt': updatedAt?.toIso8601String(),
   };
 
   factory WorkoutOccurrence.fromJson(Map<String, dynamic> json) =>
@@ -744,8 +953,15 @@ class WorkoutOccurrence {
         readinessChoice: json['readinessChoice'] == null
             ? null
             : _readinessChoiceFromJson(json['readinessChoice'] as String),
+        readinessAssessedAt: _dateTimeOrNull(json['readinessAssessedAt']),
         startedAt: _dateTimeOrNull(json['startedAt']),
         completedAt: _dateTimeOrNull(json['completedAt']),
+        scheduledHour: (json['scheduledHour'] as num?)?.toInt(),
+        scheduledMinute: (json['scheduledMinute'] as num?)?.toInt(),
+        reminderEnabled: json['reminderEnabled'] as bool? ?? true,
+        reminderMinutesBefore: (json['reminderMinutesBefore'] as num?)?.toInt(),
+        rescheduleReason: json['rescheduleReason'] as String?,
+        updatedAt: _dateTimeOrNull(json['updatedAt']),
       );
 }
 
@@ -798,6 +1014,8 @@ String _workoutOccurrenceStatusToJson(WorkoutOccurrenceStatus value) =>
       WorkoutOccurrenceStatus.postponed => 'postponed',
       WorkoutOccurrenceStatus.inProgress => 'in_progress',
       WorkoutOccurrenceStatus.completed => 'completed',
+      WorkoutOccurrenceStatus.abandoned => 'abandoned',
+      WorkoutOccurrenceStatus.missed => 'missed',
       WorkoutOccurrenceStatus.skipped => 'skipped',
       WorkoutOccurrenceStatus.cancelled => 'cancelled',
     };
@@ -808,6 +1026,8 @@ WorkoutOccurrenceStatus _workoutOccurrenceStatusFromJson(String value) =>
       'postponed' => WorkoutOccurrenceStatus.postponed,
       'in_progress' => WorkoutOccurrenceStatus.inProgress,
       'completed' => WorkoutOccurrenceStatus.completed,
+      'abandoned' => WorkoutOccurrenceStatus.abandoned,
+      'missed' => WorkoutOccurrenceStatus.missed,
       'skipped' => WorkoutOccurrenceStatus.skipped,
       'cancelled' => WorkoutOccurrenceStatus.cancelled,
       _ => throw FormatException('Unknown workout occurrence status: $value'),
@@ -817,6 +1037,19 @@ List<String> _stringList(Object? value) =>
     List<String>.from(value as List? ?? const []);
 
 List<int> _intList(Object? value) => List<int>.from(value as List? ?? const []);
+
+Map<int, List<int>> _weekdayOptionsFromJson(Object? value) {
+  final result = <int, List<int>>{};
+  for (final entry in Map<String, dynamic>.from(
+    value as Map? ?? const {},
+  ).entries) {
+    final frequency = int.tryParse(entry.key);
+    if (frequency != null) {
+      result[frequency] = _intList(entry.value);
+    }
+  }
+  return result;
+}
 
 Map<String, dynamic> _jsonMap(Object? value) =>
     Map<String, dynamic>.from(value! as Map);
@@ -834,3 +1067,5 @@ DateTime _dateTime(Object? value) => switch (value) {
 
 DateTime? _dateTimeOrNull(Object? value) =>
     value == null ? null : _dateTime(value);
+
+const Object _programUnset = Object();

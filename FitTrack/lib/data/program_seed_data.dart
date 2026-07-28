@@ -6,7 +6,7 @@ import '../models/program.dart';
 /// should always pin one of the version IDs below.
 abstract final class ProgramSeedData {
   static const defaultFallbackProgramVersionId =
-      'program_bodyweight_foundation_v1';
+      'program_bodyweight_foundation_v2';
 
   static const acsmSource = SourceReference(
     id: 'source_acsm_rt_2026',
@@ -50,19 +50,54 @@ abstract final class ProgramSeedData {
       createdAt: DateTime.utc(2026, 7, 20),
       updatedAt: DateTime.utc(2026, 7, 24),
     ),
+    Program(
+      id: 'program_home_conditioning',
+      title: 'Thể lực tại nhà linh hoạt',
+      description:
+          'Lộ trình ba đến bốn buổi mỗi tuần, kết hợp sức mạnh nền tảng, '
+          'thân giữa, vận động liên tục và phục hồi.',
+      status: ProgramLifecycleStatus.published,
+      createdBy: 'system_seed',
+      createdAt: DateTime.utc(2026, 7, 25),
+      updatedAt: DateTime.utc(2026, 7, 27),
+    ),
+    Program(
+      id: 'program_gym_strength_progression',
+      title: 'Sức mạnh phòng tập nâng cao',
+      description:
+          'Lộ trình bốn đến năm buổi dành cho người đã có kinh nghiệm, '
+          'phân bổ thân trên, thân dưới và buổi kỹ thuật.',
+      status: ProgramLifecycleStatus.published,
+      createdBy: 'system_seed',
+      createdAt: DateTime.utc(2026, 7, 25),
+      updatedAt: DateTime.utc(2026, 7, 27),
+    ),
+    Program(
+      id: 'program_mobility_recovery',
+      title: 'Mobility and recovery',
+      description:
+          'Short, low-intensity home sessions for recovery and flexibility.',
+      status: ProgramLifecycleStatus.published,
+      createdBy: 'system_seed',
+      createdAt: DateTime.utc(2026, 7, 28),
+      updatedAt: DateTime.utc(2026, 7, 28),
+    ),
   ];
 
   static final versions = <ProgramVersion>[
     _bodyweightFoundation(),
     _gymStrengthFoundation(),
+    _homeConditioning(),
+    _gymStrengthProgression(),
+    _mobilityRecovery(),
   ];
 
   static ProgramVersion _bodyweightFoundation() {
-    const versionId = 'program_bodyweight_foundation_v1';
+    const versionId = 'program_bodyweight_foundation_v2';
     return ProgramVersion(
       id: versionId,
       programId: 'program_bodyweight_foundation',
-      version: '1.0.0',
+      version: '2.0.0',
       status: ProgramLifecycleStatus.published,
       populationKeys: const ['healthy_adult_18_64'],
       audienceTags: const [ProgramAudiencePreference.unisex],
@@ -75,15 +110,20 @@ abstract final class ProgramSeedData {
       equipmentKeys: const ['bodyweight'],
       cadence: const TrainingCadence(
         sessionsPerWeek: 3,
+        supportedSessionsPerWeek: [2, 3],
         preferredWeekdays: [
           DateTime.monday,
           DateTime.wednesday,
           DateTime.friday,
         ],
         minimumRestDays: 1,
+        weekdayOptions: {
+          2: [DateTime.monday, DateTime.thursday],
+          3: [DateTime.monday, DateTime.wednesday, DateTime.friday],
+        },
       ),
-      sourceRefs: const [acsmSource, whoSource],
-      changelog: 'Phát hành đầu tiên: hai tuần, ba buổi mỗi tuần.',
+      sourceRefs: const [acsmSource, whoSource, freeExerciseDbSource],
+      changelog: 'Bản 2: dùng catalog Free Exercise DB đã biên tập và duyệt.',
       safetyCopy:
           'Dừng tập nếu đau ngực, chóng mặt, khó thở bất thường hoặc đau sắc. '
           'FitTrack không thay thế tư vấn y tế.',
@@ -93,7 +133,7 @@ abstract final class ProgramSeedData {
       matchingPriority: 10,
       weeks: _materializeWeeks(
         versionId: versionId,
-        recoveryExerciseId: 'glute_bridge',
+        recoveryExerciseId: 'fedb_Butt_Lift_Bridge',
         templates: _bodyweightWeeks,
       ),
       createdBy: 'system_seed',
@@ -104,11 +144,11 @@ abstract final class ProgramSeedData {
   }
 
   static ProgramVersion _gymStrengthFoundation() {
-    const versionId = 'program_gym_strength_foundation_v1';
+    const versionId = 'program_gym_strength_foundation_v2';
     return ProgramVersion(
       id: versionId,
       programId: 'program_gym_strength_foundation',
-      version: '1.0.0',
+      version: '2.0.0',
       status: ProgramLifecycleStatus.published,
       populationKeys: const ['healthy_adult_18_64'],
       audienceTags: const [
@@ -121,16 +161,20 @@ abstract final class ProgramSeedData {
       equipmentKeys: const ['gym'],
       cadence: const TrainingCadence(
         sessionsPerWeek: 3,
+        supportedSessionsPerWeek: [2, 3],
         preferredWeekdays: [
           DateTime.monday,
           DateTime.wednesday,
           DateTime.friday,
         ],
         minimumRestDays: 1,
+        weekdayOptions: {
+          2: [DateTime.tuesday, DateTime.friday],
+          3: [DateTime.monday, DateTime.wednesday, DateTime.friday],
+        },
       ),
-      sourceRefs: const [acsmSource, whoSource],
-      changelog:
-          'Phát hành đầu tiên: kỹ thuật nền tảng và tiến triển tuần hai.',
+      sourceRefs: const [acsmSource, whoSource, freeExerciseDbSource],
+      changelog: 'Bản 2: dùng catalog Free Exercise DB đã biên tập và duyệt.',
       safetyCopy:
           'Chọn thiết bị có thể điều khiển an toàn và dừng tập khi có dấu hiệu '
           'bất thường. FitTrack không thay thế chuyên gia y tế.',
@@ -141,13 +185,176 @@ abstract final class ProgramSeedData {
       matchingPriority: 20,
       weeks: _materializeWeeks(
         versionId: versionId,
-        recoveryExerciseId: 'glute_bridge',
+        recoveryExerciseId: 'fedb_Butt_Lift_Bridge',
         templates: _gymWeeks,
       ),
       createdBy: 'system_seed',
       createdAt: DateTime.utc(2026, 7, 20),
       publishedBy: 'system_seed',
       publishedAt: DateTime.utc(2026, 7, 24, 2),
+    );
+  }
+
+  static ProgramVersion _homeConditioning() {
+    const versionId = 'program_home_conditioning_v2';
+    return ProgramVersion(
+      id: versionId,
+      programId: 'program_home_conditioning',
+      version: '2.0.0',
+      status: ProgramLifecycleStatus.published,
+      populationKeys: const ['healthy_adult_18_64'],
+      audienceTags: const [ProgramAudiencePreference.unisex],
+      goalKeys: const [TrainingGoalKey.generalFitness, TrainingGoalKey.fatLoss],
+      experienceKeys: const ['beginner', 'intermediate'],
+      equipmentKeys: const ['bodyweight'],
+      cadence: const TrainingCadence(
+        sessionsPerWeek: 4,
+        supportedSessionsPerWeek: [3, 4],
+        preferredWeekdays: [
+          DateTime.monday,
+          DateTime.tuesday,
+          DateTime.thursday,
+          DateTime.saturday,
+        ],
+        minimumRestDays: 0,
+        weekdayOptions: {
+          3: [DateTime.monday, DateTime.wednesday, DateTime.saturday],
+          4: [
+            DateTime.monday,
+            DateTime.tuesday,
+            DateTime.thursday,
+            DateTime.saturday,
+          ],
+        },
+      ),
+      sourceRefs: const [acsmSource, whoSource, freeExerciseDbSource],
+      changelog: 'Bản 2: dùng catalog Free Exercise DB đã biên tập và duyệt.',
+      safetyCopy:
+          'Giữ cường độ có thể kiểm soát, ưu tiên kỹ thuật và chuyển sang '
+          'biến thể phục hồi khi thấy mệt hoặc khó chịu.',
+      accessibilityLabel:
+          'Lộ trình tại nhà có timed set tự động, cue chữ và bài thay thế.',
+      guidedConfirmationAvailable: true,
+      matchingPriority: 9,
+      weeks: _materializeWeeks(
+        versionId: versionId,
+        recoveryExerciseId: 'fedb_Butt_Lift_Bridge',
+        templates: _homeConditioningWeeks,
+      ),
+      createdBy: 'system_seed',
+      createdAt: DateTime.utc(2026, 7, 25),
+      publishedBy: 'system_seed',
+      publishedAt: DateTime.utc(2026, 7, 27, 1),
+    );
+  }
+
+  static ProgramVersion _gymStrengthProgression() {
+    const versionId = 'program_gym_strength_progression_v2';
+    return ProgramVersion(
+      id: versionId,
+      programId: 'program_gym_strength_progression',
+      version: '2.0.0',
+      status: ProgramLifecycleStatus.published,
+      populationKeys: const ['healthy_adult_18_64'],
+      audienceTags: const [
+        ProgramAudiencePreference.unisex,
+        ProgramAudiencePreference.male,
+        ProgramAudiencePreference.female,
+      ],
+      goalKeys: const [TrainingGoalKey.strength],
+      experienceKeys: const ['intermediate'],
+      equipmentKeys: const ['gym'],
+      cadence: const TrainingCadence(
+        sessionsPerWeek: 5,
+        supportedSessionsPerWeek: [4, 5],
+        preferredWeekdays: [
+          DateTime.monday,
+          DateTime.tuesday,
+          DateTime.wednesday,
+          DateTime.friday,
+          DateTime.saturday,
+        ],
+        minimumRestDays: 0,
+        weekdayOptions: {
+          4: [
+            DateTime.monday,
+            DateTime.tuesday,
+            DateTime.thursday,
+            DateTime.saturday,
+          ],
+          5: [
+            DateTime.monday,
+            DateTime.tuesday,
+            DateTime.wednesday,
+            DateTime.friday,
+            DateTime.saturday,
+          ],
+        },
+      ),
+      sourceRefs: const [acsmSource, whoSource, freeExerciseDbSource],
+      changelog: 'Bản 2: dùng catalog Free Exercise DB đã biên tập và duyệt.',
+      safetyCopy:
+          'Chỉ dùng thiết bị đã biết cách điều chỉnh. Dừng set khi không còn '
+          'duy trì được kỹ thuật hoặc xuất hiện đau sắc.',
+      accessibilityLabel:
+          'Lộ trình phòng tập cho người đã tập; luôn có Guided Confirmation.',
+      guidedConfirmationAvailable: true,
+      matchingPriority: 20,
+      weeks: _materializeWeeks(
+        versionId: versionId,
+        recoveryExerciseId: 'fedb_Butt_Lift_Bridge',
+        templates: _gymProgressionWeeks,
+      ),
+      createdBy: 'system_seed',
+      createdAt: DateTime.utc(2026, 7, 25),
+      publishedBy: 'system_seed',
+      publishedAt: DateTime.utc(2026, 7, 27, 2),
+    );
+  }
+
+  static ProgramVersion _mobilityRecovery() {
+    const versionId = 'program_mobility_recovery_v2';
+    return ProgramVersion(
+      id: versionId,
+      programId: 'program_mobility_recovery',
+      version: '2.0.0',
+      status: ProgramLifecycleStatus.published,
+      populationKeys: const ['healthy_adult_18_64'],
+      audienceTags: const [ProgramAudiencePreference.unisex],
+      goalKeys: const [TrainingGoalKey.flexibility],
+      experienceKeys: const ['beginner', 'intermediate'],
+      equipmentKeys: const ['bodyweight'],
+      cadence: const TrainingCadence(
+        sessionsPerWeek: 3,
+        supportedSessionsPerWeek: [2, 3],
+        preferredWeekdays: [
+          DateTime.tuesday,
+          DateTime.thursday,
+          DateTime.saturday,
+        ],
+        minimumRestDays: 0,
+        weekdayOptions: {
+          2: [DateTime.tuesday, DateTime.saturday],
+          3: [DateTime.tuesday, DateTime.thursday, DateTime.saturday],
+        },
+      ),
+      sourceRefs: const [whoSource, freeExerciseDbSource],
+      changelog: 'Bản 2: dùng catalog Free Exercise DB đã biên tập và duyệt.',
+      safetyCopy:
+          'Train only in a comfortable range. Stop for sharp pain, dizziness, unusual breathlessness, or worsening symptoms.',
+      accessibilityLabel:
+          'Short home sessions with text cues and Guided Confirmation for every exercise.',
+      guidedConfirmationAvailable: true,
+      matchingPriority: 12,
+      weeks: _materializeWeeks(
+        versionId: versionId,
+        recoveryExerciseId: 'fedb_Butt_Lift_Bridge',
+        templates: _mobilityRecoveryWeeks,
+      ),
+      createdBy: 'system_seed',
+      createdAt: DateTime.utc(2026, 7, 28),
+      publishedBy: 'system_seed',
+      publishedAt: DateTime.utc(2026, 7, 28),
     );
   }
 
@@ -243,6 +450,7 @@ abstract final class ProgramSeedData {
       weekId: weekId,
       title: template.title,
       order: order,
+      minimumSessionsPerWeek: order + 1,
       estimatedDurationMinutes: template.estimatedDurationMinutes,
       blocks: baseBlocks,
       readinessVariants: [
@@ -310,7 +518,7 @@ abstract final class ProgramSeedData {
     required bool reduceSets,
   }) => ExercisePrescription(
     id: id,
-    exerciseId: template.exerciseId,
+    exerciseId: _publishedExerciseId(template.exerciseId),
     order: order,
     sets: reduceSets && template.sets > 1 ? template.sets - 1 : template.sets,
     targetType: template.targetType,
@@ -319,12 +527,397 @@ abstract final class ProgramSeedData {
       maximum: template.maximum,
     ),
     restSeconds: template.restSeconds,
+    transitionAfterExerciseSeconds:
+        template.transitionAfterExerciseSeconds ??
+        _defaultTransitionSeconds(template.restSeconds),
     cues: template.cues,
-    alternativeExerciseIds: template.alternatives,
+    alternativeExerciseIds: template.alternatives
+        .map(_publishedExerciseId)
+        .toList(growable: false),
     prescriptionVersion: '1',
     mediaVersion: 'seed_media_v1',
     cueVersion: 'seed_cue_v1',
     poseRuleVersionId: template.poseRuleVersionId,
+  );
+
+  /// Maps legacy authoring aliases to records in the reviewed demo catalog.
+  /// `squat` stays local because its ID is bound to the implemented Camera
+  /// Coach pose rule; movements without a reviewed equivalent also stay local.
+  static String _publishedExerciseId(String authoredId) => switch (authoredId) {
+    'push_up' => 'fedb_Pushups',
+    'plank' => 'fedb_Plank',
+    'lunges' => 'fedb_Bodyweight_Walking_Lunge',
+    'glute_bridge' => 'fedb_Butt_Lift_Bridge',
+    'mountain_climber' => 'fedb_Mountain_Climbers',
+    'bench_press' => 'fedb_Dumbbell_Bench_Press',
+    'lat_pulldown' => 'fedb_Wide-Grip_Lat_Pulldown',
+    'shoulder_press' => 'fedb_Seated_Dumbbell_Press',
+    'bicep_curl' => 'fedb_Alternate_Hammer_Curl',
+    'tricep_pushdown' => 'fedb_Triceps_Pushdown',
+    'leg_press' => 'fedb_Leg_Press',
+    'calf_raise' => 'fedb_Standing_Calf_Raises',
+    'crunch' => 'fedb_Crunches',
+    'romanian_deadlift' => 'fedb_Romanian_Deadlift',
+    'row' => 'fedb_Seated_Cable_Rows',
+    _ => authoredId,
+  };
+
+  static const freeExerciseDbSource = SourceReference(
+    id: 'source_free_exercise_db',
+    title: 'Free Exercise DB',
+    publisher: 'Yuhonas',
+    url: 'https://github.com/yuhonas/free-exercise-db',
+    notes:
+        'Open metadata snapshot; every referenced record is reviewed and published.',
+  );
+
+  static int _defaultTransitionSeconds(int restBetweenSetsSeconds) {
+    if (restBetweenSetsSeconds == 0) return 15;
+    if (restBetweenSetsSeconds <= 45) return 30;
+    if (restBetweenSetsSeconds <= 90) return 45;
+    return 60;
+  }
+
+  static const _homeConditioningWeeks = <_WeekTemplate>[
+    _WeekTemplate(
+      number: 1,
+      title: 'Tuần 1 · Xây nền thể lực',
+      sessions: [
+        _homeStrengthSession,
+        _homeCoreSession,
+        _homeConditioningSession,
+        _homeMobilitySession,
+      ],
+    ),
+    _WeekTemplate(
+      number: 2,
+      title: 'Tuần 2 · Duy trì nhịp',
+      sessions: [
+        _homeStrengthSession,
+        _homeCoreSession,
+        _homeConditioningSession,
+        _homeMobilitySession,
+      ],
+    ),
+  ];
+
+  static const _mobilityRecoveryWeeks = <_WeekTemplate>[
+    _WeekTemplate(
+      number: 1,
+      title: 'Week 1 - gentle movement',
+      sessions: [_homeMobilitySession, _homeCoreSession, _homeMobilitySession],
+    ),
+    _WeekTemplate(
+      number: 2,
+      title: 'Week 2 - comfortable range',
+      sessions: [_homeMobilitySession, _homeCoreSession, _homeMobilitySession],
+    ),
+  ];
+
+  static const _homeStrengthSession = _SessionTemplate(
+    title: 'Sức mạnh toàn thân',
+    estimatedDurationMinutes: 32,
+    blocks: [
+      _BlockTemplate(
+        type: ProgramBlockType.main,
+        prescriptions: [
+          _PrescriptionTemplate(
+            exerciseId: 'squat',
+            sets: 3,
+            targetType: PrescriptionTargetType.repetitions,
+            minimum: 10,
+            maximum: 12,
+            restSeconds: 60,
+            cues: ['Giữ gối theo hướng mũi chân.'],
+            alternatives: ['glute_bridge', 'lunges'],
+            poseRuleVersionId: 'squat_pose_v1',
+          ),
+          _PrescriptionTemplate(
+            exerciseId: 'push_up',
+            sets: 3,
+            targetType: PrescriptionTargetType.repetitions,
+            minimum: 6,
+            maximum: 10,
+            restSeconds: 60,
+            cues: ['Giữ thân người ổn định.'],
+          ),
+        ],
+      ),
+    ],
+  );
+
+  static const _homeCoreSession = _SessionTemplate(
+    title: 'Thân giữa và kiểm soát',
+    estimatedDurationMinutes: 25,
+    blocks: [
+      _BlockTemplate(
+        type: ProgramBlockType.main,
+        prescriptions: [
+          _PrescriptionTemplate(
+            exerciseId: 'plank',
+            sets: 3,
+            targetType: PrescriptionTargetType.durationSeconds,
+            minimum: 20,
+            maximum: 30,
+            restSeconds: 45,
+            cues: ['Thở đều trong toàn bộ timed set.'],
+          ),
+          _PrescriptionTemplate(
+            exerciseId: 'glute_bridge',
+            sets: 3,
+            targetType: PrescriptionTargetType.repetitions,
+            minimum: 10,
+            maximum: 15,
+            restSeconds: 45,
+            cues: ['Dừng ngắn ở vị trí cao nhất.'],
+            alternatives: ['squat'],
+          ),
+        ],
+      ),
+    ],
+  );
+
+  static const _homeConditioningSession = _SessionTemplate(
+    title: 'Vận động liên tục',
+    estimatedDurationMinutes: 28,
+    blocks: [
+      _BlockTemplate(
+        type: ProgramBlockType.conditioning,
+        prescriptions: [
+          _PrescriptionTemplate(
+            exerciseId: 'mountain_climber',
+            sets: 4,
+            targetType: PrescriptionTargetType.durationSeconds,
+            minimum: 20,
+            maximum: 30,
+            restSeconds: 40,
+            cues: ['Giữ nhịp có thể kiểm soát.'],
+            alternatives: ['burpee'],
+          ),
+          _PrescriptionTemplate(
+            exerciseId: 'lunges',
+            sets: 3,
+            targetType: PrescriptionTargetType.repetitions,
+            minimum: 8,
+            maximum: 12,
+            restSeconds: 45,
+            cues: ['Giữ thân người thẳng.'],
+            alternatives: ['squat'],
+          ),
+        ],
+      ),
+    ],
+  );
+
+  static const _homeMobilitySession = _SessionTemplate(
+    title: 'Phục hồi chủ động',
+    estimatedDurationMinutes: 20,
+    blocks: [
+      _BlockTemplate(
+        type: ProgramBlockType.coolDown,
+        prescriptions: [
+          _PrescriptionTemplate(
+            exerciseId: 'glute_bridge',
+            sets: 2,
+            targetType: PrescriptionTargetType.repetitions,
+            minimum: 8,
+            maximum: 10,
+            restSeconds: 30,
+            transitionAfterExerciseSeconds: 20,
+            cues: ['Di chuyển chậm trong biên độ thoải mái.'],
+          ),
+          _PrescriptionTemplate(
+            exerciseId: 'plank',
+            sets: 2,
+            targetType: PrescriptionTargetType.durationSeconds,
+            minimum: 15,
+            maximum: 20,
+            restSeconds: 40,
+            cues: ['Dừng nếu khó giữ nhịp thở đều.'],
+          ),
+        ],
+      ),
+    ],
+  );
+
+  static const _gymProgressionWeeks = <_WeekTemplate>[
+    _WeekTemplate(
+      number: 1,
+      title: 'Tuần 1 · Phân bổ nhóm vận động',
+      sessions: [
+        _gymPushSession,
+        _gymLegSession,
+        _gymPullSession,
+        _gymTechniqueSession,
+        _gymAccessorySession,
+      ],
+    ),
+    _WeekTemplate(
+      number: 2,
+      title: 'Tuần 2 · Củng cố chất lượng',
+      sessions: [
+        _gymPushSession,
+        _gymLegSession,
+        _gymPullSession,
+        _gymTechniqueSession,
+        _gymAccessorySession,
+      ],
+    ),
+  ];
+
+  static const _gymPushSession = _SessionTemplate(
+    title: 'Thân trên · Đẩy',
+    estimatedDurationMinutes: 45,
+    blocks: [
+      _BlockTemplate(
+        type: ProgramBlockType.main,
+        prescriptions: [
+          _PrescriptionTemplate(
+            exerciseId: 'bench_press',
+            sets: 4,
+            targetType: PrescriptionTargetType.repetitions,
+            minimum: 6,
+            maximum: 10,
+            restSeconds: 90,
+            cues: ['Giữ bả vai ổn định.'],
+            alternatives: ['push_up'],
+          ),
+          _PrescriptionTemplate(
+            exerciseId: 'shoulder_press',
+            sets: 3,
+            targetType: PrescriptionTargetType.repetitions,
+            minimum: 8,
+            maximum: 10,
+            restSeconds: 75,
+            cues: ['Không ưỡn lưng khi đưa tay lên.'],
+          ),
+        ],
+      ),
+    ],
+  );
+
+  static const _gymLegSession = _SessionTemplate(
+    title: 'Thân dưới',
+    estimatedDurationMinutes: 48,
+    blocks: [
+      _BlockTemplate(
+        type: ProgramBlockType.main,
+        prescriptions: [
+          _PrescriptionTemplate(
+            exerciseId: 'leg_press',
+            sets: 4,
+            targetType: PrescriptionTargetType.repetitions,
+            minimum: 8,
+            maximum: 12,
+            restSeconds: 90,
+            cues: ['Không khóa gối ở cuối chuyển động.'],
+            alternatives: ['squat'],
+          ),
+          _PrescriptionTemplate(
+            exerciseId: 'romanian_deadlift',
+            sets: 4,
+            targetType: PrescriptionTargetType.repetitions,
+            minimum: 8,
+            maximum: 10,
+            restSeconds: 90,
+            cues: ['Đẩy hông về sau và giữ lưng trung lập.'],
+            alternatives: ['glute_bridge'],
+          ),
+        ],
+      ),
+    ],
+  );
+
+  static const _gymPullSession = _SessionTemplate(
+    title: 'Thân trên · Kéo',
+    estimatedDurationMinutes: 44,
+    blocks: [
+      _BlockTemplate(
+        type: ProgramBlockType.main,
+        prescriptions: [
+          _PrescriptionTemplate(
+            exerciseId: 'row',
+            sets: 4,
+            targetType: PrescriptionTargetType.repetitions,
+            minimum: 8,
+            maximum: 12,
+            restSeconds: 90,
+            cues: ['Kéo khuỷu tay về sau, không nhún vai.'],
+            alternatives: ['lat_pulldown'],
+          ),
+          _PrescriptionTemplate(
+            exerciseId: 'bicep_curl',
+            sets: 3,
+            targetType: PrescriptionTargetType.repetitions,
+            minimum: 10,
+            maximum: 12,
+            restSeconds: 60,
+            cues: ['Không đung đưa thân người.'],
+          ),
+        ],
+      ),
+    ],
+  );
+
+  static const _gymTechniqueSession = _SessionTemplate(
+    title: 'Kỹ thuật toàn thân',
+    estimatedDurationMinutes: 42,
+    blocks: [
+      _BlockTemplate(
+        type: ProgramBlockType.main,
+        prescriptions: [
+          _PrescriptionTemplate(
+            exerciseId: 'deadlift',
+            sets: 3,
+            targetType: PrescriptionTargetType.repetitions,
+            minimum: 5,
+            maximum: 8,
+            restSeconds: 120,
+            cues: ['Dừng set khi không còn giữ được lưng trung lập.'],
+            alternatives: ['romanian_deadlift'],
+          ),
+          _PrescriptionTemplate(
+            exerciseId: 'plank',
+            sets: 3,
+            targetType: PrescriptionTargetType.durationSeconds,
+            minimum: 25,
+            maximum: 35,
+            restSeconds: 45,
+            cues: ['Giữ thân người thẳng và thở đều.'],
+          ),
+        ],
+      ),
+    ],
+  );
+
+  static const _gymAccessorySession = _SessionTemplate(
+    title: 'Bổ trợ và phục hồi',
+    estimatedDurationMinutes: 32,
+    blocks: [
+      _BlockTemplate(
+        type: ProgramBlockType.accessory,
+        prescriptions: [
+          _PrescriptionTemplate(
+            exerciseId: 'tricep_pushdown',
+            sets: 3,
+            targetType: PrescriptionTargetType.repetitions,
+            minimum: 10,
+            maximum: 12,
+            restSeconds: 60,
+            cues: ['Giữ khuỷu tay sát thân người.'],
+          ),
+          _PrescriptionTemplate(
+            exerciseId: 'calf_raise',
+            sets: 3,
+            targetType: PrescriptionTargetType.repetitions,
+            minimum: 12,
+            maximum: 15,
+            restSeconds: 45,
+            cues: ['Kiểm soát nhịp nâng và hạ.'],
+          ),
+        ],
+      ),
+    ],
   );
 
   static const _bodyweightWeeks = <_WeekTemplate>[
@@ -372,7 +965,6 @@ abstract final class ProgramSeedData {
                   maximum: 10,
                   restSeconds: 60,
                   cues: ['Giữ thân người thành một đường thẳng.'],
-                  poseRuleVersionId: 'push_up_pose_v1',
                 ),
               ],
             ),
@@ -387,7 +979,6 @@ abstract final class ProgramSeedData {
                   maximum: 30,
                   restSeconds: 45,
                   cues: ['Siết bụng và thở đều.'],
-                  poseRuleVersionId: 'plank_pose_v1',
                 ),
               ],
             ),
@@ -462,7 +1053,6 @@ abstract final class ProgramSeedData {
                   maximum: 10,
                   restSeconds: 60,
                   cues: ['Hạ ngực có kiểm soát.'],
-                  poseRuleVersionId: 'push_up_pose_v1',
                 ),
               ],
             ),
@@ -527,7 +1117,6 @@ abstract final class ProgramSeedData {
                   maximum: 12,
                   restSeconds: 60,
                   cues: ['Siết bụng để giữ thân người ổn định.'],
-                  poseRuleVersionId: 'push_up_pose_v1',
                 ),
               ],
             ),
@@ -542,7 +1131,6 @@ abstract final class ProgramSeedData {
                   maximum: 35,
                   restSeconds: 45,
                   cues: ['Thở đều, không nâng hông quá cao.'],
-                  poseRuleVersionId: 'plank_pose_v1',
                 ),
               ],
             ),
@@ -617,7 +1205,6 @@ abstract final class ProgramSeedData {
                   maximum: 12,
                   restSeconds: 60,
                   cues: ['Giữ vai ổn định trong toàn bộ chuyển động.'],
-                  poseRuleVersionId: 'push_up_pose_v1',
                 ),
               ],
             ),
@@ -686,7 +1273,6 @@ abstract final class ProgramSeedData {
                   maximum: 30,
                   restSeconds: 45,
                   cues: ['Giữ thân người thẳng và thở đều.'],
-                  poseRuleVersionId: 'plank_pose_v1',
                 ),
               ],
             ),
@@ -926,7 +1512,6 @@ abstract final class ProgramSeedData {
                   maximum: 35,
                   restSeconds: 45,
                   cues: ['Thở đều và giữ thân người thẳng.'],
-                  poseRuleVersionId: 'plank_pose_v1',
                 ),
               ],
             ),
@@ -977,6 +1562,7 @@ class _PrescriptionTemplate {
     required this.maximum,
     required this.restSeconds,
     required this.cues,
+    this.transitionAfterExerciseSeconds,
     this.alternatives = const [],
     this.poseRuleVersionId,
   });
@@ -987,6 +1573,7 @@ class _PrescriptionTemplate {
   final int minimum;
   final int maximum;
   final int restSeconds;
+  final int? transitionAfterExerciseSeconds;
   final List<String> cues;
   final List<String> alternatives;
   final String? poseRuleVersionId;

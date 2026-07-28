@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 
 import '../models/pose_coach.dart';
 import '../services/pose_detection_adapter.dart';
+import '../theme/app_colors.dart';
 
 typedef CameraCoachResultCallback = void Function(PoseCoachResult result);
 typedef CameraCoachRepCallback = void Function(PoseRepEvent event);
@@ -13,19 +14,22 @@ typedef CameraCoachRepCallback = void Function(PoseRepEvent event);
 /// Self-contained Android Camera Coach panel for the Squat MVP.
 ///
 /// The parent Active Workout screen owns workout transitions. It can use
-/// [onTargetReached] to complete the current guided set and
-/// [onFallbackRequested] to switch to Guided Confirmation.
+/// [onTargetReached] to complete the current guided set. Camera failures and
+/// unreliable tracking never change workout mode automatically;
+/// [onFallbackRequested] is called only from an explicit user action.
 class CameraCoachPanel extends StatefulWidget {
   const CameraCoachPanel({
     super.key,
     required this.targetReps,
     required this.onFallbackRequested,
     this.exerciseId = 'squat',
+    this.poseRuleVersionId = 'squat_pose_v1',
     this.initialRepCount = 0,
     this.poseRulePublished = true,
     this.deviceAllowed = true,
+    this.requireUserStart = true,
     this.initialLensDirection = CameraLensDirection.front,
-    this.uncertainFallbackDelay = const Duration(seconds: 5),
+    this.unstableWarningDelay = const Duration(seconds: 5),
     this.ruleEngine,
     this.onResult,
     this.onRepCompleted,
@@ -35,12 +39,14 @@ class CameraCoachPanel extends StatefulWidget {
        assert(initialRepCount >= 0);
 
   final String exerciseId;
+  final String? poseRuleVersionId;
   final int targetReps;
   final int initialRepCount;
   final bool poseRulePublished;
   final bool deviceAllowed;
+  final bool requireUserStart;
   final CameraLensDirection initialLensDirection;
-  final Duration uncertainFallbackDelay;
+  final Duration unstableWarningDelay;
   final SquatPoseRuleEngine? ruleEngine;
   final CameraCoachResultCallback? onResult;
   final CameraCoachRepCallback? onRepCompleted;
@@ -52,6 +58,12 @@ class CameraCoachPanel extends StatefulWidget {
     final id = exerciseId.trim().toLowerCase();
     return id == 'squat' || id == 'squat_bodyweight' || id == 'ex-squat';
   }
+
+  static bool supportsRule(String exerciseId, String? ruleVersionId) =>
+      supportsExercise(exerciseId) && ruleVersionId == 'squat_pose_v1';
+
+  static bool get platformSupported =>
+      MlKitPoseDetectionService.isAndroidSupported;
 
   @override
   State<CameraCoachPanel> createState() => _CameraCoachPanelState();
@@ -65,12 +77,14 @@ class _CameraCoachPanelState extends State<CameraCoachPanel>
   MlKitPoseDetectionService? _detector;
   PoseCoachResult? _result;
   PoseCapabilityUnavailableReason? _unavailableReason;
-  DateTime? _uncertainSince;
+  DateTime? _unreliableSince;
   int _sessionToken = 0;
   int _consecutiveFailures = 0;
   bool _initializing = true;
   bool _targetReachedNotified = false;
-  bool _automaticFallbackNotified = false;
+  bool _unavailableNotified = false;
+  bool _unstableWarningNotified = false;
+  late bool _userStarted;
 
   @override
   void initState() {
@@ -80,7 +94,8 @@ class _CameraCoachPanelState extends State<CameraCoachPanel>
         widget.ruleEngine ??
         SquatPoseRuleEngine(initialRepCount: widget.initialRepCount);
     _preferredLens = widget.initialLensDirection;
-    unawaited(_initializeCamera());
+    _userStarted = !widget.requireUserStart;
+    if (_userStarted) unawaited(_initializeCamera());
   }
 
   @override
@@ -95,6 +110,7 @@ class _CameraCoachPanelState extends State<CameraCoachPanel>
       _targetReachedNotified = false;
     }
     if (widget.exerciseId != oldWidget.exerciseId ||
+        widget.poseRuleVersionId != oldWidget.poseRuleVersionId ||
         widget.poseRulePublished != oldWidget.poseRulePublished ||
         widget.deviceAllowed != oldWidget.deviceAllowed) {
       unawaited(_restartCamera());
@@ -104,7 +120,9 @@ class _CameraCoachPanelState extends State<CameraCoachPanel>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      if (_unavailableReason == null) unawaited(_initializeCamera());
+      if (_userStarted && _unavailableReason == null) {
+        unawaited(_initializeCamera());
+      }
       return;
     }
     if (state == AppLifecycleState.inactive ||
@@ -124,7 +142,10 @@ class _CameraCoachPanelState extends State<CameraCoachPanel>
 
   PoseCapabilityUnavailableReason? _gateReason() {
     if (!widget.poseRulePublished ||
-        !CameraCoachPanel.supportsExercise(widget.exerciseId)) {
+        !CameraCoachPanel.supportsRule(
+          widget.exerciseId,
+          widget.poseRuleVersionId,
+        )) {
       return PoseCapabilityUnavailableReason.exerciseUnsupported;
     }
     if (!widget.deviceAllowed) {
@@ -257,6 +278,19 @@ class _CameraCoachPanelState extends State<CameraCoachPanel>
           ),
         );
         return;
+      case PoseDetectionStatus.multiplePoses:
+        _consecutiveFailures = 0;
+        _publishResult(
+          PoseCoachResult(
+            status: PoseCoachStatus.notVisible,
+            phase: _ruleEngine.phase,
+            repCount: _ruleEngine.repCount,
+            capturedAt: capturedAt,
+            isCalibrated: _ruleEngine.isCalibrated,
+            feedbackCode: PoseFeedbackCode.onePersonOnly,
+          ),
+        );
+        return;
       case PoseDetectionStatus.detected:
         _consecutiveFailures = 0;
         final frame = detection.frame;
@@ -279,14 +313,20 @@ class _CameraCoachPanelState extends State<CameraCoachPanel>
       widget.onTargetReached?.call();
     }
 
-    if (result.status == PoseCoachStatus.uncertain) {
+    if (result.status == PoseCoachStatus.uncertain ||
+        result.status == PoseCoachStatus.notVisible) {
       final now = DateTime.now();
-      _uncertainSince ??= now;
-      if (now.difference(_uncertainSince!) >= widget.uncertainFallbackDelay) {
-        _activateFallback(PoseCapabilityUnavailableReason.modelUnavailable);
+      _unreliableSince ??= now;
+      if (!_unstableWarningNotified &&
+          now.difference(_unreliableSince!) >= widget.unstableWarningDelay) {
+        _unstableWarningNotified = true;
+        widget.onUnavailable?.call(
+          PoseCapabilityUnavailableReason.trackingUnreliable,
+        );
       }
     } else {
-      _uncertainSince = null;
+      _unreliableSince = null;
+      _unstableWarningNotified = false;
     }
   }
 
@@ -298,17 +338,17 @@ class _CameraCoachPanelState extends State<CameraCoachPanel>
       _unavailableReason = reason;
     });
     unawaited(_releaseResources(invalidateSession: false));
-    if (_automaticFallbackNotified) return;
-    _automaticFallbackNotified = true;
+    if (_unavailableNotified) return;
+    _unavailableNotified = true;
     widget.onUnavailable?.call(reason);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) widget.onFallbackRequested();
-    });
   }
 
   Future<void> _restartCamera() async {
+    _userStarted = true;
     _unavailableReason = null;
-    _automaticFallbackNotified = false;
+    _unavailableNotified = false;
+    _unstableWarningNotified = false;
+    _unreliableSince = null;
     await _releaseResources();
     if (mounted) await _initializeCamera();
   }
@@ -341,6 +381,7 @@ class _CameraCoachPanelState extends State<CameraCoachPanel>
 
   @override
   Widget build(BuildContext context) {
+    if (!_userStarted) return _preflightPanel(context);
     final reason = _unavailableReason;
     if (reason != null) return _fallbackPanel(context, reason);
     final controller = _cameraController;
@@ -351,6 +392,63 @@ class _CameraCoachPanelState extends State<CameraCoachPanel>
     }
     return _cameraPanel(context, controller);
   }
+
+  Widget _preflightPanel(BuildContext context) => Container(
+    padding: const EdgeInsets.all(20),
+    decoration: BoxDecoration(
+      color: Theme.of(context).colorScheme.surfaceContainerHigh,
+      borderRadius: BorderRadius.circular(20),
+      border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.camera_alt_outlined, size: 32),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Chuẩn bị Camera Coach',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        const Text(
+          'Đặt điện thoại ổn định, đủ sáng và để toàn thân trong khung hình. '
+          'Chỉ một người nên xuất hiện trước camera.',
+        ),
+        const SizedBox(height: 10),
+        const Text(
+          'Khung hình được xử lý tạm thời trên thiết bị. FitTrack không lưu '
+          'ảnh, video hoặc landmark. AI có thể sai và bạn luôn có thể chuyển '
+          'sang xác nhận có hướng dẫn.',
+          style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+        ),
+        const SizedBox(height: 18),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            onPressed: () {
+              setState(() => _userStarted = true);
+              unawaited(_initializeCamera());
+            },
+            icon: const Icon(Icons.videocam_outlined),
+            label: const Text('Bắt đầu Camera Coach'),
+          ),
+        ),
+        SizedBox(
+          width: double.infinity,
+          child: TextButton(
+            onPressed: widget.onFallbackRequested,
+            child: const Text('Chuyển sang Hướng dẫn'),
+          ),
+        ),
+      ],
+    ),
+  );
 
   Widget _loadingPanel(BuildContext context) => Container(
     height: 340,
@@ -400,10 +498,22 @@ class _CameraCoachPanelState extends State<CameraCoachPanel>
         const SizedBox(height: 6),
         Text(_fallbackMessage(reason), textAlign: TextAlign.center),
         const SizedBox(height: 16),
-        FilledButton.icon(
-          onPressed: widget.onFallbackRequested,
-          icon: const Icon(Icons.touch_app_outlined),
-          label: const Text('Tiếp tục không dùng camera'),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            onPressed: _restartCamera,
+            icon: const Icon(Icons.refresh),
+            label: const Text('Thử lại Camera Coach'),
+          ),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: widget.onFallbackRequested,
+            icon: const Icon(Icons.touch_app_outlined),
+            label: const Text('Chuyển sang Hướng dẫn'),
+          ),
         ),
       ],
     ),
@@ -555,6 +665,7 @@ class _CameraCoachPanelState extends State<CameraCoachPanel>
       PoseFeedbackCode.staleFrame => 'AI chưa theo kịp chuyển động',
       PoseFeedbackCode.standTall => 'Đứng thẳng để bắt đầu',
       PoseFeedbackCode.lowerHips => 'Hạ thấp thêm',
+      PoseFeedbackCode.onePersonOnly => 'Chỉ để một người trong khung hình',
       PoseFeedbackCode.detectorUnavailable => 'Camera Coach chưa khả dụng',
       null => _phaseLabel(result.phase),
     };
@@ -567,26 +678,29 @@ class _CameraCoachPanelState extends State<CameraCoachPanel>
     SquatPhase.ascending => 'Đứng lên và giữ nhịp',
   };
 
-  String _fallbackMessage(PoseCapabilityUnavailableReason reason) =>
-      switch (reason) {
-        PoseCapabilityUnavailableReason.web =>
-          'Bản Web sử dụng Guided Confirmation.',
-        PoseCapabilityUnavailableReason.unsupportedPlatform =>
-          'Camera Coach hiện chỉ hỗ trợ Android.',
-        PoseCapabilityUnavailableReason.exerciseUnsupported =>
-          'Bài tập này chưa có pose rule được hỗ trợ.',
-        PoseCapabilityUnavailableReason.deviceUnsupported =>
-          'Thiết bị này chưa nằm trong danh sách hỗ trợ.',
-        PoseCapabilityUnavailableReason.permissionDenied =>
-          'Bạn chưa cấp quyền camera. Buổi tập vẫn tiếp tục bình thường.',
-        PoseCapabilityUnavailableReason.cameraUnavailable =>
-          'Không thể mở camera trên thiết bị này.',
-        PoseCapabilityUnavailableReason.modelUnavailable =>
-          'AI chưa đủ chắc chắn để tiếp tục hướng dẫn.',
-        PoseCapabilityUnavailableReason.disposed => 'Camera Coach đã dừng.',
-        PoseCapabilityUnavailableReason.none =>
-          'Hãy tiếp tục bằng Guided Confirmation.',
-      };
+  String _fallbackMessage(
+    PoseCapabilityUnavailableReason reason,
+  ) => switch (reason) {
+    PoseCapabilityUnavailableReason.web =>
+      'Camera Coach chưa hỗ trợ trên Web. Chế độ sẽ không tự thay đổi.',
+    PoseCapabilityUnavailableReason.unsupportedPlatform =>
+      'Camera Coach hiện chỉ hỗ trợ Android.',
+    PoseCapabilityUnavailableReason.exerciseUnsupported =>
+      'Bài tập này chưa có pose rule được hỗ trợ.',
+    PoseCapabilityUnavailableReason.deviceUnsupported =>
+      'Thiết bị này chưa nằm trong danh sách hỗ trợ.',
+    PoseCapabilityUnavailableReason.permissionDenied =>
+      'Bạn chưa cấp quyền camera. Hãy cấp quyền rồi thử lại.',
+    PoseCapabilityUnavailableReason.cameraUnavailable =>
+      'Không thể mở camera trên thiết bị này.',
+    PoseCapabilityUnavailableReason.modelUnavailable =>
+      'Bộ nhận diện đang gặp lỗi. Bạn có thể thử lại Camera Coach.',
+    PoseCapabilityUnavailableReason.trackingUnreliable =>
+      'Không thể theo dõi tư thế ổn định. Hãy kiểm tra ánh sáng và vị trí camera.',
+    PoseCapabilityUnavailableReason.disposed => 'Camera Coach đã dừng.',
+    PoseCapabilityUnavailableReason.none =>
+      'Camera đã tắt. Bạn có thể thử lại hoặc tự chọn chuyển sang Hướng dẫn.',
+  };
 }
 
 class _StatusChip extends StatelessWidget {

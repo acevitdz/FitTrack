@@ -1,8 +1,10 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import '../data/program_seed_data.dart';
 import '../data/seed_data.dart';
+import '../models/account.dart';
 import '../models/active_workout.dart' as target;
 import '../models/exercise.dart';
 import '../models/health_models.dart';
@@ -15,10 +17,15 @@ import '../models/workout_schedule.dart';
 import '../services/firebase_gateway.dart';
 import '../services/active_workout_controller.dart';
 import '../services/active_workout_draft_store.dart';
+import '../services/bundled_exercise_catalog.dart';
 import '../services/local_store.dart';
 import '../services/notification_service.dart';
+import '../services/program_catalog_validator.dart';
 import '../services/program_matcher.dart';
 import '../services/speech_cue_service.dart';
+import '../services/sync_queue.dart';
+
+const Object _appStateUnset = Object();
 
 class AppState extends ChangeNotifier {
   AppState({
@@ -27,10 +34,12 @@ class AppState extends ChangeNotifier {
     LocalStore? localStore,
     ActiveWorkoutDraftStore? workoutDraftStore,
     SpeechCueService? speechCueService,
+    SyncQueue? syncQueue,
   }) : _notifications = notificationService,
        _store = localStore ?? LocalStore(),
        _workoutDraftStore = workoutDraftStore ?? ActiveWorkoutDraftStore(),
        _speech = speechCueService ?? const SpeechCueService(),
+       _syncQueue = syncQueue ?? SyncQueue(),
        _firebase = FirebaseGateway(available: firebaseAvailable) {
     _notifications.setPayloadHandler(_handleNotificationPayload);
   }
@@ -40,7 +49,11 @@ class AppState extends ChangeNotifier {
   final LocalStore _store;
   final ActiveWorkoutDraftStore _workoutDraftStore;
   final SpeechCueService _speech;
+  final SyncQueue _syncQueue;
   final FirebaseGateway _firebase;
+  final BundledExerciseCatalog _bundledExerciseCatalog =
+      const BundledExerciseCatalog();
+  List<Exercise> _bundledExercises = const [];
 
   bool isAuthenticated = false;
   bool busy = false;
@@ -55,9 +68,14 @@ class AppState extends ChangeNotifier {
   bool voiceCoachEnabled = false;
   double voiceCoachRate = .48;
   bool hapticsEnabled = true;
+  bool countdownSoundsEnabled = true;
   String unit = MeasurementUnitSystem.metric.storageKey;
   String uid = 'demo-user';
   String? _pendingNotificationPayload;
+  int _remoteRevision = 0;
+  bool _syncing = false;
+  AccountAccess accountAccess = const AccountAccess.active();
+  DataExportRequest? latestExportRequest;
 
   String? takePendingNotificationPayload() {
     final value = _pendingNotificationPayload;
@@ -66,9 +84,7 @@ class AppState extends ChangeNotifier {
   }
 
   void _handleNotificationPayload(String payload) {
-    if (!payload.startsWith('today:') && !payload.startsWith('active:')) {
-      return;
-    }
+    if (decodeFitTrackNotificationPayload(payload) == null) return;
     _pendingNotificationPayload = payload;
     notifyListeners();
   }
@@ -136,9 +152,72 @@ class AppState extends ChangeNotifier {
     return programs.where((item) => item.id == programId).firstOrNull;
   }
 
+  List<ProgramVersion> get catalogProgramVersions {
+    final versions =
+        programVersions
+            .where(
+              (version) =>
+                  version.status == ProgramLifecycleStatus.published &&
+                  version.guidedConfirmationAvailable,
+            )
+            .toList()
+          ..sort((left, right) {
+            final priority = right.matchingPriority.compareTo(
+              left.matchingPriority,
+            );
+            return priority != 0 ? priority : left.id.compareTo(right.id);
+          });
+    return List.unmodifiable(versions);
+  }
+
+  String? programCompatibilityIssue(ProgramVersion version) {
+    if (!version.populationKeys.contains(trainingPreferences.populationKey)) {
+      return 'Lộ trình này không hỗ trợ nhóm người dùng hiện tại.';
+    }
+    if (!version.experienceKeys.contains(trainingPreferences.experienceKey)) {
+      return 'Hãy chọn lộ trình phù hợp với kinh nghiệm tập hiện tại.';
+    }
+    if (!version.goalKeys.contains(trainingPreferences.goalKey)) {
+      return 'Lộ trình này không hỗ trợ mục tiêu tập hiện tại.';
+    }
+    if (!version.cadence.supports(trainingPreferences.sessionsPerWeek)) {
+      return 'Lộ trình này không hỗ trợ '
+          '${trainingPreferences.sessionsPerWeek} buổi mỗi tuần.';
+    }
+    final availableEquipment = trainingPreferences.equipmentKeys.toSet();
+    if (!availableEquipment.containsAll(version.equipmentKeys)) {
+      return 'Thiếu dụng cụ bắt buộc: '
+          '${version.equipmentKeys.where((item) => !availableEquipment.contains(item)).join(', ')}.';
+    }
+    return null;
+  }
+
   List<target.WorkoutCompletion> get completedTargetWorkouts =>
       List.of(workoutCompletions)
         ..sort((a, b) => b.completedAt.compareTo(a.completedAt));
+
+  List<target.WorkoutCompletion> get participatingTargetWorkouts =>
+      completedTargetWorkouts
+          .where((completion) => completion.hasParticipation)
+          .toList(growable: false);
+
+  WorkoutOccurrence? occurrenceById(String id) =>
+      occurrences.where((item) => item.id == id).firstOrNull;
+
+  List<WorkoutOccurrence> get overdueOccurrences {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    return occurrences.where((item) {
+      final scheduled = DateTime(
+        item.scheduledDate.year,
+        item.scheduledDate.month,
+        item.scheduledDate.day,
+      );
+      return item.isOpen &&
+          item.status != WorkoutOccurrenceStatus.inProgress &&
+          scheduled.isBefore(today);
+    }).toList()..sort((a, b) => a.scheduledDate.compareTo(b.scheduledDate));
+  }
 
   WorkoutOccurrence? get todayOccurrence {
     final today = DateTime.now();
@@ -161,7 +240,23 @@ class AppState extends ChangeNotifier {
       );
       if (!scheduled.isAfter(day)) return item;
     }
-    return available.firstOrNull;
+    return null;
+  }
+
+  WorkoutOccurrence? get nextOccurrence {
+    final now = DateTime.now();
+    final day = DateTime(now.year, now.month, now.day);
+    final upcoming = occurrences.where((item) {
+      final scheduled = DateTime(
+        item.scheduledDate.year,
+        item.scheduledDate.month,
+        item.scheduledDate.day,
+      );
+      return item.isOpen &&
+          item.status != WorkoutOccurrenceStatus.inProgress &&
+          scheduled.isAfter(day);
+    }).toList()..sort((a, b) => a.scheduledDate.compareTo(b.scheduledDate));
+    return upcoming.firstOrNull;
   }
 
   ProgramSession? sessionForOccurrence(WorkoutOccurrence occurrence) =>
@@ -187,12 +282,36 @@ class AppState extends ChangeNotifier {
         .where(
           (item) =>
               !item.completedAt.isBefore(start) &&
+              item.hasParticipation &&
               currentOccurrenceIds.contains(item.occurrenceId),
         )
         .length;
   }
 
-  Duration get targetWorkoutDuration => workoutCompletions.fold(
+  int get fullyCompletedTargetWorkoutsThisWeek {
+    final currentEnrollment = enrollment;
+    if (currentEnrollment == null) return 0;
+    final now = DateTime.now();
+    final start = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).subtract(Duration(days: now.weekday - 1));
+    final currentOccurrenceIds = occurrences
+        .where((item) => item.enrollmentId == currentEnrollment.id)
+        .map((item) => item.id)
+        .toSet();
+    return workoutCompletions
+        .where(
+          (item) =>
+              !item.completedAt.isBefore(start) &&
+              item.isFullyCompleted &&
+              currentOccurrenceIds.contains(item.occurrenceId),
+        )
+        .length;
+  }
+
+  Duration get targetWorkoutDuration => participatingTargetWorkouts.fold(
     Duration.zero,
     (total, item) => total + Duration(seconds: item.actualDurationSeconds),
   );
@@ -206,7 +325,7 @@ class AppState extends ChangeNotifier {
       _summarizeStreak(workoutDays, requireRecentDay: true).current;
 
   List<Exercise> get templateExercises => exercises
-      .where((exercise) => !exercise.isPersonal && exercise.isActive)
+      .where((exercise) => !exercise.isPersonal && exercise.isCatalogApproved)
       .toList(growable: false);
 
   List<Exercise> get personalExercises => exercises
@@ -266,6 +385,7 @@ class AppState extends ChangeNotifier {
   int get workoutStreak => targetWorkoutStreak;
 
   Future<void> initialize() async {
+    await _loadBundledExercises();
     final storedSession = await _store.loadAuthenticated();
     String? sessionUid;
     if (firebaseAvailable) {
@@ -291,6 +411,29 @@ class AppState extends ChangeNotifier {
 
     uid = sessionUid;
     _store.scopeTo(uid);
+    if (firebaseAvailable) {
+      try {
+        accountAccess = await _firebase.loadAccountAccess(uid);
+      } on Object {
+        accountAccess = const AccountAccess.active();
+      }
+      if (!accountAccess.canUsePrivateApp) {
+        errorMessage = AccountAccessException(accountAccess).toString();
+        await _firebase.signOut();
+        isAuthenticated = false;
+        await _store.saveAuthenticated(false);
+        await _store.saveAuthenticatedUid(null);
+        _store.clearScope();
+        _prepareAccountState(
+          accountUid: 'demo-user',
+          email: 'demo@fittrack.vn',
+          name: 'Người dùng FitTrack',
+          onboardingCompleted: true,
+          includeSamples: true,
+        );
+        return;
+      }
+    }
     final local = await _store.loadState();
     if (local == null) {
       _prepareAccountState(
@@ -331,13 +474,21 @@ class AppState extends ChangeNotifier {
     isAuthenticated = true;
     await _store.saveAuthenticated(true);
     await _store.saveAuthenticatedUid(uid);
-    await _refreshRemoteDomain();
     await _refreshTemplateExercises();
+    await _refreshRemoteDomain();
+    if (firebaseAvailable) {
+      try {
+        latestExportRequest = await _firebase.latestDataExportRequest(uid);
+      } on Object {
+        // Export status is optional while offline.
+      }
+    }
     activeWorkoutDraft = await _workoutDraftStore.load(uid);
     if (profile.onboardingCompleted) {
       await ensureProgramEnrollment(persist: false);
     }
     await _initializeMessagingIfOptedIn();
+    await _drainSyncQueue();
     await _store.saveState(_toJson());
   }
 
@@ -349,6 +500,9 @@ class AppState extends ChangeNotifier {
     bool includeSamples = false,
   }) {
     uid = accountUid;
+    _remoteRevision = 0;
+    accountAccess = const AccountAccess.active();
+    latestExportRequest = null;
     themeMode = ThemeMode.system;
     notificationsEnabled = false;
     notificationPermissionRequested = false;
@@ -359,6 +513,7 @@ class AppState extends ChangeNotifier {
     voiceCoachEnabled = false;
     voiceCoachRate = .48;
     hapticsEnabled = true;
+    countdownSoundsEnabled = true;
     unit = MeasurementUnitSystem.metric.storageKey;
     profile = UserProfile(
       id: accountUid,
@@ -370,7 +525,7 @@ class AppState extends ChangeNotifier {
       weeklyWorkoutGoal: 3,
       onboardingCompleted: onboardingCompleted,
     );
-    exercises = List.of(SeedData.exercises);
+    exercises = _baselineExercises();
     favoriteExerciseIds.clear();
     plans.clear();
     schedules.clear();
@@ -452,6 +607,12 @@ class AppState extends ChangeNotifier {
           : await _firebase.signIn(email.trim(), password);
       uid = signedInUid;
       _store.scopeTo(uid);
+      accountAccess = register
+          ? const AccountAccess.active()
+          : await _firebase.loadAccountAccess(uid);
+      if (!accountAccess.canUsePrivateApp) {
+        throw AccountAccessException(accountAccess);
+      }
 
       if (register) {
         _prepareAccountState(
@@ -483,8 +644,8 @@ class AppState extends ChangeNotifier {
 
       profile = profile.copyWith(id: uid, email: email.trim());
       await _mergeRemoteActivityDays();
-      await _refreshRemoteDomain();
       await _refreshTemplateExercises();
+      await _refreshRemoteDomain();
       isAuthenticated = true;
       await _store.saveAuthenticated(true);
       await _store.saveAuthenticatedUid(uid);
@@ -531,7 +692,14 @@ class AppState extends ChangeNotifier {
       final personal = exercises
           .where((exercise) => exercise.ownerId == uid)
           .toList();
-      exercises = [...templates, ...personal];
+      // Firestore is an override catalog, not the only source of truth. Keep
+      // the reviewed local baseline so a new/empty project can still enroll.
+      final mergedTemplates = <String, Exercise>{
+        for (final exercise in _baselineExercises()) exercise.id: exercise,
+        for (final exercise in templates)
+          if (exercise.isCatalogApproved) exercise.id: exercise,
+      };
+      exercises = [...mergedTemplates.values, ...personal];
     } on Object {
       // Keep the last local template cache while offline.
     }
@@ -542,8 +710,23 @@ class AppState extends ChangeNotifier {
     try {
       final remotePrograms = await _firebase.loadPrograms();
       final remoteVersions = await _firebase.loadProgramVersions();
-      programs = remotePrograms;
-      programVersions = remoteVersions;
+      final validVersions = remoteVersions
+          .where(
+            (version) => const ProgramCatalogValidator()
+                .validate(version, exercises: exercises)
+                .isValid,
+          )
+          .toList(growable: false);
+      if (validVersions.isEmpty) return;
+      final programIds = validVersions
+          .map((version) => version.programId)
+          .toSet();
+      final validPrograms = remotePrograms
+          .where((program) => programIds.contains(program.id))
+          .toList(growable: false);
+      if (validPrograms.isEmpty) return;
+      programs = validPrograms;
+      programVersions = validVersions;
     } on Object {
       // Keep the last verified local cache while offline.
     }
@@ -568,13 +751,56 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> requestDataExport() => _firebase.requestDataExport();
+  Future<String> requestDataExport() async {
+    if (!isAuthenticated) throw StateError('not-authenticated');
+    final exportedAt = DateTime.now();
+    final export = const JsonEncoder.withIndent('  ').convert({
+      'schemaVersion': 1,
+      'exportedAt': exportedAt.toIso8601String(),
+      'userId': uid,
+      'data': _toJson(),
+    });
+    if (firebaseAvailable && uid != 'demo-user') {
+      latestExportRequest = await _firebase.requestDataExport();
+    }
+    notifyListeners();
+    return export;
+  }
+
+  int get activeSessionsPerWeek =>
+      activeProgramVersion?.cadence.resolveFrequency(
+        trainingPreferences.sessionsPerWeek,
+      ) ??
+      trainingPreferences.sessionsPerWeek;
+
+  Future<void> refreshDataExportStatus() async {
+    if (!firebaseAvailable || uid == 'demo-user') return;
+    latestExportRequest = await _firebase.latestDataExportRequest(uid);
+    notifyListeners();
+  }
+
+  Future<String> downloadLatestDataExport() async {
+    if (!firebaseAvailable || uid == 'demo-user') {
+      throw StateError('data-export-not-available');
+    }
+    await refreshDataExportStatus();
+    final request = latestExportRequest;
+    if (request == null || !request.canDownload) {
+      throw StateError('data-export-not-ready');
+    }
+    final bytes = await _firebase.downloadDataExport(request);
+    return utf8.decode(bytes);
+  }
 
   Future<void> deleteAccountData() async {
+    final deletionRequest = await _firebase.deleteCurrentAccount();
+    if (firebaseAvailable && deletionRequest == null) {
+      throw StateError('account-deletion-request-failed');
+    }
     await _speech.stop();
     await _notifications.cancelAll();
     await _workoutDraftStore.clear(uid);
-    await _firebase.deleteCurrentAccount();
+    await _syncQueue.clear(uid);
     await _store.clear();
     isAuthenticated = false;
     _store.clearScope();
@@ -671,9 +897,9 @@ class AppState extends ChangeNotifier {
     workoutDays
       ..clear()
       ..addAll(
-        workoutCompletions.map(
-          (completion) => _dateKey(completion.completedAt),
-        ),
+        workoutCompletions
+            .where((completion) => completion.hasParticipation)
+            .map((completion) => _dateKey(completion.completedAt)),
       );
     _recalculateWorkoutStreak();
   }
@@ -758,6 +984,7 @@ class AppState extends ChangeNotifier {
         'Hãy hoàn tất hoặc bỏ buổi tập đang dở trước khi đổi chương trình.',
       );
     }
+    _validateRequestedSchedule(value);
     trainingPreferences = value;
     profile = profile.copyWith(
       goal: TrainingGoalKey.labelFor(value.goalKey),
@@ -773,6 +1000,7 @@ class AppState extends ChangeNotifier {
 
   Future<ProgramMatchResult> ensureProgramEnrollment({
     bool persist = true,
+    bool forceNew = false,
   }) async {
     if (!firebaseAvailable && programs.isEmpty) {
       programs = List.of(ProgramSeedData.programs);
@@ -781,19 +1009,21 @@ class AppState extends ChangeNotifier {
       programVersions = List.of(ProgramSeedData.versions);
     }
     final current = enrollment;
-    if (current != null &&
+    final currentVersion = current == null
+        ? null
+        : programVersions
+              .where((version) => version.id == current.programVersionId)
+              .firstOrNull;
+    if (!forceNew &&
+        current != null &&
+        currentVersion != null &&
         current.status == ProgramEnrollmentStatus.active &&
-        programVersions.any(
-          (version) =>
-              version.id == current.programVersionId && version.isPublished,
-        )) {
-      final version = programVersions.firstWhere(
-        (item) => item.id == current.programVersionId,
-      );
+        (currentVersion.isPublished ||
+            currentVersion.status == ProgramLifecycleStatus.retired)) {
       final result = ProgramMatchResult(
         status: ProgramMatchStatus.matched,
         candidate: ProgramMatchCandidate(
-          version: version,
+          version: currentVersion,
           score: 0,
           reasons: const ['existing_enrollment'],
         ),
@@ -803,6 +1033,45 @@ class AppState extends ChangeNotifier {
       lastProgramMatchStatus = result.status;
       await _syncProgramNotifications();
       return result;
+    }
+    if (!forceNew &&
+        current != null &&
+        currentVersion != null &&
+        current.status == ProgramEnrollmentStatus.completed) {
+      final result = ProgramMatchResult(
+        status: ProgramMatchStatus.matched,
+        candidate: ProgramMatchCandidate(
+          version: currentVersion,
+          score: 0,
+          reasons: const ['completed_enrollment'],
+        ),
+        rankedCandidates: const [],
+        reasons: const ['completed_enrollment'],
+      );
+      lastProgramMatchStatus = result.status;
+      return result;
+    }
+    if (current != null &&
+        currentVersion?.status == ProgramLifecycleStatus.recalled) {
+      await _cancelOpenOccurrences(current.id);
+      enrollment = current.copyWith(
+        status: ProgramEnrollmentStatus.cancelled,
+        endedAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+      errorMessage =
+          'Lộ trình hiện tại đã được thu hồi vì lý do an toàn. Hãy chọn lại lộ trình.';
+      if (!forceNew) {
+        final result = const ProgramMatchResult(
+          status: ProgramMatchStatus.noSupportedProgram,
+          candidate: null,
+          rankedCandidates: [],
+          reasons: ['recalled_enrollment_requires_rematch'],
+        );
+        lastProgramMatchStatus = result.status;
+        if (persist) await _commit();
+        return result;
+      }
     }
 
     final result = const ProgramMatcher().match(
@@ -819,6 +1088,8 @@ class AppState extends ChangeNotifier {
       return result;
     }
 
+    _resolveScheduleConfiguration(version);
+
     final now = DateTime.now();
     await _cancelOpenOccurrences(enrollment?.id);
     enrollment = ProgramEnrollment(
@@ -827,11 +1098,53 @@ class AppState extends ChangeNotifier {
       programVersionId: version.id,
       startedAt: now,
       status: ProgramEnrollmentStatus.active,
+      updatedAt: now,
     );
     occurrences.addAll(_buildOccurrences(version, enrollment!, now));
     await _syncProgramNotifications();
     if (persist) await _commit();
     return result;
+  }
+
+  Future<ProgramMatchResult> restartProgramEnrollment() =>
+      ensureProgramEnrollment(forceNew: true);
+
+  Future<void> enrollInProgramVersion(String versionId) async {
+    if (activeWorkoutDraft != null) {
+      throw StateError(
+        'Hãy hoàn tất hoặc bỏ buổi tập đang dở trước khi đổi lộ trình.',
+      );
+    }
+    final version = programVersions
+        .where((item) => item.id == versionId)
+        .firstOrNull;
+    if (version == null ||
+        version.status != ProgramLifecycleStatus.published ||
+        !version.guidedConfirmationAvailable) {
+      throw StateError('Lộ trình này không còn khả dụng.');
+    }
+    final issue = programCompatibilityIssue(version);
+    if (issue != null) throw StateError(issue);
+    _resolveScheduleConfiguration(version);
+    if (enrollment?.programVersionId == version.id &&
+        enrollment?.status == ProgramEnrollmentStatus.active) {
+      return;
+    }
+
+    final now = DateTime.now();
+    await _cancelOpenOccurrences(enrollment?.id);
+    enrollment = ProgramEnrollment(
+      id: 'enrollment-$uid-${version.id}-${now.microsecondsSinceEpoch}',
+      userId: uid,
+      programVersionId: version.id,
+      startedAt: now,
+      status: ProgramEnrollmentStatus.active,
+      updatedAt: now,
+    );
+    occurrences.addAll(_buildOccurrences(version, enrollment!, now));
+    lastProgramMatchStatus = ProgramMatchStatus.matched;
+    await _syncProgramNotifications();
+    await _commit();
   }
 
   Future<void> _cancelOpenOccurrences(String? enrollmentId) async {
@@ -846,7 +1159,12 @@ class AppState extends ChangeNotifier {
         )
         .toList(growable: false);
     for (final occurrence in open) {
-      await _notifications.cancelProgramOccurrence(occurrence.id);
+      await _safeCancelProgramOccurrence(occurrence.id);
+      if (activeWorkoutDraft?.occurrenceId == occurrence.id) {
+        await _safeCancelRestSession(activeWorkoutDraft!.sessionId);
+        await _workoutDraftStore.clear(uid);
+        activeWorkoutDraft = null;
+      }
       _replaceOccurrence(occurrence, status: WorkoutOccurrenceStatus.cancelled);
     }
   }
@@ -857,22 +1175,29 @@ class AppState extends ChangeNotifier {
     DateTime start,
   ) {
     final startDay = DateTime(start.year, start.month, start.day);
-    final weekdays = <int>[
-      ...(version.cadence.preferredWeekdays.isEmpty
-          ? const [1, 3, 5]
-          : version.cadence.preferredWeekdays),
-    ]..sort();
+    final schedule = _resolveScheduleConfiguration(version);
+    final frequency = schedule.frequency;
+    final weekdays = schedule.weekdays;
     final result = <WorkoutOccurrence>[];
     var cursor = startDay;
+    var shouldStartToday = schedule.startToday;
     final weeks = [...version.weeks]
       ..sort((a, b) => a.weekNumber.compareTo(b.weekNumber));
     for (final week in weeks) {
-      final sessions = [...week.sessions]
-        ..sort((a, b) => a.order.compareTo(b.order));
+      final eligibleSessions =
+          week.sessions
+              .where((session) => session.minimumSessionsPerWeek <= frequency)
+              .toList()
+            ..sort((a, b) => a.order.compareTo(b.order));
+      final sessions = eligibleSessions.take(frequency);
       for (final session in sessions) {
         var scheduled = cursor;
-        while (!weekdays.contains(scheduled.weekday)) {
-          scheduled = scheduled.add(const Duration(days: 1));
+        if (shouldStartToday) {
+          shouldStartToday = false;
+        } else {
+          while (!weekdays.contains(scheduled.weekday)) {
+            scheduled = scheduled.add(const Duration(days: 1));
+          }
         }
         result.add(
           WorkoutOccurrence(
@@ -883,6 +1208,7 @@ class AppState extends ChangeNotifier {
             weekNumber: week.weekNumber,
             scheduledDate: scheduled,
             status: WorkoutOccurrenceStatus.scheduled,
+            updatedAt: start,
           ),
         );
         cursor = scheduled.add(
@@ -893,17 +1219,97 @@ class AppState extends ChangeNotifier {
     return result;
   }
 
+  void _validateRequestedSchedule(UserTrainingPreferences preferences) {
+    final selected = preferences.preferredWeekdays;
+    if (selected.isEmpty) return;
+    if (selected.any((day) => day < DateTime.monday || day > DateTime.sunday)) {
+      throw StateError('Ngày tập phải nằm trong khoảng thứ Hai đến Chủ nhật.');
+    }
+    if (selected.toSet().length != preferences.sessionsPerWeek) {
+      throw StateError(
+        'Hãy chọn đúng ${preferences.sessionsPerWeek} ngày tập khác nhau trong tuần.',
+      );
+    }
+    final match = const ProgramMatcher().match(
+      preferences: preferences,
+      catalog: programVersions,
+      fallbackProgramVersionId: ProgramSeedData.defaultFallbackProgramVersionId,
+    );
+    final version = match.version;
+    if (version != null) {
+      _resolveScheduleConfiguration(version, preferences: preferences);
+    }
+  }
+
+  ({int frequency, List<int> weekdays, bool startToday})
+  _resolveScheduleConfiguration(
+    ProgramVersion version, {
+    UserTrainingPreferences? preferences,
+  }) {
+    final requested = preferences ?? trainingPreferences;
+    final frequency = version.cadence.resolveFrequency(
+      requested.sessionsPerWeek,
+    );
+    final selected = requested.preferredWeekdays.toSet().toList()..sort();
+    if (selected.isNotEmpty) {
+      if (selected.length != frequency) {
+        throw StateError(
+          'Lộ trình này hỗ trợ $frequency buổi/tuần; hãy chọn đúng $frequency ngày.',
+        );
+      }
+      if (!_supportsWeeklyRestGap(selected, version.cadence.minimumRestDays)) {
+        throw StateError(
+          'Các ngày đã chọn không đủ thời gian nghỉ tối thiểu của lộ trình.',
+        );
+      }
+      return (frequency: frequency, weekdays: selected, startToday: false);
+    }
+    return (
+      frequency: frequency,
+      weekdays: version.cadence.weekdaysFor(frequency),
+      startToday: requested.startPolicy == ProgramStartPolicy.today,
+    );
+  }
+
+  bool _supportsWeeklyRestGap(List<int> weekdays, int minimumRestDays) {
+    if (weekdays.isEmpty) return false;
+    final ordered = [...weekdays]..sort();
+    final requiredGap = minimumRestDays + 1;
+    for (var index = 0; index < ordered.length; index++) {
+      final current = ordered[index];
+      final next = index + 1 < ordered.length
+          ? ordered[index + 1]
+          : ordered.first + DateTime.daysPerWeek;
+      if (next - current < requiredGap) return false;
+    }
+    return true;
+  }
+
   Future<void> chooseReadiness(
     WorkoutOccurrence occurrence,
     ReadinessChoice choice,
   ) async {
+    final current = occurrenceById(occurrence.id);
+    if (current == null || !current.isOpen) {
+      throw StateError('Buổi tập này không còn có thể đánh giá readiness.');
+    }
+    if (current.status == WorkoutOccurrenceStatus.inProgress) {
+      throw StateError('Không thể đổi readiness khi buổi tập đang diễn ra.');
+    }
     _replaceOccurrence(
-      occurrence,
-      status: occurrence.status,
+      current,
+      status: current.status,
       readinessChoice: choice,
+      readinessAssessedAt: DateTime.now(),
     );
     await _syncProgramNotifications();
     await _commit();
+  }
+
+  bool isReadinessCurrent(WorkoutOccurrence occurrence, {DateTime? now}) {
+    final assessedAt = occurrence.readinessAssessedAt;
+    if (occurrence.readinessChoice == null || assessedAt == null) return false;
+    return _dateKey(assessedAt) == _dateKey(now ?? DateTime.now());
   }
 
   Future<void> postponeOccurrence(WorkoutOccurrence occurrence) async {
@@ -915,24 +1321,173 @@ class AppState extends ChangeNotifier {
     while (occupied.contains(_dateKey(next))) {
       next = next.add(const Duration(days: 1));
     }
-    _replaceOccurrence(
+    await rescheduleOccurrence(
       occurrence,
-      status: WorkoutOccurrenceStatus.postponed,
       scheduledDate: next,
-      originalScheduledDate:
-          occurrence.originalScheduledDate ?? occurrence.scheduledDate,
+      hour: occurrence.scheduledHour ?? programReminderHour,
+      minute: occurrence.scheduledMinute ?? programReminderMinute,
     );
+  }
+
+  Future<void> rescheduleOccurrence(
+    WorkoutOccurrence occurrence, {
+    required DateTime scheduledDate,
+    required int hour,
+    required int minute,
+    OccurrenceRescheduleMode mode = OccurrenceRescheduleMode.single,
+    String reason = 'user_rescheduled',
+  }) async {
+    final current = occurrenceById(occurrence.id);
+    if (current == null || !current.isOpen) {
+      throw StateError('Buổi tập này không còn có thể dời lịch.');
+    }
+    if (current.status == WorkoutOccurrenceStatus.inProgress) {
+      throw StateError('Không thể dời một buổi tập đang diễn ra.');
+    }
+    if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+      throw ArgumentError('Giờ tập không hợp lệ.');
+    }
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final targetDay = DateTime(
+      scheduledDate.year,
+      scheduledDate.month,
+      scheduledDate.day,
+    );
+    if (targetDay.isBefore(today)) {
+      throw ArgumentError('Không thể dời buổi tập sang ngày đã qua.');
+    }
+
+    final ordered = _orderedEnrollmentOccurrences(current.enrollmentId)
+        .where((item) => item.status != WorkoutOccurrenceStatus.cancelled)
+        .toList(growable: false);
+    final currentIndex = ordered.indexWhere((item) => item.id == current.id);
+    if (currentIndex < 0) {
+      throw StateError('Không tìm thấy buổi tập trong lộ trình.');
+    }
+    final version = programVersions
+        .where((item) => item.id == current.programVersionId)
+        .firstOrNull;
+    final minimumGapDays = (version?.cadence.minimumRestDays ?? 0) + 1;
+
+    if (currentIndex > 0) {
+      final previous = ordered[currentIndex - 1];
+      final earliest = DateTime(
+        previous.scheduledDate.year,
+        previous.scheduledDate.month,
+        previous.scheduledDate.day,
+      ).add(Duration(days: minimumGapDays));
+      if (targetDay.isBefore(earliest)) {
+        throw StateError('Ngày mới không đủ thời gian nghỉ sau buổi trước.');
+      }
+    }
+
+    if (mode == OccurrenceRescheduleMode.single) {
+      final collision = ordered.any(
+        (item) =>
+            item.id != current.id &&
+            item.isOpen &&
+            _dateKey(item.scheduledDate) == _dateKey(targetDay),
+      );
+      if (collision) {
+        throw StateError('Ngày đã chọn đã có một buổi tập khác.');
+      }
+      if (currentIndex + 1 < ordered.length) {
+        final following = ordered[currentIndex + 1];
+        final latest = DateTime(
+          following.scheduledDate.year,
+          following.scheduledDate.month,
+          following.scheduledDate.day,
+        ).subtract(Duration(days: minimumGapDays));
+        if (targetDay.isAfter(latest)) {
+          throw StateError(
+            'Ngày mới quá gần buổi kế tiếp. Hãy chọn dời cả chuỗi.',
+          );
+        }
+      }
+      _replaceOccurrence(
+        current,
+        status: WorkoutOccurrenceStatus.postponed,
+        scheduledDate: targetDay,
+        originalScheduledDate:
+            current.originalScheduledDate ?? current.scheduledDate,
+        readinessChoice: null,
+        readinessAssessedAt: null,
+        scheduledHour: hour,
+        scheduledMinute: minute,
+        rescheduleReason: reason,
+      );
+    } else {
+      final currentDay = DateTime(
+        current.scheduledDate.year,
+        current.scheduledDate.month,
+        current.scheduledDate.day,
+      );
+      final deltaDays = targetDay.difference(currentDay).inDays;
+      for (final item
+          in ordered.skip(currentIndex).where((item) => item.isOpen)) {
+        final shifted = DateTime(
+          item.scheduledDate.year,
+          item.scheduledDate.month,
+          item.scheduledDate.day,
+        ).add(Duration(days: deltaDays));
+        _replaceOccurrence(
+          item,
+          status: WorkoutOccurrenceStatus.postponed,
+          scheduledDate: shifted,
+          originalScheduledDate:
+              item.originalScheduledDate ?? item.scheduledDate,
+          readinessChoice: null,
+          readinessAssessedAt: null,
+          scheduledHour: item.id == current.id ? hour : item.scheduledHour,
+          scheduledMinute: item.id == current.id
+              ? minute
+              : item.scheduledMinute,
+          rescheduleReason: reason,
+        );
+      }
+    }
     await _syncProgramNotifications();
     await _commit();
   }
 
   Future<void> skipOccurrence(WorkoutOccurrence occurrence) async {
+    if (!occurrence.isOpen ||
+        occurrence.status == WorkoutOccurrenceStatus.inProgress) {
+      throw StateError('Buổi tập này không thể bỏ qua.');
+    }
     _replaceOccurrence(
       occurrence,
       status: WorkoutOccurrenceStatus.skipped,
       completedAt: DateTime.now(),
     );
-    await _notifications.cancelProgramOccurrence(occurrence.id);
+    await _safeCancelProgramOccurrence(occurrence.id);
+    _advanceEnrollmentProgress(occurrence.enrollmentId);
+    await _commit();
+  }
+
+  Future<void> markOccurrenceMissed(WorkoutOccurrence occurrence) async {
+    if (!occurrence.isOpen ||
+        occurrence.status == WorkoutOccurrenceStatus.inProgress) {
+      throw StateError('Buổi tập này không thể đánh dấu là đã lỡ.');
+    }
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final scheduled = DateTime(
+      occurrence.scheduledDate.year,
+      occurrence.scheduledDate.month,
+      occurrence.scheduledDate.day,
+    );
+    if (!scheduled.isBefore(today)) {
+      throw StateError('Chỉ có thể đánh dấu đã lỡ cho buổi quá hạn.');
+    }
+    _replaceOccurrence(
+      occurrence,
+      status: WorkoutOccurrenceStatus.missed,
+      completedAt: now,
+    );
+    await _safeCancelProgramOccurrence(occurrence.id);
+    _advanceEnrollmentProgress(occurrence.enrollmentId);
     await _commit();
   }
 
@@ -960,10 +1515,18 @@ class AppState extends ChangeNotifier {
         .where((item) => item.id == occurrence.programVersionId)
         .firstOrNull;
     final session = version?.sessionById(occurrence.sessionId);
-    if (version == null || session == null || !version.isPublished) {
+    if (version == null ||
+        session == null ||
+        (version.status != ProgramLifecycleStatus.published &&
+            version.status != ProgramLifecycleStatus.retired)) {
       throw StateError('Phiên bản chương trình không còn khả dụng.');
     }
-    final choice = occurrence.readinessChoice ?? ReadinessChoice.ready;
+    if (!isReadinessCurrent(occurrence)) {
+      throw StateError(
+        'Hãy chọn mức sẵn sàng của hôm nay trước khi bắt đầu buổi tập.',
+      );
+    }
+    final choice = occurrence.readinessChoice!;
     final variant = session.readinessVariantFor(choice);
     if (variant?.stopWorkout ?? false) {
       throw StateError(
@@ -988,28 +1551,62 @@ class AppState extends ChangeNotifier {
       title: session.title,
       programTitle: activeProgram?.title ?? 'FitTrack Program',
       contentVersion: version.version,
+      readinessChoice: choice.name,
+      readinessVariantTitle: variant?.title ?? 'Sẵn sàng',
+      readinessGuidance:
+          variant?.guidance ?? 'Thực hiện đúng prescription của buổi tập.',
       sourceRefs: version.sourceRefs.map((item) => item.url).toList(),
       exercises: prescriptions.map((item) {
         final exercise = exercises
             .where((candidate) => candidate.id == item.exerciseId)
             .firstOrNull;
+        final selectableExercises = <Exercise>[];
+        if (exercise != null && exercise.isActive) {
+          selectableExercises.add(exercise);
+        }
+        for (final alternativeId in item.alternativeExerciseIds) {
+          final alternative = exercises
+              .where(
+                (candidate) =>
+                    candidate.id == alternativeId && candidate.isActive,
+              )
+              .firstOrNull;
+          if (alternative != null) selectableExercises.add(alternative);
+        }
         return target.WorkoutExerciseSnapshot(
           exerciseId: item.exerciseId,
+          prescribedExerciseId: item.exerciseId,
           name: _resolveExerciseName(item.exerciseId, exercise?.name),
           muscleGroup: exercise?.muscleGroup ?? 'Toàn thân',
           equipment: exercise?.equipment ?? 'Không dụng cụ',
           setCount: item.sets,
           target: target.WorkoutTargetContext(
-            type: item.targetType.name,
+            type: switch (item.targetType) {
+              PrescriptionTargetType.repetitions => 'repetitions',
+              PrescriptionTargetType.durationSeconds => 'duration_seconds',
+            },
             label: item.targetLabel,
             minimum: item.targetRange.minimum,
             maximum: item.targetRange.maximum,
           ),
           restSeconds: item.restSeconds,
+          transitionAfterExerciseSeconds: item.transitionAfterExerciseSeconds,
           cues: item.cues,
           mediaUrl: exercise?.imageUrl,
           mediaAltText: exercise?.description,
           poseRuleVersionId: item.poseRuleVersionId,
+          alternatives: selectableExercises
+              .map(
+                (candidate) => target.WorkoutExerciseAlternativeSnapshot(
+                  exerciseId: candidate.id,
+                  name: _resolveExerciseName(candidate.id, candidate.name),
+                  muscleGroup: candidate.muscleGroup,
+                  equipment: candidate.equipment,
+                  mediaUrl: candidate.imageUrl,
+                  mediaAltText: candidate.description,
+                ),
+              )
+              .toList(),
         );
       }).toList(),
     );
@@ -1027,7 +1624,7 @@ class AppState extends ChangeNotifier {
       status: WorkoutOccurrenceStatus.inProgress,
       startedAt: DateTime.now(),
     );
-    await _notifications.cancelProgramOccurrence(occurrence.id);
+    await _safeCancelProgramOccurrence(occurrence.id);
     await _workoutDraftStore.save(uid, activeWorkoutDraft!);
     await _commit();
     return controller;
@@ -1036,15 +1633,19 @@ class AppState extends ChangeNotifier {
   Future<void> checkpointWorkout(ActiveWorkoutController controller) async {
     activeWorkoutDraft = controller.checkpoint();
     await _workoutDraftStore.save(uid, activeWorkoutDraft!);
-    await _notifications.cancelRestSession(controller.draft.sessionId);
+    await _safeCancelRestSession(controller.draft.sessionId);
     if (notificationsEnabled &&
         controller.phase == target.WorkoutPhase.resting &&
         controller.draft.restEndsAt != null) {
-      await _notifications.scheduleRestEnd(
-        sessionId: controller.draft.sessionId,
-        phaseId: controller.phaseId,
-        restEndsAt: controller.draft.restEndsAt!,
-      );
+      try {
+        await _notifications.scheduleRestEnd(
+          sessionId: controller.draft.sessionId,
+          phaseId: controller.phaseId,
+          restEndsAt: controller.draft.restEndsAt!,
+        );
+      } on Object {
+        // A notification failure must never block workout checkpointing.
+      }
     }
     notifyListeners();
   }
@@ -1069,7 +1670,7 @@ class AppState extends ChangeNotifier {
         idempotencyKey: savedCompletion.idempotencyKey,
       );
       await _workoutDraftStore.clear(uid);
-      await _notifications.cancelRestSession(controller.draft.sessionId);
+      await _safeCancelRestSession(controller.draft.sessionId);
       activeWorkoutDraft = null;
       notifyListeners();
       return savedCompletion;
@@ -1088,15 +1689,20 @@ class AppState extends ChangeNotifier {
     workoutCompletions.add(completion);
     _replaceOccurrence(
       occurrence,
-      status: WorkoutOccurrenceStatus.completed,
+      status: completion.status == target.WorkoutCompletionStatus.abandoned
+          ? WorkoutOccurrenceStatus.abandoned
+          : WorkoutOccurrenceStatus.completed,
       completedAt: completion.completedAt,
     );
-    await _recordWorkoutActivity(completion.completedAt);
+    if (completion.hasParticipation) {
+      await _recordWorkoutActivity(completion.completedAt);
+    }
+    _advanceEnrollmentProgress(occurrence.enrollmentId);
     _unlockAchievements();
     await _commit();
     controller.markCompletionSaved(idempotencyKey: completion.idempotencyKey);
     await _workoutDraftStore.clear(uid);
-    await _notifications.cancelRestSession(controller.draft.sessionId);
+    await _safeCancelRestSession(controller.draft.sessionId);
     activeWorkoutDraft = null;
     notifyListeners();
     return completion;
@@ -1119,8 +1725,9 @@ class AppState extends ChangeNotifier {
       completedAt: DateTime.now(),
     );
     await _workoutDraftStore.clear(uid);
-    await _notifications.cancelRestSession(controller.draft.sessionId);
+    await _safeCancelRestSession(controller.draft.sessionId);
     activeWorkoutDraft = null;
+    _advanceEnrollmentProgress(occurrence.enrollmentId);
     await _commit();
   }
 
@@ -1128,27 +1735,95 @@ class AppState extends ChangeNotifier {
     WorkoutOccurrence current, {
     required WorkoutOccurrenceStatus status,
     DateTime? scheduledDate,
-    DateTime? originalScheduledDate,
-    ReadinessChoice? readinessChoice,
-    DateTime? startedAt,
-    DateTime? completedAt,
+    Object? originalScheduledDate = _appStateUnset,
+    Object? readinessChoice = _appStateUnset,
+    Object? readinessAssessedAt = _appStateUnset,
+    Object? startedAt = _appStateUnset,
+    Object? completedAt = _appStateUnset,
+    Object? scheduledHour = _appStateUnset,
+    Object? scheduledMinute = _appStateUnset,
+    bool? reminderEnabled,
+    Object? reminderMinutesBefore = _appStateUnset,
+    Object? rescheduleReason = _appStateUnset,
   }) {
     final index = occurrences.indexWhere((item) => item.id == current.id);
     if (index < 0) return;
-    occurrences[index] = WorkoutOccurrence(
-      id: current.id,
-      enrollmentId: current.enrollmentId,
-      programVersionId: current.programVersionId,
-      sessionId: current.sessionId,
-      weekNumber: current.weekNumber,
-      scheduledDate: scheduledDate ?? current.scheduledDate,
+    final stored = occurrences[index];
+    occurrences[index] = stored.copyWith(
+      scheduledDate: scheduledDate ?? stored.scheduledDate,
       status: status,
-      originalScheduledDate:
-          originalScheduledDate ?? current.originalScheduledDate,
-      readinessChoice: readinessChoice ?? current.readinessChoice,
-      startedAt: startedAt ?? current.startedAt,
-      completedAt: completedAt ?? current.completedAt,
+      originalScheduledDate: originalScheduledDate,
+      readinessChoice: readinessChoice,
+      readinessAssessedAt: readinessAssessedAt,
+      startedAt: startedAt,
+      completedAt: completedAt,
+      scheduledHour: scheduledHour,
+      scheduledMinute: scheduledMinute,
+      reminderEnabled: reminderEnabled,
+      reminderMinutesBefore: reminderMinutesBefore,
+      rescheduleReason: rescheduleReason,
+      updatedAt: DateTime.now(),
     );
+  }
+
+  List<WorkoutOccurrence> _orderedEnrollmentOccurrences(String enrollmentId) {
+    final versionId = enrollment?.id == enrollmentId
+        ? enrollment?.programVersionId
+        : occurrences
+              .where((item) => item.enrollmentId == enrollmentId)
+              .firstOrNull
+              ?.programVersionId;
+    final version = programVersions
+        .where((item) => item.id == versionId)
+        .firstOrNull;
+    final sequence = <String, int>{};
+    if (version != null) {
+      for (var index = 0; index < version.allSessions.length; index++) {
+        sequence[version.allSessions[index].id] = index;
+      }
+    }
+    final result = occurrences
+        .where((item) => item.enrollmentId == enrollmentId)
+        .toList();
+    result.sort((left, right) {
+      final order = (sequence[left.sessionId] ?? 1 << 30).compareTo(
+        sequence[right.sessionId] ?? 1 << 30,
+      );
+      return order != 0
+          ? order
+          : left.scheduledDate.compareTo(right.scheduledDate);
+    });
+    return result;
+  }
+
+  void _advanceEnrollmentProgress(String enrollmentId) {
+    final current = enrollment;
+    if (current == null ||
+        current.id != enrollmentId ||
+        current.status != ProgramEnrollmentStatus.active) {
+      return;
+    }
+    final ordered = _orderedEnrollmentOccurrences(enrollmentId);
+    final nextIndex = ordered.indexWhere((item) => item.isOpen);
+    final now = DateTime.now();
+    if (nextIndex < 0 && ordered.isNotEmpty) {
+      final last = ordered.last;
+      enrollment = current.copyWith(
+        status: ProgramEnrollmentStatus.completed,
+        currentWeekNumber: last.weekNumber,
+        nextSessionOrder: ordered.length,
+        endedAt: now,
+        updatedAt: now,
+      );
+      return;
+    }
+    if (nextIndex >= 0) {
+      enrollment = current.copyWith(
+        currentWeekNumber: ordered[nextIndex].weekNumber,
+        nextSessionOrder: nextIndex,
+        updatedAt: now,
+      );
+    }
   }
 
   Future<void> updateBodyMetrics({
@@ -1166,7 +1841,10 @@ class AppState extends ChangeNotifier {
     if (moment.isAfter(DateTime.now().add(const Duration(minutes: 1)))) {
       throw ArgumentError('Thời điểm đo không được ở tương lai.');
     }
-    profile = profile.copyWith(heightCm: heightCm, currentWeightKg: weightKg);
+    final previousLatest = latestWeight;
+    if (previousLatest == null || !moment.isBefore(previousLatest.recordedAt)) {
+      profile = profile.copyWith(heightCm: heightCm, currentWeightKg: weightKg);
+    }
     weightEntries.add(
       WeightEntry(
         id: _newId('body'),
@@ -1516,11 +2194,19 @@ class AppState extends ChangeNotifier {
 
   Future<bool> requestNotificationPermission() async {
     notificationPermissionRequested = true;
-    notificationPermissionGranted = await _notifications.requestPermission();
+    try {
+      notificationPermissionGranted = await _notifications.requestPermission();
+    } on Object {
+      notificationPermissionGranted = false;
+    }
     if (firebaseAvailable && notificationPermissionGranted) {
-      await _notifications.initializeFirebaseMessaging(
-        isEnabled: () => notificationsEnabled,
-      );
+      try {
+        await _notifications.initializeFirebaseMessaging(
+          isEnabled: () => notificationsEnabled,
+        );
+      } on Object {
+        // Permission can still be stored when FCM setup is temporarily down.
+      }
     }
     await _syncProgramNotifications();
     await _commit();
@@ -1533,15 +2219,23 @@ class AppState extends ChangeNotifier {
   Future<void> setNotificationsEnabled(bool value) async {
     notificationsEnabled = value;
     if (!value) {
-      await _notifications.cancelAll();
+      try {
+        await _notifications.cancelAll();
+      } on Object {
+        // The preference remains authoritative even if the plugin is down.
+      }
     } else {
       await _initializeMessagingIfOptedIn();
     }
     for (final reminder in reminders) {
-      if (value) {
-        await _notifications.schedule(reminder);
-      } else {
-        await _notifications.cancel(reminder.id);
+      try {
+        if (value) {
+          await _notifications.schedule(reminder);
+        } else {
+          await _notifications.cancel(reminder.id);
+        }
+      } on Object {
+        // Continue syncing the remaining reminders.
       }
     }
     await _syncProgramNotifications();
@@ -1565,31 +2259,89 @@ class AppState extends ChangeNotifier {
     await _commit();
   }
 
+  Future<void> setOccurrenceReminder(
+    WorkoutOccurrence occurrence, {
+    required bool enabled,
+    required int hour,
+    required int minute,
+    int? minutesBefore,
+  }) async {
+    final current = occurrenceById(occurrence.id);
+    if (current == null || !current.isOpen) {
+      throw StateError('Buổi tập này không còn có thể đặt nhắc nhở.');
+    }
+    if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+      throw ArgumentError('Giờ nhắc không hợp lệ.');
+    }
+    _replaceOccurrence(
+      current,
+      status: current.status,
+      scheduledHour: hour,
+      scheduledMinute: minute,
+      reminderEnabled: enabled,
+      reminderMinutesBefore: (minutesBefore ?? programReminderMinutesBefore)
+          .clamp(0, 1440),
+    );
+    await _syncProgramNotifications();
+    await _commit();
+  }
+
   Future<void> _syncProgramNotifications() async {
     for (final occurrence in occurrences) {
-      await _notifications.cancelProgramOccurrence(occurrence.id);
+      await _safeCancelProgramOccurrence(occurrence.id);
       if (!notificationsEnabled ||
           !notificationPermissionGranted ||
-          occurrence.status == WorkoutOccurrenceStatus.completed ||
-          occurrence.status == WorkoutOccurrenceStatus.skipped ||
-          occurrence.status == WorkoutOccurrenceStatus.cancelled ||
+          !occurrence.reminderEnabled ||
+          !occurrence.isOpen ||
           occurrence.status == WorkoutOccurrenceStatus.inProgress) {
         continue;
       }
       final session = sessionForOccurrence(occurrence);
-      final scheduledAt = DateTime(
-        occurrence.scheduledDate.year,
-        occurrence.scheduledDate.month,
-        occurrence.scheduledDate.day,
-        programReminderHour,
-        programReminderMinute,
+      final scheduledAt = occurrence.scheduledAt(
+        fallbackHour: programReminderHour,
+        fallbackMinute: programReminderMinute,
       );
-      await _notifications.scheduleProgramOccurrence(
+      await _safeScheduleProgramOccurrence(
         occurrenceId: occurrence.id,
         title: session?.title ?? 'Buổi tập FitTrack',
         scheduledAt: scheduledAt,
-        minutesBefore: programReminderMinutesBefore,
+        minutesBefore:
+            occurrence.reminderMinutesBefore ?? programReminderMinutesBefore,
       );
+    }
+  }
+
+  Future<void> _safeScheduleProgramOccurrence({
+    required String occurrenceId,
+    required String title,
+    required DateTime scheduledAt,
+    required int minutesBefore,
+  }) async {
+    try {
+      await _notifications.scheduleProgramOccurrence(
+        occurrenceId: occurrenceId,
+        title: title,
+        scheduledAt: scheduledAt,
+        minutesBefore: minutesBefore,
+      );
+    } on Object {
+      // Scheduling is best-effort; the occurrence remains usable.
+    }
+  }
+
+  Future<void> _safeCancelProgramOccurrence(String occurrenceId) async {
+    try {
+      await _notifications.cancelProgramOccurrence(occurrenceId);
+    } on Object {
+      // Notification infrastructure must not block domain mutations.
+    }
+  }
+
+  Future<void> _safeCancelRestSession(String sessionId) async {
+    try {
+      await _notifications.cancelRestSession(sessionId);
+    } on Object {
+      // Notification infrastructure must not block workout persistence.
     }
   }
 
@@ -1599,9 +2351,13 @@ class AppState extends ChangeNotifier {
         !notificationPermissionGranted) {
       return;
     }
-    await _notifications.initializeFirebaseMessaging(
-      isEnabled: () => notificationsEnabled,
-    );
+    try {
+      await _notifications.initializeFirebaseMessaging(
+        isEnabled: () => notificationsEnabled,
+      );
+    } on Object {
+      // Push messaging is optional; local state and workouts remain available.
+    }
   }
 
   Future<void> setThemeMode(ThemeMode value) async {
@@ -1630,8 +2386,15 @@ class AppState extends ChangeNotifier {
     await _commit();
   }
 
+  Future<void> setCountdownSoundsEnabled(bool value) async {
+    countdownSoundsEnabled = value;
+    await _commit();
+  }
+
   void _unlockAchievements() {
-    final completed = workoutCompletions.length;
+    final completed = workoutCompletions
+        .where((item) => item.isFullyCompleted)
+        .length;
     // Achievement eligibility may use the better independent streak, but the
     // weight-entry and workout day sets are never combined into one sequence.
     final bestStreak = longestStreak > longestWorkoutStreak
@@ -1653,23 +2416,207 @@ class AppState extends ChangeNotifier {
     }).toList();
   }
 
+  Map<String, dynamic> _mergeSnapshots({
+    required Map<String, dynamic> remote,
+    required Map<String, dynamic> local,
+  }) {
+    final merged = Map<String, dynamic>.from(local);
+    merged['weightEntries'] = _mergeRecordLists(
+      remote['weightEntries'],
+      local['weightEntries'],
+      keyOf: (item) => item['id'] as String?,
+    );
+    merged['completions'] = _mergeRecordLists(
+      remote['completions'],
+      local['completions'],
+      keyOf: (item) => item['id'] as String?,
+    );
+    merged['achievements'] = _mergeRecordLists(
+      remote['achievements'],
+      local['achievements'],
+      keyOf: (item) => item['id'] as String?,
+      choose: (remoteItem, localItem) {
+        if (localItem['unlockedAt'] != null) return localItem;
+        return remoteItem['unlockedAt'] != null ? remoteItem : localItem;
+      },
+    );
+    merged['weightActivityDays'] = _mergeStringLists(
+      remote['weightActivityDays'],
+      local['weightActivityDays'],
+    );
+    merged['workoutDays'] = _mergeStringLists(
+      remote['workoutDays'],
+      local['workoutDays'],
+    );
+
+    final remoteTarget = Map<String, dynamic>.from(
+      remote['target'] as Map? ?? const {},
+    );
+    final localTarget = Map<String, dynamic>.from(
+      local['target'] as Map? ?? const {},
+    );
+    final mergedTarget = Map<String, dynamic>.from(localTarget);
+    mergedTarget['occurrences'] = _mergeRecordLists(
+      remoteTarget['occurrences'],
+      localTarget['occurrences'],
+      keyOf: (item) => item['id'] as String?,
+      choose: _chooseNewestRecord,
+    );
+    mergedTarget['workoutCompletions'] = _mergeRecordLists(
+      remoteTarget['workoutCompletions'],
+      localTarget['workoutCompletions'],
+      keyOf: (item) =>
+          item['idempotencyKey'] as String? ?? item['id'] as String?,
+    );
+    final remoteEnrollment = remoteTarget['enrollment'];
+    final localEnrollment = localTarget['enrollment'];
+    if (remoteEnrollment is Map && localEnrollment is Map) {
+      mergedTarget['enrollment'] = _chooseNewestRecord(
+        Map<String, dynamic>.from(remoteEnrollment),
+        Map<String, dynamic>.from(localEnrollment),
+      );
+    }
+    merged['target'] = mergedTarget;
+    merged['_sync'] = {
+      'remoteRevision':
+          ((remote['_sync'] as Map?)?['remoteRevision'] as num?)?.toInt() ?? 0,
+    };
+    return merged;
+  }
+
+  List<Map<String, dynamic>> _mergeRecordLists(
+    Object? remoteValue,
+    Object? localValue, {
+    required String? Function(Map<String, dynamic>) keyOf,
+    Map<String, dynamic> Function(
+      Map<String, dynamic> remoteItem,
+      Map<String, dynamic> localItem,
+    )?
+    choose,
+  }) {
+    final records = <String, Map<String, dynamic>>{};
+    for (final raw in remoteValue as List? ?? const []) {
+      if (raw is! Map) continue;
+      final item = Map<String, dynamic>.from(raw);
+      final key = keyOf(item);
+      if (key != null) records[key] = item;
+    }
+    for (final raw in localValue as List? ?? const []) {
+      if (raw is! Map) continue;
+      final item = Map<String, dynamic>.from(raw);
+      final key = keyOf(item);
+      if (key == null) continue;
+      final remoteItem = records[key];
+      records[key] = remoteItem == null
+          ? item
+          : (choose?.call(remoteItem, item) ?? item);
+    }
+    return records.values.toList(growable: false);
+  }
+
+  List<String> _mergeStringLists(Object? remoteValue, Object? localValue) => {
+    ...(remoteValue as List? ?? const []).whereType<String>(),
+    ...(localValue as List? ?? const []).whereType<String>(),
+  }.toList(growable: false);
+
+  Map<String, dynamic> _chooseNewestRecord(
+    Map<String, dynamic> remoteItem,
+    Map<String, dynamic> localItem,
+  ) {
+    DateTime timestamp(Map<String, dynamic> item) {
+      for (final key in const [
+        'updatedAt',
+        'completedAt',
+        'endedAt',
+        'startedAt',
+        'scheduledDate',
+      ]) {
+        final value = item[key];
+        if (value is String) {
+          final parsed = DateTime.tryParse(value);
+          if (parsed != null) return parsed;
+        }
+      }
+      return DateTime.fromMillisecondsSinceEpoch(0);
+    }
+
+    return timestamp(localItem).isBefore(timestamp(remoteItem))
+        ? remoteItem
+        : localItem;
+  }
+
   Future<void> _commit() async {
     // Both streaks are time-dependent even when no new event is added.
     _recalculateWeightStreak();
     _recalculateWorkoutStreak();
-    await _store.saveState(_toJson());
-    try {
-      await _firebase.syncSnapshot(uid, _toJson());
-    } on Object {
-      // Local persistence is authoritative while offline; Firebase retries can
-      // be added with a durable sync queue after project configuration.
+    final snapshot = _toJson();
+    await _store.saveState(snapshot);
+    if (firebaseAvailable && uid != 'demo-user') {
+      await _syncQueue.enqueueLatest(
+        uid: uid,
+        snapshot: snapshot,
+        expectedRemoteRevision: _remoteRevision,
+      );
+      await _drainSyncQueue();
     }
     notifyListeners();
   }
 
+  Future<void> _drainSyncQueue() async {
+    if (_syncing || !firebaseAvailable || uid == 'demo-user') return;
+    _syncing = true;
+    try {
+      var operation = await _syncQueue.peek(uid);
+      if (operation == null) return;
+      try {
+        final syncedRevision = await _firebase.syncSnapshot(
+          uid,
+          operation.snapshot,
+          expectedRemoteRevision: operation.expectedRemoteRevision,
+        );
+        _restore(operation.snapshot);
+        _remoteRevision = syncedRevision;
+        await _syncQueue.clear(uid);
+      } on SyncConflictException catch (conflict) {
+        final remote = await _firebase.loadSnapshot(uid);
+        if (remote == null) return;
+        final merged = _mergeSnapshots(
+          remote: remote,
+          local: operation.snapshot,
+        );
+        _remoteRevision = conflict.remoteRevision;
+        _restore(merged);
+        await _store.saveState(_toJson());
+        await _syncQueue.enqueueLatest(
+          uid: uid,
+          snapshot: _toJson(),
+          expectedRemoteRevision: _remoteRevision,
+        );
+        operation = await _syncQueue.peek(uid);
+        if (operation == null) return;
+        _remoteRevision = await _firebase.syncSnapshot(
+          uid,
+          operation.snapshot,
+          expectedRemoteRevision: operation.expectedRemoteRevision,
+        );
+        await _syncQueue.clear(uid);
+      }
+      await _store.saveState(_toJson());
+    } on Object {
+      // The durable operation stays queued and will be retried next launch or
+      // after the next local mutation.
+    } finally {
+      _syncing = false;
+    }
+  }
+
   Map<String, dynamic> _toJson() => {
+    '_sync': {'remoteRevision': _remoteRevision},
     'profile': profile.toJson(),
-    'exercises': exercises.map((item) => item.toJson()).toList(),
+    // Reviewed templates are bundled/remote catalog data, not per-user data.
+    // Only personal entries belong in the account snapshot (and Firestore
+    // document), keeping sync payloads small and avoiding stale catalog data.
+    'exercises': personalExercises.map((item) => item.toJson()).toList(),
     'favoriteExerciseIds': favoriteExerciseIds.toList(),
     'plans': plans.map((item) => item.toJson()).toList(),
     'schedules': schedules.map((item) => item.toJson()).toList(),
@@ -1703,6 +2650,7 @@ class AppState extends ChangeNotifier {
       'voiceCoachEnabled': voiceCoachEnabled,
       'voiceCoachRate': voiceCoachRate,
       'hapticsEnabled': hapticsEnabled,
+      'countdownSoundsEnabled': countdownSoundsEnabled,
       'unit': unit,
     },
     'target': {
@@ -1719,12 +2667,15 @@ class AppState extends ChangeNotifier {
   };
 
   void _restore(Map<String, dynamic> json) {
+    _remoteRevision =
+        ((json['_sync'] as Map?)?['remoteRevision'] as num?)?.toInt() ?? 0;
     profile = UserProfile.fromJson(json['profile'] as Map<String, dynamic>);
     if (json['exercises'] case final List<dynamic> savedExercises) {
       exercises = savedExercises
           .map((item) => Exercise.fromJson(item as Map<String, dynamic>))
           .toList();
     }
+    _mergeBundledExercises();
     favoriteExerciseIds
       ..clear()
       ..addAll(List<String>.from(json['favoriteExerciseIds'] as List? ?? []));
@@ -1836,6 +2787,8 @@ class AppState extends ChangeNotifier {
     voiceCoachEnabled = settings['voiceCoachEnabled'] as bool? ?? false;
     voiceCoachRate = (settings['voiceCoachRate'] as num?)?.toDouble() ?? .48;
     hapticsEnabled = settings['hapticsEnabled'] as bool? ?? true;
+    countdownSoundsEnabled =
+        settings['countdownSoundsEnabled'] as bool? ?? true;
     unit = MeasurementUnitSystem.fromStored(
       settings['unit'] as String?,
     ).storageKey;
@@ -1916,6 +2869,37 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  Future<void> _loadBundledExercises() async {
+    try {
+      _bundledExercises = await _bundledExerciseCatalog.load();
+    } on Object {
+      // Keep the authored seed catalog available if an asset is unavailable
+      // during a test build or while an older binary is being upgraded.
+      _bundledExercises = const [];
+    }
+    _mergeBundledExercises();
+  }
+
+  List<Exercise> _baselineExercises() {
+    final merged = <String, Exercise>{
+      for (final exercise in SeedData.exercises) exercise.id: exercise,
+      for (final exercise in _bundledExercises) exercise.id: exercise,
+    };
+    return merged.values.toList(growable: false);
+  }
+
+  void _mergeBundledExercises() {
+    if (_bundledExercises.isEmpty) return;
+    final merged = <String, Exercise>{
+      for (final exercise in _baselineExercises()) exercise.id: exercise,
+      for (final exercise in exercises)
+        if (exercise.isPersonal ||
+            !_bundledExercises.any((bundled) => bundled.id == exercise.id))
+          exercise.id: exercise,
+    };
+    exercises = merged.values.toList(growable: false);
+  }
+
   String _dateKey(DateTime date) =>
       '${date.year.toString().padLeft(4, '0')}-'
       '${date.month.toString().padLeft(2, '0')}-'
@@ -1927,6 +2911,7 @@ class AppState extends ChangeNotifier {
       '$prefix-${DateTime.now().microsecondsSinceEpoch}';
 
   String _friendlyError(Object error) {
+    if (error is AccountAccessException) return error.toString();
     final message = error.toString().toLowerCase();
     if (message.contains('wrong-password') ||
         message.contains('invalid-credential')) {

@@ -73,6 +73,9 @@ final class MlKitPoseDetectionService
     );
     final poses = await detector.processImage(converted.inputImage);
     if (poses.isEmpty) return PoseDetectionResult.noPose(capturedAt);
+    if (poses.length > 1) {
+      return PoseDetectionResult.multiplePoses(capturedAt);
+    }
 
     PoseFrame? bestFrame;
     var bestQuality = -1.0;

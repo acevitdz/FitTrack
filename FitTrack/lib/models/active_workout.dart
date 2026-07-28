@@ -11,6 +11,7 @@ class _ActiveWorkoutUnset {
 /// The lifecycle of one guided workout session.
 enum WorkoutPhase {
   preparing,
+  countingDown,
   working,
   resting,
   paused,
@@ -23,7 +24,7 @@ enum WorkoutConfirmationMode { aiCamera, guided }
 
 enum SetEventStatus { completed, redone, skipped }
 
-enum WorkoutCompletionStatus { completed, partiallyCompleted }
+enum WorkoutCompletionStatus { completed, partiallyCompleted, abandoned }
 
 /// Prescribed context shown to the user. It is deliberately display-oriented:
 /// it is not an actual-result input and contains no external load or volume.
@@ -56,6 +57,59 @@ class WorkoutTargetContext {
       );
 }
 
+int _defaultGuidedWorkSeconds(WorkoutTargetContext target) {
+  if (const {
+    'duration_seconds',
+    'durationSeconds',
+    'duration',
+  }.contains(target.type)) {
+    return target.minimum ?? target.maximum ?? 30;
+  }
+  // Guided sets run on a timer. Repetition prescriptions remain visible for
+  // Camera Coach and history, while a conservative three-second tempo turns
+  // the upper rep target into an authored runtime fallback.
+  final repetitions = target.maximum ?? target.minimum ?? 10;
+  return (repetitions * 3).clamp(20, 60);
+}
+
+class WorkoutExerciseAlternativeSnapshot {
+  const WorkoutExerciseAlternativeSnapshot({
+    required this.exerciseId,
+    required this.name,
+    this.muscleGroup = '',
+    this.equipment = '',
+    this.mediaUrl,
+    this.mediaAltText,
+  });
+
+  final String exerciseId;
+  final String name;
+  final String muscleGroup;
+  final String equipment;
+  final String? mediaUrl;
+  final String? mediaAltText;
+
+  Map<String, dynamic> toJson() => {
+    'exerciseId': exerciseId,
+    'name': name,
+    'muscleGroup': muscleGroup,
+    'equipment': equipment,
+    'mediaUrl': mediaUrl,
+    'mediaAltText': mediaAltText,
+  };
+
+  factory WorkoutExerciseAlternativeSnapshot.fromJson(
+    Map<String, dynamic> json,
+  ) => WorkoutExerciseAlternativeSnapshot(
+    exerciseId: json['exerciseId'] as String,
+    name: json['name'] as String,
+    muscleGroup: json['muscleGroup'] as String? ?? '',
+    equipment: json['equipment'] as String? ?? '',
+    mediaUrl: json['mediaUrl'] as String?,
+    mediaAltText: json['mediaAltText'] as String?,
+  );
+}
+
 /// Immutable exercise data captured when a session starts. Catalog edits do
 /// not change a workout that is already running or its history.
 class WorkoutExerciseSnapshot {
@@ -65,13 +119,24 @@ class WorkoutExerciseSnapshot {
     required this.setCount,
     required this.target,
     required this.restSeconds,
+    this.preparationSeconds = 5,
+    int? workDurationSeconds,
+    int? transitionAfterExerciseSeconds,
     this.muscleGroup = '',
     this.equipment = '',
     List<String> cues = const [],
     this.mediaUrl,
     this.mediaAltText,
     this.poseRuleVersionId,
-  }) : cues = List.unmodifiable(cues) {
+    String? prescribedExerciseId,
+    List<WorkoutExerciseAlternativeSnapshot> alternatives = const [],
+  }) : workDurationSeconds =
+           workDurationSeconds ?? _defaultGuidedWorkSeconds(target),
+       transitionAfterExerciseSeconds =
+           transitionAfterExerciseSeconds ?? restSeconds,
+       cues = List.unmodifiable(cues),
+       prescribedExerciseId = prescribedExerciseId ?? exerciseId,
+       alternatives = List.unmodifiable(alternatives) {
     if (exerciseId.trim().isEmpty) {
       throw ArgumentError.value(exerciseId, 'exerciseId', 'Must not be empty');
     }
@@ -88,37 +153,93 @@ class WorkoutExerciseSnapshot {
         'Must not be negative',
       );
     }
+    if (preparationSeconds < 0) {
+      throw ArgumentError.value(
+        preparationSeconds,
+        'preparationSeconds',
+        'Must not be negative',
+      );
+    }
+    if (this.workDurationSeconds < 1) {
+      throw ArgumentError.value(
+        this.workDurationSeconds,
+        'workDurationSeconds',
+        'Must be at least one second',
+      );
+    }
+    if (this.transitionAfterExerciseSeconds < 0) {
+      throw ArgumentError.value(
+        this.transitionAfterExerciseSeconds,
+        'transitionAfterExerciseSeconds',
+        'Must not be negative',
+      );
+    }
   }
 
   final String exerciseId;
+  final String prescribedExerciseId;
   final String name;
   final String muscleGroup;
   final String equipment;
   final int setCount;
   final WorkoutTargetContext target;
+  final int preparationSeconds;
+  final int workDurationSeconds;
   final int restSeconds;
+  int get restBetweenSetsSeconds => restSeconds;
+  final int transitionAfterExerciseSeconds;
   final List<String> cues;
   final String? mediaUrl;
   final String? mediaAltText;
   final String? poseRuleVersionId;
+  final List<WorkoutExerciseAlternativeSnapshot> alternatives;
+
+  bool get isAlternative => exerciseId != prescribedExerciseId;
+
+  WorkoutExerciseSnapshot selectAlternative(
+    WorkoutExerciseAlternativeSnapshot alternative,
+  ) => WorkoutExerciseSnapshot(
+    exerciseId: alternative.exerciseId,
+    prescribedExerciseId: prescribedExerciseId,
+    name: alternative.name,
+    muscleGroup: alternative.muscleGroup,
+    equipment: alternative.equipment,
+    setCount: setCount,
+    target: target,
+    preparationSeconds: preparationSeconds,
+    workDurationSeconds: workDurationSeconds,
+    restSeconds: restSeconds,
+    transitionAfterExerciseSeconds: transitionAfterExerciseSeconds,
+    cues: cues,
+    mediaUrl: alternative.mediaUrl,
+    mediaAltText: alternative.mediaAltText,
+    alternatives: alternatives,
+  );
 
   Map<String, dynamic> toJson() => {
     'exerciseId': exerciseId,
+    'prescribedExerciseId': prescribedExerciseId,
     'name': name,
     'muscleGroup': muscleGroup,
     'equipment': equipment,
     'setCount': setCount,
     'target': target.toJson(),
+    'preparationSeconds': preparationSeconds,
+    'workDurationSeconds': workDurationSeconds,
     'restSeconds': restSeconds,
+    'restBetweenSetsSeconds': restBetweenSetsSeconds,
+    'transitionAfterExerciseSeconds': transitionAfterExerciseSeconds,
     'cues': cues,
     'mediaUrl': mediaUrl,
     'mediaAltText': mediaAltText,
     'poseRuleVersionId': poseRuleVersionId,
+    'alternatives': alternatives.map((item) => item.toJson()).toList(),
   };
 
   factory WorkoutExerciseSnapshot.fromJson(Map<String, dynamic> json) =>
       WorkoutExerciseSnapshot(
         exerciseId: json['exerciseId'] as String,
+        prescribedExerciseId: json['prescribedExerciseId'] as String?,
         name: json['name'] as String,
         muscleGroup: json['muscleGroup'] as String? ?? '',
         equipment: json['equipment'] as String? ?? '',
@@ -126,11 +247,26 @@ class WorkoutExerciseSnapshot {
         target: WorkoutTargetContext.fromJson(
           Map<String, dynamic>.from(json['target'] as Map),
         ),
-        restSeconds: (json['restSeconds'] as num? ?? 0).toInt(),
+        preparationSeconds: (json['preparationSeconds'] as num? ?? 5).toInt(),
+        workDurationSeconds: (json['workDurationSeconds'] as num?)?.toInt(),
+        restSeconds:
+            (json['restBetweenSetsSeconds'] as num? ??
+                    json['restSeconds'] as num? ??
+                    0)
+                .toInt(),
+        transitionAfterExerciseSeconds:
+            (json['transitionAfterExerciseSeconds'] as num?)?.toInt(),
         cues: List<String>.from(json['cues'] as List? ?? const []),
         mediaUrl: json['mediaUrl'] as String?,
         mediaAltText: json['mediaAltText'] as String?,
         poseRuleVersionId: json['poseRuleVersionId'] as String?,
+        alternatives: (json['alternatives'] as List? ?? const [])
+            .map(
+              (item) => WorkoutExerciseAlternativeSnapshot.fromJson(
+                Map<String, dynamic>.from(item as Map),
+              ),
+            )
+            .toList(),
       );
 }
 
@@ -141,6 +277,9 @@ class WorkoutSessionSnapshot {
     required List<WorkoutExerciseSnapshot> exercises,
     this.programTitle = '',
     this.contentVersion = '',
+    this.readinessChoice,
+    this.readinessVariantTitle,
+    this.readinessGuidance,
     List<String> sourceRefs = const [],
   }) : exercises = List.unmodifiable(exercises),
        sourceRefs = List.unmodifiable(sourceRefs) {
@@ -163,17 +302,45 @@ class WorkoutSessionSnapshot {
   final String title;
   final String programTitle;
   final String contentVersion;
+  final String? readinessChoice;
+  final String? readinessVariantTitle;
+  final String? readinessGuidance;
   final List<String> sourceRefs;
   final List<WorkoutExerciseSnapshot> exercises;
 
   int get totalSetCount =>
       exercises.fold(0, (total, exercise) => total + exercise.setCount);
 
+  WorkoutSessionSnapshot replaceExercise(
+    int index,
+    WorkoutExerciseSnapshot exercise,
+  ) {
+    if (index < 0 || index >= exercises.length) {
+      throw RangeError.index(index, exercises, 'index');
+    }
+    final updated = [...exercises];
+    updated[index] = exercise;
+    return WorkoutSessionSnapshot(
+      programSessionId: programSessionId,
+      title: title,
+      programTitle: programTitle,
+      contentVersion: contentVersion,
+      readinessChoice: readinessChoice,
+      readinessVariantTitle: readinessVariantTitle,
+      readinessGuidance: readinessGuidance,
+      sourceRefs: sourceRefs,
+      exercises: updated,
+    );
+  }
+
   Map<String, dynamic> toJson() => {
     'programSessionId': programSessionId,
     'title': title,
     'programTitle': programTitle,
     'contentVersion': contentVersion,
+    'readinessChoice': readinessChoice,
+    'readinessVariantTitle': readinessVariantTitle,
+    'readinessGuidance': readinessGuidance,
     'sourceRefs': sourceRefs,
     'exercises': exercises.map((exercise) => exercise.toJson()).toList(),
   };
@@ -184,6 +351,9 @@ class WorkoutSessionSnapshot {
         title: json['title'] as String,
         programTitle: json['programTitle'] as String? ?? '',
         contentVersion: json['contentVersion'] as String? ?? '',
+        readinessChoice: json['readinessChoice'] as String?,
+        readinessVariantTitle: json['readinessVariantTitle'] as String?,
+        readinessGuidance: json['readinessGuidance'] as String?,
         sourceRefs: List<String>.from(json['sourceRefs'] as List? ?? const []),
         exercises: (json['exercises'] as List)
             .map(
@@ -192,6 +362,53 @@ class WorkoutSessionSnapshot {
               ),
             )
             .toList(),
+      );
+}
+
+/// Aggregated, frame-free evidence captured by Camera Coach for one set.
+/// Raw images and landmarks never enter the persisted workout model.
+class CameraSetEvidence {
+  const CameraSetEvidence({
+    required this.ruleVersionId,
+    required this.evaluatedFrameCount,
+    required this.reliableFrameCount,
+    required this.formCueCount,
+    required this.averageConfidence,
+    required this.minimumConfidence,
+  }) : assert(evaluatedFrameCount >= 0),
+       assert(reliableFrameCount >= 0),
+       assert(formCueCount >= 0),
+       assert(reliableFrameCount <= evaluatedFrameCount),
+       assert(averageConfidence >= 0 && averageConfidence <= 1),
+       assert(minimumConfidence >= 0 && minimumConfidence <= 1);
+
+  final String ruleVersionId;
+  final int evaluatedFrameCount;
+  final int reliableFrameCount;
+  final int formCueCount;
+  final double averageConfidence;
+  final double minimumConfidence;
+
+  double get reliableFrameRatio =>
+      evaluatedFrameCount == 0 ? 0 : reliableFrameCount / evaluatedFrameCount;
+
+  Map<String, dynamic> toJson() => {
+    'ruleVersionId': ruleVersionId,
+    'evaluatedFrameCount': evaluatedFrameCount,
+    'reliableFrameCount': reliableFrameCount,
+    'formCueCount': formCueCount,
+    'averageConfidence': averageConfidence,
+    'minimumConfidence': minimumConfidence,
+  };
+
+  factory CameraSetEvidence.fromJson(Map<String, dynamic> json) =>
+      CameraSetEvidence(
+        ruleVersionId: json['ruleVersionId'] as String? ?? 'unknown',
+        evaluatedFrameCount: (json['evaluatedFrameCount'] as num? ?? 0).toInt(),
+        reliableFrameCount: (json['reliableFrameCount'] as num? ?? 0).toInt(),
+        formCueCount: (json['formCueCount'] as num? ?? 0).toInt(),
+        averageConfidence: (json['averageConfidence'] as num? ?? 0).toDouble(),
+        minimumConfidence: (json['minimumConfidence'] as num? ?? 0).toDouble(),
       );
 }
 
@@ -212,6 +429,8 @@ class SetEvent {
     this.skipReason,
     this.detectedRepCount,
     this.confidence,
+    this.timedDurationSeconds,
+    this.cameraEvidence,
   });
 
   final String id;
@@ -226,6 +445,8 @@ class SetEvent {
   final String? skipReason;
   final int? detectedRepCount;
   final double? confidence;
+  final int? timedDurationSeconds;
+  final CameraSetEvidence? cameraEvidence;
   final DateTime completedAt;
 
   Map<String, dynamic> toJson() => {
@@ -239,6 +460,8 @@ class SetEvent {
     'skipReason': skipReason,
     'detectedRepCount': detectedRepCount,
     'confidence': confidence,
+    'timedDurationSeconds': timedDurationSeconds,
+    'cameraEvidence': cameraEvidence?.toJson(),
     'completedAt': completedAt.toIso8601String(),
   };
 
@@ -257,6 +480,12 @@ class SetEvent {
     skipReason: json['skipReason'] as String?,
     detectedRepCount: (json['detectedRepCount'] as num?)?.toInt(),
     confidence: (json['confidence'] as num?)?.toDouble(),
+    timedDurationSeconds: (json['timedDurationSeconds'] as num?)?.toInt(),
+    cameraEvidence: json['cameraEvidence'] == null
+        ? null
+        : CameraSetEvidence.fromJson(
+            Map<String, dynamic>.from(json['cameraEvidence'] as Map),
+          ),
     completedAt: DateTime.parse(json['completedAt'] as String),
   );
 }
@@ -295,6 +524,8 @@ class WorkoutCompletion {
       setEvents.where((event) => event.status == SetEventStatus.redone).length;
   int get skippedSetCount =>
       setEvents.where((event) => event.status == SetEventStatus.skipped).length;
+  bool get hasParticipation => completedSetCount > 0;
+  bool get isFullyCompleted => status == WorkoutCompletionStatus.completed;
 
   Map<String, dynamic> toJson() => {
     'id': id,
@@ -356,9 +587,14 @@ class ActiveWorkoutDraft {
     this.startedAt,
     this.runningSince,
     this.restEndsAt,
+    this.preparationEndsAt,
     this.pausedFrom,
     this.pausedRestRemainingMilliseconds,
+    this.pausedPreparationRemainingMilliseconds,
     this.finishRequestedAt,
+    this.timedSetStartedAt,
+    this.timedSetElapsedMilliseconds = 0,
+    this.pausedTimedSetWasRunning = false,
   }) : setEvents = List.unmodifiable(setEvents) {
     if (sessionId.trim().isEmpty || userId.trim().isEmpty) {
       throw ArgumentError('sessionId and userId must not be empty');
@@ -371,7 +607,9 @@ class ActiveWorkoutDraft {
     if (transitionSequence < 0 ||
         exerciseIndex < 0 ||
         setIndex < 0 ||
-        accumulatedActiveMilliseconds < 0) {
+        accumulatedActiveMilliseconds < 0 ||
+        timedSetElapsedMilliseconds < 0 ||
+        (pausedPreparationRemainingMilliseconds ?? 0) < 0) {
       throw ArgumentError('Workout checkpoint counters must not be negative');
     }
     if (exerciseIndex >= snapshot.exercises.length) {
@@ -390,7 +628,7 @@ class ActiveWorkoutDraft {
     }
   }
 
-  static const schemaVersion = 1;
+  static const schemaVersion = 3;
   final String sessionId;
   final String userId;
   final String occurrenceId;
@@ -405,11 +643,16 @@ class ActiveWorkoutDraft {
   final DateTime? runningSince;
   final int accumulatedActiveMilliseconds;
   final DateTime? restEndsAt;
+  final DateTime? preparationEndsAt;
   final WorkoutConfirmationMode confirmationMode;
   final List<SetEvent> setEvents;
   final WorkoutPhase? pausedFrom;
   final int? pausedRestRemainingMilliseconds;
+  final int? pausedPreparationRemainingMilliseconds;
   final DateTime? finishRequestedAt;
+  final DateTime? timedSetStartedAt;
+  final int timedSetElapsedMilliseconds;
+  final bool pausedTimedSetWasRunning;
   final DateTime savedAt;
   final String completionIdempotencyKey;
 
@@ -423,18 +666,24 @@ class ActiveWorkoutDraft {
     Object? runningSince = activeWorkoutUnset,
     int? accumulatedActiveMilliseconds,
     Object? restEndsAt = activeWorkoutUnset,
+    Object? preparationEndsAt = activeWorkoutUnset,
     WorkoutConfirmationMode? confirmationMode,
     List<SetEvent>? setEvents,
     Object? pausedFrom = activeWorkoutUnset,
     Object? pausedRestRemainingMilliseconds = activeWorkoutUnset,
+    Object? pausedPreparationRemainingMilliseconds = activeWorkoutUnset,
     Object? finishRequestedAt = activeWorkoutUnset,
+    Object? timedSetStartedAt = activeWorkoutUnset,
+    int? timedSetElapsedMilliseconds,
+    bool? pausedTimedSetWasRunning,
     DateTime? savedAt,
+    WorkoutSessionSnapshot? snapshot,
   }) => ActiveWorkoutDraft(
     sessionId: sessionId,
     userId: userId,
     occurrenceId: occurrenceId,
     programVersionId: programVersionId,
-    snapshot: snapshot,
+    snapshot: snapshot ?? this.snapshot,
     phase: phase ?? this.phase,
     phaseId: phaseId ?? this.phaseId,
     transitionSequence: transitionSequence ?? this.transitionSequence,
@@ -451,6 +700,9 @@ class ActiveWorkoutDraft {
     restEndsAt: identical(restEndsAt, activeWorkoutUnset)
         ? this.restEndsAt
         : restEndsAt as DateTime?,
+    preparationEndsAt: identical(preparationEndsAt, activeWorkoutUnset)
+        ? this.preparationEndsAt
+        : preparationEndsAt as DateTime?,
     confirmationMode: confirmationMode ?? this.confirmationMode,
     setEvents: setEvents ?? this.setEvents,
     pausedFrom: identical(pausedFrom, activeWorkoutUnset)
@@ -460,9 +712,20 @@ class ActiveWorkoutDraft {
         identical(pausedRestRemainingMilliseconds, activeWorkoutUnset)
         ? this.pausedRestRemainingMilliseconds
         : pausedRestRemainingMilliseconds as int?,
+    pausedPreparationRemainingMilliseconds:
+        identical(pausedPreparationRemainingMilliseconds, activeWorkoutUnset)
+        ? this.pausedPreparationRemainingMilliseconds
+        : pausedPreparationRemainingMilliseconds as int?,
     finishRequestedAt: identical(finishRequestedAt, activeWorkoutUnset)
         ? this.finishRequestedAt
         : finishRequestedAt as DateTime?,
+    timedSetStartedAt: identical(timedSetStartedAt, activeWorkoutUnset)
+        ? this.timedSetStartedAt
+        : timedSetStartedAt as DateTime?,
+    timedSetElapsedMilliseconds:
+        timedSetElapsedMilliseconds ?? this.timedSetElapsedMilliseconds,
+    pausedTimedSetWasRunning:
+        pausedTimedSetWasRunning ?? this.pausedTimedSetWasRunning,
     savedAt: savedAt ?? this.savedAt,
     completionIdempotencyKey: completionIdempotencyKey,
   );
@@ -470,7 +733,9 @@ class ActiveWorkoutDraft {
   Duration activeDurationAt(DateTime now) {
     var milliseconds = accumulatedActiveMilliseconds;
     if (runningSince != null &&
-        (phase == WorkoutPhase.working || phase == WorkoutPhase.resting)) {
+        (phase == WorkoutPhase.countingDown ||
+            phase == WorkoutPhase.working ||
+            phase == WorkoutPhase.resting)) {
       final runningMilliseconds = now.difference(runningSince!).inMilliseconds;
       if (runningMilliseconds > 0) milliseconds += runningMilliseconds;
     }
@@ -486,6 +751,30 @@ class ActiveWorkoutDraft {
     }
     final remaining = restEndsAt!.difference(now);
     return remaining.isNegative ? Duration.zero : remaining;
+  }
+
+  Duration preparationRemainingAt(DateTime now) {
+    if (phase == WorkoutPhase.paused &&
+        pausedFrom == WorkoutPhase.countingDown) {
+      return Duration(
+        milliseconds: pausedPreparationRemainingMilliseconds ?? 0,
+      );
+    }
+    if (phase != WorkoutPhase.countingDown || preparationEndsAt == null) {
+      return Duration.zero;
+    }
+    final remaining = preparationEndsAt!.difference(now);
+    return remaining.isNegative ? Duration.zero : remaining;
+  }
+
+  Duration timedSetElapsedAt(DateTime now) {
+    var milliseconds = timedSetElapsedMilliseconds;
+    final started = timedSetStartedAt;
+    if (started != null) {
+      final running = now.difference(started).inMilliseconds;
+      if (running > 0) milliseconds += running;
+    }
+    return Duration(milliseconds: milliseconds);
   }
 
   Map<String, dynamic> toJson() => {
@@ -504,11 +793,17 @@ class ActiveWorkoutDraft {
     'runningSince': runningSince?.toIso8601String(),
     'accumulatedActiveMilliseconds': accumulatedActiveMilliseconds,
     'restEndsAt': restEndsAt?.toIso8601String(),
+    'preparationEndsAt': preparationEndsAt?.toIso8601String(),
     'confirmationMode': confirmationMode.name,
     'setEvents': setEvents.map((event) => event.toJson()).toList(),
     'pausedFrom': pausedFrom?.name,
     'pausedRestRemainingMilliseconds': pausedRestRemainingMilliseconds,
+    'pausedPreparationRemainingMilliseconds':
+        pausedPreparationRemainingMilliseconds,
     'finishRequestedAt': finishRequestedAt?.toIso8601String(),
+    'timedSetStartedAt': timedSetStartedAt?.toIso8601String(),
+    'timedSetElapsedMilliseconds': timedSetElapsedMilliseconds,
+    'pausedTimedSetWasRunning': pausedTimedSetWasRunning,
     'savedAt': savedAt.toIso8601String(),
     'completionIdempotencyKey': completionIdempotencyKey,
   };
@@ -517,7 +812,7 @@ class ActiveWorkoutDraft {
 
   factory ActiveWorkoutDraft.fromJson(Map<String, dynamic> json) {
     final version = (json['schemaVersion'] as num? ?? 1).toInt();
-    if (version != schemaVersion) {
+    if (version < 1 || version > schemaVersion) {
       throw FormatException('Unsupported active workout schema: $version');
     }
     return ActiveWorkoutDraft(
@@ -538,6 +833,7 @@ class ActiveWorkoutDraft {
       accumulatedActiveMilliseconds:
           (json['accumulatedActiveMilliseconds'] as num? ?? 0).toInt(),
       restEndsAt: _dateOrNull(json['restEndsAt']),
+      preparationEndsAt: _dateOrNull(json['preparationEndsAt']),
       confirmationMode: WorkoutConfirmationMode.values.byName(
         json['confirmationMode'] as String,
       ),
@@ -551,7 +847,14 @@ class ActiveWorkoutDraft {
           : WorkoutPhase.values.byName(json['pausedFrom'] as String),
       pausedRestRemainingMilliseconds:
           (json['pausedRestRemainingMilliseconds'] as num?)?.toInt(),
+      pausedPreparationRemainingMilliseconds:
+          (json['pausedPreparationRemainingMilliseconds'] as num?)?.toInt(),
       finishRequestedAt: _dateOrNull(json['finishRequestedAt']),
+      timedSetStartedAt: _dateOrNull(json['timedSetStartedAt']),
+      timedSetElapsedMilliseconds:
+          (json['timedSetElapsedMilliseconds'] as num? ?? 0).toInt(),
+      pausedTimedSetWasRunning:
+          json['pausedTimedSetWasRunning'] as bool? ?? false,
       savedAt: DateTime.parse(json['savedAt'] as String),
       completionIdempotencyKey: json['completionIdempotencyKey'] as String,
     );

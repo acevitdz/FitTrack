@@ -79,6 +79,7 @@ enum PoseFeedbackCode {
   staleFrame,
   standTall,
   lowerHips,
+  onePersonOnly,
   detectorUnavailable,
 }
 
@@ -169,6 +170,7 @@ enum PoseCapabilityUnavailableReason {
   permissionDenied,
   cameraUnavailable,
   modelUnavailable,
+  trackingUnreliable,
   disposed,
 }
 
@@ -185,7 +187,14 @@ class PoseDetectionCapability {
   final PoseCapabilityUnavailableReason unavailableReason;
 }
 
-enum PoseDetectionStatus { detected, noPose, unavailable, busy, failure }
+enum PoseDetectionStatus {
+  detected,
+  noPose,
+  multiplePoses,
+  unavailable,
+  busy,
+  failure,
+}
 
 /// Result returned by a detector adapter. Only normalized landmarks may cross
 /// this boundary; the source camera frame remains transient in the adapter.
@@ -208,6 +217,12 @@ class PoseDetectionResult {
   factory PoseDetectionResult.noPose(DateTime capturedAt) =>
       PoseDetectionResult._(
         status: PoseDetectionStatus.noPose,
+        capturedAt: capturedAt,
+      );
+
+  factory PoseDetectionResult.multiplePoses(DateTime capturedAt) =>
+      PoseDetectionResult._(
+        status: PoseDetectionStatus.multiplePoses,
         capturedAt: capturedAt,
       );
 

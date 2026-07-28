@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../models/active_workout.dart';
+import '../../models/program.dart';
+import '../../services/notification_service.dart';
 import '../../state/app_state.dart';
 import '../active/active_workout_screen.dart';
 import '../history/history_screen.dart';
@@ -18,6 +21,7 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   var _index = 0;
   var _routingNotification = false;
+  String? _preferredOccurrenceId;
 
   @override
   void initState() {
@@ -44,13 +48,36 @@ class _MainShellState extends State<MainShell> {
     _routingNotification = true;
     setState(() => _index = 0);
     try {
-      if (!payload.startsWith('active:')) return;
+      final route = decodeFitTrackNotificationPayload(payload);
+      if (route == null) return;
+      if (route['type'] == 'today') {
+        final occurrence = widget.state.occurrenceById(
+          route['occurrenceId'] as String,
+        );
+        if (occurrence == null ||
+            !occurrence.isOpen ||
+            occurrence.status == WorkoutOccurrenceStatus.inProgress) {
+          return;
+        }
+        if (mounted) {
+          setState(() => _preferredOccurrenceId = occurrence.id);
+        }
+        return;
+      }
+      if (route['type'] != 'active') return;
       final draft = widget.state.activeWorkoutDraft;
-      if (draft == null) return;
-      final occurrence = widget.state.occurrences
-          .where((item) => item.id == draft.occurrenceId)
-          .firstOrNull;
-      if (occurrence == null) return;
+      if (draft == null ||
+          draft.phase != WorkoutPhase.resting ||
+          draft.sessionId != route['sessionId'] ||
+          draft.phaseId != route['phaseId'] ||
+          draft.restEndsAt?.millisecondsSinceEpoch != route['restEndsAt']) {
+        return;
+      }
+      final occurrence = widget.state.occurrenceById(draft.occurrenceId);
+      if (occurrence == null ||
+          occurrence.status != WorkoutOccurrenceStatus.inProgress) {
+        return;
+      }
       final controller = await widget.state.openWorkout(occurrence);
       if (!mounted) return;
       await Navigator.push(
@@ -73,6 +100,7 @@ class _MainShellState extends State<MainShell> {
     final pages = [
       HomeScreen(
         state: widget.state,
+        preferredOccurrenceId: _preferredOccurrenceId,
         onOpenProgram: () => setState(() => _index = 1),
         onOpenProfile: () => setState(() => _index = 3),
         onOpenHistory: () => setState(() => _index = 2),

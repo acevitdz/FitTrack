@@ -41,6 +41,11 @@ class ProgramOverviewScreen extends StatelessWidget {
             pinned: true,
             title: const Text('Chương trình'),
             actions: [
+              IconButton(
+                tooltip: 'Danh mục lộ trình',
+                onPressed: () => _showCatalog(context),
+                icon: const Icon(Icons.explore_outlined),
+              ),
               Padding(
                 padding: const EdgeInsets.only(right: 12),
                 child: Chip(label: Text('v${version.version}')),
@@ -75,7 +80,7 @@ class ProgramOverviewScreen extends StatelessWidget {
                           children: [
                             _DarkChip('${version.weeks.length} tuần'),
                             _DarkChip(
-                              '${version.cadence.sessionsPerWeek} buổi/tuần',
+                              '${state.activeSessionsPerWeek} buổi/tuần',
                             ),
                             _DarkChip('${version.allSessions.length} buổi'),
                           ],
@@ -140,13 +145,14 @@ class ProgramOverviewScreen extends StatelessWidget {
                             ),
                           ],
                         ),
-                        if (state.trainingPreferences.sessionsPerWeek !=
-                            version.cadence.sessionsPerWeek) ...[
+                        if (!version.cadence.supports(
+                          state.trainingPreferences.sessionsPerWeek,
+                        )) ...[
                           const SizedBox(height: 12),
                           Text(
                             'Bạn chọn ${state.trainingPreferences.sessionsPerWeek} buổi/tuần; '
                             'phiên bản đã phát hành phù hợp gần nhất có '
-                            '${version.cadence.sessionsPerWeek} buổi/tuần. '
+                            '${state.activeSessionsPerWeek} buổi/tuần. '
                             'FitTrack giữ nguyên nội dung chương trình đã phát hành và không tự sinh thêm buổi.',
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
@@ -170,6 +176,15 @@ class ProgramOverviewScreen extends StatelessWidget {
                     _SessionTile(
                       session: session,
                       occurrence: occurrencesBySession[session.id],
+                      onReschedule:
+                          occurrencesBySession[session.id]?.isOpen == true &&
+                              occurrencesBySession[session.id]?.status !=
+                                  WorkoutOccurrenceStatus.inProgress
+                          ? () => _reschedule(
+                              context,
+                              occurrencesBySession[session.id]!,
+                            )
+                          : null,
                     ),
                   const SizedBox(height: 14),
                 ],
@@ -211,13 +226,271 @@ class ProgramOverviewScreen extends StatelessWidget {
       ),
     );
   }
+
+  Future<void> _showCatalog(BuildContext context) async {
+    final versions = state.catalogProgramVersions;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) => FractionallySizedBox(
+        heightFactor: .86,
+        child: SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Danh mục lộ trình',
+                        style: Theme.of(sheetContext).textTheme.headlineSmall,
+                      ),
+                    ),
+                    Chip(label: Text('${versions.length} lựa chọn')),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              Expanded(
+                child: versions.isEmpty
+                    ? const EmptyState(
+                        icon: Icons.route_outlined,
+                        title: 'Chưa có lộ trình khả dụng',
+                        message:
+                            'Danh mục chưa có phiên bản đã phát hành phù hợp.',
+                      )
+                    : ListView.separated(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: versions.length,
+                        separatorBuilder: (_, _) => const SizedBox(height: 10),
+                        itemBuilder: (_, index) {
+                          final version = versions[index];
+                          final program = state.programs
+                              .where((item) => item.id == version.programId)
+                              .firstOrNull;
+                          final issue = state.programCompatibilityIssue(
+                            version,
+                          );
+                          final active =
+                              state.enrollment?.programVersionId ==
+                                  version.id &&
+                              state.enrollment?.status ==
+                                  ProgramEnrollmentStatus.active;
+                          return Card(
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          program?.title ?? version.id,
+                                          style: Theme.of(
+                                            sheetContext,
+                                          ).textTheme.titleLarge,
+                                        ),
+                                      ),
+                                      if (active)
+                                        const Chip(
+                                          avatar: Icon(Icons.check, size: 18),
+                                          label: Text('Đang theo'),
+                                        ),
+                                    ],
+                                  ),
+                                  if (program?.description.isNotEmpty ==
+                                      true) ...[
+                                    const SizedBox(height: 6),
+                                    Text(program!.description),
+                                  ],
+                                  const SizedBox(height: 10),
+                                  Wrap(
+                                    spacing: 8,
+                                    runSpacing: 8,
+                                    children: [
+                                      Chip(
+                                        label: Text(
+                                          '${version.weeks.length} tuần',
+                                        ),
+                                      ),
+                                      Chip(
+                                        label: Text(
+                                          '${version.cadence.supportedFrequencies.join('/')} buổi/tuần',
+                                        ),
+                                      ),
+                                      Chip(
+                                        label: Text(
+                                          version.equipmentKeys.contains('gym')
+                                              ? 'Phòng gym'
+                                              : 'Tại nhà',
+                                        ),
+                                      ),
+                                      for (final goal in version.goalKeys.take(
+                                        2,
+                                      ))
+                                        Chip(
+                                          label: Text(
+                                            TrainingGoalKey.labelFor(goal),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                  if (issue != null) ...[
+                                    const SizedBox(height: 10),
+                                    Text(
+                                      issue,
+                                      style: const TextStyle(
+                                        color: AppColors.warning,
+                                      ),
+                                    ),
+                                  ],
+                                  const SizedBox(height: 12),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: FilledButton.icon(
+                                      onPressed: active || issue != null
+                                          ? null
+                                          : () {
+                                              Navigator.pop(sheetContext);
+                                              _selectCatalogVersion(
+                                                context,
+                                                version,
+                                              );
+                                            },
+                                      icon: Icon(
+                                        active
+                                            ? Icons.check
+                                            : Icons.route_outlined,
+                                      ),
+                                      label: Text(
+                                        active
+                                            ? 'Đang sử dụng'
+                                            : 'Chọn lộ trình này',
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _selectCatalogVersion(
+    BuildContext context,
+    ProgramVersion version,
+  ) async {
+    await Future<void>.delayed(Duration.zero);
+    if (!context.mounted) return;
+    if (state.enrollment?.status == ProgramEnrollmentStatus.active) {
+      final accepted = await confirmAction(
+        context,
+        title: 'Đổi lộ trình?',
+        message:
+            'Các buổi chưa tập của lộ trình hiện tại sẽ được hủy. Kết quả đã tập vẫn được giữ trong lịch sử.',
+        confirmLabel: 'Đổi lộ trình',
+      );
+      if (!accepted || !context.mounted) return;
+    }
+    try {
+      await state.enrollInProgramVersion(version.id);
+    } on Object catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.toString())));
+    }
+  }
+
+  Future<void> _reschedule(
+    BuildContext context,
+    WorkoutOccurrence occurrence,
+  ) async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final initialDate = occurrence.scheduledDate.isBefore(today)
+        ? today
+        : occurrence.scheduledDate;
+    final date = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: today,
+      lastDate: today.add(const Duration(days: 365)),
+    );
+    if (date == null || !context.mounted) return;
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(
+        hour: occurrence.scheduledHour ?? state.programReminderHour,
+        minute: occurrence.scheduledMinute ?? state.programReminderMinute,
+      ),
+    );
+    if (time == null || !context.mounted) return;
+    final mode = await showModalBottomSheet<OccurrenceRescheduleMode>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.event),
+              title: const Text('Chỉ dời buổi này'),
+              subtitle: const Text('Giữ nguyên lịch các buổi còn lại.'),
+              onTap: () =>
+                  Navigator.pop(sheetContext, OccurrenceRescheduleMode.single),
+            ),
+            ListTile(
+              leading: const Icon(Icons.event_repeat),
+              title: const Text('Dời cả phần lịch còn lại'),
+              subtitle: const Text(
+                'Dịch buổi này và mọi buổi sau cùng số ngày.',
+              ),
+              onTap: () =>
+                  Navigator.pop(sheetContext, OccurrenceRescheduleMode.cascade),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (mode == null || !context.mounted) return;
+    try {
+      await state.rescheduleOccurrence(
+        occurrence,
+        scheduledDate: date,
+        hour: time.hour,
+        minute: time.minute,
+        mode: mode,
+      );
+    } on Object catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.toString())));
+    }
+  }
 }
 
 class _SessionTile extends StatelessWidget {
-  const _SessionTile({required this.session, required this.occurrence});
+  const _SessionTile({
+    required this.session,
+    required this.occurrence,
+    required this.onReschedule,
+  });
 
   final ProgramSession session;
   final WorkoutOccurrence? occurrence;
+  final VoidCallback? onReschedule;
 
   @override
   Widget build(BuildContext context) {
@@ -236,6 +509,18 @@ class _SessionTile extends StatelessWidget {
         ),
         trailing: Chip(label: Text(_statusLabel(status))),
         children: [
+          if (onReschedule != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: OutlinedButton.icon(
+                  onPressed: onReschedule,
+                  icon: const Icon(Icons.event_repeat),
+                  label: const Text('Dời lịch buổi này'),
+                ),
+              ),
+            ),
           for (final block in [
             ...session.blocks,
           ]..sort((a, b) => a.order.compareTo(b.order)))
@@ -273,6 +558,8 @@ class _SessionTile extends StatelessWidget {
   Color _statusColor(WorkoutOccurrenceStatus? value) => switch (value) {
     WorkoutOccurrenceStatus.completed => AppColors.success,
     WorkoutOccurrenceStatus.inProgress => AppColors.warning,
+    WorkoutOccurrenceStatus.abandoned ||
+    WorkoutOccurrenceStatus.missed ||
     WorkoutOccurrenceStatus.skipped ||
     WorkoutOccurrenceStatus.cancelled => AppColors.textMuted,
     _ => AppColors.primary,
@@ -280,6 +567,8 @@ class _SessionTile extends StatelessWidget {
 
   IconData _statusIcon(WorkoutOccurrenceStatus? value) => switch (value) {
     WorkoutOccurrenceStatus.completed => Icons.check,
+    WorkoutOccurrenceStatus.abandoned => Icons.block_outlined,
+    WorkoutOccurrenceStatus.missed => Icons.event_busy_outlined,
     WorkoutOccurrenceStatus.inProgress => Icons.play_arrow,
     WorkoutOccurrenceStatus.skipped => Icons.skip_next,
     WorkoutOccurrenceStatus.postponed => Icons.event_repeat,
@@ -288,6 +577,8 @@ class _SessionTile extends StatelessWidget {
 
   String _statusLabel(WorkoutOccurrenceStatus? value) => switch (value) {
     WorkoutOccurrenceStatus.completed => 'Xong',
+    WorkoutOccurrenceStatus.abandoned => 'Bỏ dở (0 hiệp)',
+    WorkoutOccurrenceStatus.missed => 'Đã lỡ',
     WorkoutOccurrenceStatus.inProgress => 'Đang tập',
     WorkoutOccurrenceStatus.skipped => 'Bỏ qua',
     WorkoutOccurrenceStatus.postponed => 'Đã dời',
