@@ -11,6 +11,7 @@ import '../exercises/exercise_library_screen.dart';
 import '../health/weight_screen.dart';
 import '../history/legacy_data_screen.dart';
 import 'achievements_screen.dart';
+import 'edit_profile_screen.dart';
 import 'reminders_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -82,7 +83,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           child: profile.photoUrl == null
                               ? Text(
                                   initial,
-                                  style: Theme.of(context).textTheme.headlineMedium
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineMedium
                                       ?.copyWith(
                                         color: AppColors.primary,
                                         fontWeight: FontWeight.w800,
@@ -141,9 +144,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        TrainingGoalKey.labels[
-                              state.trainingPreferences.goalKey
-                            ] ??
+                        TrainingGoalKey.labels[state
+                                .trainingPreferences
+                                .goalKey] ??
                             'Mục tiêu luyện tập',
                         style: const TextStyle(
                           color: Colors.white,
@@ -165,7 +168,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 icon: Icons.person_outline,
                 title: 'Chỉnh sửa hồ sơ',
                 subtitle: 'Cập nhật tên hiển thị và ảnh đại diện',
-                onTap: _editName,
+                onTap: () => _open(EditProfileScreen(state: state)),
               ),
               _MenuTile(
                 icon: Icons.tune,
@@ -306,32 +309,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Future<void> _editName() async {
-    final controller = TextEditingController(text: widget.state.profile.name);
-    final value = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Tên hiển thị'),
-        content: TextField(controller: controller, autofocus: true),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Hủy'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, controller.text.trim()),
-            child: const Text('Lưu'),
-          ),
-        ],
-      ),
-    );
-    controller.dispose();
-    if (value == null || value.isEmpty) return;
-    await widget.state.updateProfile(
-      widget.state.profile.copyWith(name: value),
     );
   }
 
@@ -634,5 +611,3 @@ class _MenuTile extends StatelessWidget {
     onTap: onTap,
   );
 }
-
-
