@@ -42,65 +42,21 @@ class _WeightScreenState extends State<WeightScreen> {
         .toList();
     final bmi = widget.state.profile.bmi;
     final unit = MeasurementUnitSystem.fromStored(widget.state.unit);
+    final periodChange = chartEntries.length < 2
+        ? 0.0
+        : unit.weightFromKilograms(
+            chartEntries.last.weightKg - chartEntries.first.weightKg,
+          );
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Chỉ số cơ thể'),
-        actions: [
-          TextButton(onPressed: _updateMetrics, child: const Text('Cập nhật')),
-        ],
+      appBar: AppBar(title: const Text('Chỉ số cơ thể'), centerTitle: true),
+      floatingActionButton: FloatingActionButton(
+        tooltip: 'Nhập cân nặng',
+        onPressed: _updateMetrics,
+        child: const Icon(Icons.add),
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: MetricCard(
-                  label: 'Chiều cao',
-                  value: unit.formatHeight(widget.state.profile.heightCm),
-                  icon: Icons.height,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: MetricCard(
-                  label: 'Cân nặng',
-                  value: unit.formatWeight(
-                    widget.state.profile.currentWeightKg,
-                  ),
-                  icon: Icons.monitor_weight_outlined,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: MetricCard(
-                  label: 'Streak',
-                  value: '${widget.state.currentStreak} ngày',
-                  icon: Icons.local_fire_department_outlined,
-                  color: AppColors.warning,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: MetricCard(
-                  label: 'Chuỗi kỷ lục',
-                  value: '${widget.state.longestStreak} ngày',
-                  icon: Icons.workspace_premium_outlined,
-                  color: AppColors.success,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Nhập cân nặng trong ngày để duy trì streak hằng ngày. Nhiều lần cập nhật trong cùng một ngày vẫn chỉ được tính một ngày.',
-            style: TextStyle(color: AppColors.textMuted, fontSize: 12),
-          ),
-          const SizedBox(height: 10),
           Card(
             child: Padding(
               padding: const EdgeInsets.all(18),
@@ -114,7 +70,7 @@ class _WeightScreenState extends State<WeightScreen> {
                     runSpacing: 4,
                     children: [
                       Text(
-                        'BMI tham khảo',
+                        'BMI hiện tại',
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                       Chip(label: Text(_bmiLabel(bmi))),
@@ -129,9 +85,29 @@ class _WeightScreenState extends State<WeightScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  const Text(
-                    'BMI chỉ là chỉ số sàng lọc tham khảo, không phản ánh đầy đủ thành phần cơ thể và không được FitTrack dùng một mình để thay đổi bài tập.',
-                    style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+                  _BmiRangeIndicator(value: bmi),
+                  Text(
+                    '${unit.formatHeight(widget.state.profile.heightCm)} • '
+                    '${unit.formatWeight(widget.state.profile.currentWeightKg)}',
+                    style: const TextStyle(
+                      color: AppColors.textMuted,
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.input,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Text(
+                      'BMI chỉ mang tính tham khảo và không thay thế tư vấn y khoa.',
+                      style: TextStyle(
+                        color: AppColors.textMuted,
+                        fontSize: 12,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -148,7 +124,7 @@ class _WeightScreenState extends State<WeightScreen> {
                     children: [
                       Expanded(
                         child: Text(
-                          'Biểu đồ cân nặng',
+                          'Tiến độ cân nặng',
                           style: Theme.of(context).textTheme.titleLarge,
                         ),
                       ),
@@ -166,17 +142,38 @@ class _WeightScreenState extends State<WeightScreen> {
                   ),
                   const SizedBox(height: 16),
                   SizedBox(
-                    height: 280,
+                    height: 220,
                     child: chartEntries.length < 2
                         ? const EmptyState(
                             icon: Icons.show_chart,
                             title: 'Chưa đủ dữ liệu',
                             message: 'Cần ít nhất hai lần đo trong kỳ đã chọn.',
                           )
-                        : _BodyMetricChart(
-                            entries: chartEntries,
-                            unit: unit,
+                        : _BodyMetricChart(entries: chartEntries, unit: unit),
+                  ),
+                  const Divider(height: 24),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _ProgressValue(
+                          label: 'Hiện tại',
+                          value: unit.formatWeight(
+                            widget.state.profile.currentWeightKg,
                           ),
+                        ),
+                      ),
+                      Expanded(
+                        child: _ProgressValue(
+                          label: 'Thay đổi',
+                          value:
+                              '${periodChange > 0 ? '+' : ''}${periodChange.toStringAsFixed(1)} ${unit.weightSymbol}',
+                          valueColor: periodChange <= 0
+                              ? AppColors.success
+                              : AppColors.error,
+                          alignEnd: true,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -205,9 +202,7 @@ class _WeightScreenState extends State<WeightScreen> {
                         backgroundColor: AppColors.input,
                         child: Icon(Icons.straighten),
                       ),
-                      title: Text(
-                        unit.formatWeight(entries[index].weightKg),
-                      ),
+                      title: Text(unit.formatWeight(entries[index].weightKg)),
                       subtitle: Text(
                         '${entries[index].heightCm == null ? '—' : unit.formatHeight(entries[index].heightCm!)} • '
                         'BMI ${entries[index].bmi?.toStringAsFixed(1) ?? '—'} • '
@@ -231,6 +226,112 @@ class _WeightScreenState extends State<WeightScreen> {
     if (value < 30) return 'Cao';
     return 'Thừa cân';
   }
+}
+
+class _BmiRangeIndicator extends StatelessWidget {
+  const _BmiRangeIndicator({required this.value});
+
+  final double value;
+
+  @override
+  Widget build(BuildContext context) {
+    final ratio = value.isFinite
+        ? ((value - 15) / 25).clamp(0.0, 1.0).toDouble()
+        : 0.0;
+    return LayoutBuilder(
+      builder: (context, constraints) => SizedBox(
+        height: 30,
+        child: Stack(
+          children: [
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(999),
+                child: const Row(
+                  children: [
+                    Expanded(
+                      flex: 3,
+                      child: ColoredBox(
+                        color: AppColors.primary,
+                        child: SizedBox(height: 9),
+                      ),
+                    ),
+                    Expanded(
+                      flex: 4,
+                      child: ColoredBox(
+                        color: AppColors.success,
+                        child: SizedBox(height: 9),
+                      ),
+                    ),
+                    Expanded(
+                      flex: 3,
+                      child: ColoredBox(
+                        color: AppColors.warning,
+                        child: SizedBox(height: 9),
+                      ),
+                    ),
+                    Expanded(
+                      flex: 3,
+                      child: ColoredBox(
+                        color: AppColors.error,
+                        child: SizedBox(height: 9),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Positioned(
+              top: 7,
+              left: ratio * (constraints.maxWidth - 20),
+              child: const Icon(
+                Icons.arrow_drop_up,
+                color: AppColors.text,
+                size: 20,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProgressValue extends StatelessWidget {
+  const _ProgressValue({
+    required this.label,
+    required this.value,
+    this.valueColor,
+    this.alignEnd = false,
+  });
+
+  final String label;
+  final String value;
+  final Color? valueColor;
+  final bool alignEnd;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: alignEnd
+        ? CrossAxisAlignment.end
+        : CrossAxisAlignment.start,
+    children: [
+      Text(
+        label,
+        style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+      ),
+      const SizedBox(height: 3),
+      Text(
+        value,
+        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+          color: valueColor ?? AppColors.text,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    ],
+  );
 }
 
 class BodyMetricEntryScreen extends StatefulWidget {
@@ -296,19 +397,21 @@ class _BodyMetricEntryScreenState extends State<BodyMetricEntryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final heightCm = _unit.heightToCentimeters(
-      _parseOrZero(_height.text),
-    );
-    final weightKg = _unit.weightToKilograms(
-      _parseOrZero(_weight.text),
-    );
+    final heightCm = _unit.heightToCentimeters(_parseOrZero(_height.text));
+    final weightKg = _unit.weightToKilograms(_parseOrZero(_weight.text));
     final meters = heightCm / 100;
     final bmi = meters > 0 && weightKg > 0
         ? weightKg / (meters * meters)
         : null;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Cập nhật chỉ số'),
+        leading: IconButton(
+          tooltip: 'Đóng',
+          onPressed: _saving ? null : () => Navigator.pop(context),
+          icon: const Icon(Icons.close),
+        ),
+        title: const Text('Nhập cân nặng'),
+        centerTitle: true,
         actions: [
           TextButton(
             onPressed: _saving ? null : _save,
@@ -319,16 +422,17 @@ class _BodyMetricEntryScreenState extends State<BodyMetricEntryScreen> {
       body: Form(
         key: _formKey,
         child: FitTrackPage(
+          maxWidth: 390,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Hai số liệu sức khỏe duy nhất',
+                'Cập nhật chỉ số hôm nay',
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               const SizedBox(height: 8),
               const Text(
-                'FitTrack chỉ yêu cầu chiều cao và cân nặng. BMI được tính tự động; lưu cân nặng sẽ duy trì streak hằng ngày, tối đa một lần tính mỗi ngày.',
+                'Nhập chiều cao và cân nặng để FitTrack tự động tính BMI và theo dõi tiến độ.',
               ),
               const SizedBox(height: 16),
               SegmentedButton<MeasurementUnitSystem>(
