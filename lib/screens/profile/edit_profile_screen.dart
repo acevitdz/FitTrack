@@ -273,7 +273,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               AppFormLabel(
                 label: 'Mục tiêu chính',
                 child: DropdownButtonFormField<String>(
-                  value: _goal,
+                  initialValue: _goal,
                   decoration: const InputDecoration(),
                   items: [
                     for (final entry in TrainingGoalKey.labels.entries)

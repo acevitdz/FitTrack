@@ -32,10 +32,7 @@ class _SplashScreenState extends State<SplashScreen>
       curve: Curves.easeOut,
     );
     _scaleAnimation = Tween<double>(begin: 0.86, end: 1).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeOutBack,
-      ),
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOutBack),
     );
     _animationController.forward();
 
@@ -72,10 +69,7 @@ class _SplashScreenState extends State<SplashScreen>
               const Text(
                 'Đang chuẩn bị dữ liệu của bạn...',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Color(0xFFB6C6F2),
-                  fontSize: 13,
-                ),
+                style: TextStyle(color: Color(0xFFB6C6F2), fontSize: 13),
               ),
               const SizedBox(height: 14),
               const SizedBox(
@@ -100,7 +94,7 @@ class _BrandContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Semantics(
+    return Semantics(
       label: 'FitTrack - Nâng tầm vóc dáng Việt',
       child: Column(
         children: [
