@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../data/program_seed_data.dart';
 import '../../models/measurement_units.dart';
 import '../../models/program.dart';
+import '../../services/program_matcher.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/design_system.dart';
@@ -29,6 +31,43 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   var _equipment = 'bodyweight';
   var _sessionsPerWeek = 3;
   var _unit = MeasurementUnitSystem.metric;
+
+  UserTrainingPreferences get _draftPreferences => UserTrainingPreferences(
+    populationKey: _population,
+    programAudiencePreference: _audience,
+    goalKey: _goal,
+    experienceKey: _experience,
+    equipmentKeys: _equipmentKeys,
+    sessionsPerWeek: _sessionsPerWeek,
+  );
+
+  ProgramMatchResult get _programPreview => const ProgramMatcher().match(
+    preferences: _draftPreferences,
+    catalog: widget.state.programVersions,
+    fallbackProgramVersionId: ProgramSeedData.defaultFallbackProgramVersionId,
+  );
+
+  Program? get _previewProgram {
+    final programId = _programPreview.version?.programId;
+    if (programId == null) return null;
+    for (final program in widget.state.programs) {
+      if (program.id == programId) return program;
+    }
+    return null;
+  }
+
+  double? get _draftBmi {
+    final height = _tryParse(_height.text);
+    final weight = _tryParse(_weight.text);
+    if (height == null || weight == null) return null;
+    final heightCm = _unit.heightToCentimeters(height);
+    final weightKg = _unit.weightToKilograms(weight);
+    if (heightCm < 100 || heightCm > 250 || weightKg <= 0 || weightKg > 500) {
+      return null;
+    }
+    final heightMeters = heightCm / 100;
+    return weightKg / (heightMeters * heightMeters);
+  }
 
   @override
   void initState() {
@@ -93,14 +132,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       );
       await widget.state.updateProfile(profile);
       await widget.state.updateTrainingPreferences(
-        UserTrainingPreferences(
-          populationKey: _population,
-          programAudiencePreference: _audience,
-          goalKey: _goal,
-          experienceKey: _experience,
-          equipmentKeys: _equipmentKeys,
-          sessionsPerWeek: _sessionsPerWeek,
-        ),
+        _draftPreferences,
         rematch: false,
       );
       await widget.state.updateBodyMetrics(
@@ -167,7 +199,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               Expanded(
                 flex: 2,
                 child: AppPrimaryButton(
-                  label: _step == 2 ? 'Chọn chương trình' : 'Tiếp tục',
+                  label: _step == 2
+                      ? (_programPreview.hasMatch
+                            ? 'Chọn chương trình'
+                            : 'Hoàn tất thiết lập')
+                      : 'Tiếp tục',
                   icon: _step == 2 ? Icons.auto_awesome : Icons.arrow_forward,
                   loading: _saving,
                   onPressed: _next,
@@ -273,6 +309,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               label: 'Chiều cao (${_unit.heightSymbol})',
               child: TextFormField(
                 controller: _height,
+                onChanged: (_) => setState(() {}),
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
@@ -295,6 +332,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               label: 'Cân nặng (${_unit.weightSymbol})',
               child: TextFormField(
                 controller: _weight,
+                onChanged: (_) => setState(() {}),
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
@@ -304,14 +342,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   final kilograms = number == null
                       ? null
                       : _unit.weightToKilograms(number);
-                  return kilograms == null ||
-                          kilograms <= 0 ||
-                          kilograms > 500
+                  return kilograms == null || kilograms <= 0 || kilograms > 500
                       ? 'Nhập cân nặng tương đương trên 0 và không quá 500 kg'
                       : null;
                 },
               ),
             ),
+            const SizedBox(height: 18),
+            _bmiPreview(),
           ],
         ),
       ),
@@ -371,8 +409,131 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         selected: {_audience},
         onSelectionChanged: (value) => setState(() => _audience = value.first),
       ),
+      const SizedBox(height: 22),
+      _programPreviewCard(),
     ],
   );
+
+  Widget _bmiPreview() {
+    final bmi = _draftBmi;
+    return Container(
+      key: const ValueKey('onboarding-bmi-preview'),
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.paleBlue.withValues(alpha: .48),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.primary.withValues(alpha: .18)),
+      ),
+      child: Row(
+        children: [
+          const CircleAvatar(
+            backgroundColor: Colors.white,
+            foregroundColor: AppColors.primary,
+            child: Icon(Icons.monitor_weight_outlined),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'BMI tạm tính',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  bmi == null
+                      ? 'Nhập đủ chỉ số hợp lệ'
+                      : bmi.toStringAsFixed(1),
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                const Text(
+                  'Chỉ mang tính tham khảo, không thay thế tư vấn y tế.',
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _programPreviewCard() {
+    final match = _programPreview;
+    final version = match.version;
+    final program = _previewProgram;
+    final hasMatch = version != null;
+    return Container(
+      key: const ValueKey('onboarding-program-preview'),
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: hasMatch
+            ? AppColors.paleBlue.withValues(alpha: .48)
+            : AppColors.warning.withValues(alpha: .12),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: hasMatch
+              ? AppColors.primary.withValues(alpha: .2)
+              : AppColors.warning.withValues(alpha: .45),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CircleAvatar(
+            backgroundColor: Colors.white,
+            foregroundColor: hasMatch ? AppColors.primary : AppColors.warning,
+            child: Icon(
+              hasMatch ? Icons.auto_awesome : Icons.health_and_safety_outlined,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  hasMatch
+                      ? 'Gợi ý chương trình'
+                      : 'Chưa thể tự ghép chương trình',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppColors.textMuted,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  hasMatch
+                      ? (program?.title ?? 'Chương trình FitTrack')
+                      : 'FitTrack sẽ lưu hồ sơ nhưng không tự kê chương trình cho lựa chọn này.',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                if (hasMatch) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    '${version.cadence.sessionsPerWeek} buổi/tuần • ${version.weeks.length} tuần'
+                    '${match.isFallback ? ' • Lựa chọn gần nhất' : ''}',
+                  ),
+                  if (program?.description.isNotEmpty ?? false) ...[
+                    const SizedBox(height: 6),
+                    Text(program!.description),
+                  ],
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _label(String value) => Padding(
     padding: const EdgeInsets.only(top: 16, bottom: 8),
