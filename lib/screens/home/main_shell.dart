@@ -5,7 +5,7 @@ import '../active/active_workout_screen.dart';
 import '../history/history_screen.dart';
 import '../profile/profile_screen.dart';
 import '../program/program_overview_screen.dart';
-import 'home_screen.dart';
+import 'dashboard_screen.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key, required this.state});
@@ -71,7 +71,7 @@ class _MainShellState extends State<MainShell> {
   @override
   Widget build(BuildContext context) {
     final pages = [
-      HomeScreen(
+      DashboardScreen(
         state: widget.state,
         onOpenProgram: () => setState(() => _index = 1),
         onOpenProfile: () => setState(() => _index = 3),
