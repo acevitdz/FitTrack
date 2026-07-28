@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../state/app_state.dart';
 import '../active/active_workout_screen.dart';
-import '../history/history_screen.dart';
+import '../history/progress_screen.dart';
 import '../profile/profile_screen.dart';
 import '../program/program_overview_screen.dart';
 import 'dashboard_screen.dart';
@@ -78,7 +78,7 @@ class _MainShellState extends State<MainShell> {
         onOpenHistory: () => setState(() => _index = 2),
       ),
       ProgramOverviewScreen(state: widget.state),
-      HistoryScreen(state: widget.state),
+      ProgressScreen(state: widget.state),
       ProfileScreen(state: widget.state),
     ];
     return Scaffold(
