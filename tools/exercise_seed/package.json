@@ -1,0 +1,16 @@
+{
+  "name": "fittrack-exercise-seed",
+  "version": "1.0.0",
+  "private": true,
+  "description": "One-time tooling to author and seed the TV2 exercise catalog (exercises/{exerciseId}) into Firestore.",
+  "type": "module",
+  "scripts": {
+    "fetch-reference": "node scripts/fetch-wger-reference.mjs",
+    "build": "node scripts/build-seed.mjs",
+    "fetch-images": "node scripts/fetch-images.mjs",
+    "push": "node scripts/push-to-firestore.mjs"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.6.0"
+  }
+}

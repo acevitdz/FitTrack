@@ -1,0 +1,372 @@
+[
+  {
+    "name": "Gập bụng (Crunch)",
+    "primaryMuscle": "bung",
+    "secondaryMuscles": [],
+    "equipment": [
+      "khong_dung_cu"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Nằm ngửa, gối gập, hai bàn chân đặt sát sàn, tay đặt sau đầu hoặc bắt chéo trước ngực.",
+      "Siết bụng, nâng vai và lưng trên khỏi sàn.",
+      "Giữ 1 giây ở điểm cao nhất, không kéo cổ bằng tay.",
+      "Hạ người xuống từ từ về vị trí ban đầu."
+    ],
+    "commonMistakes": [
+      "Kéo cổ bằng tay để nâng người lên thay vì dùng lực bụng.",
+      "Nâng cả lưng dưới khỏi sàn thay vì chỉ lưng trên."
+    ],
+    "quickTip": "Thở ra khi gập lên, hít vào khi hạ xuống để tăng hiệu quả siết cơ bụng.",
+    "suggestedRestSeconds": 45,
+    "imageUrl": "https://images.pexels.com/photos/6516225/pexels-photo-6516225.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "crunch exercise",
+    "isActive": true
+  },
+  {
+    "name": "Gập bụng chéo (Bicycle Crunch)",
+    "primaryMuscle": "bung",
+    "secondaryMuscles": [],
+    "equipment": [
+      "khong_dung_cu"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Nằm ngửa, tay đặt sau đầu, hai chân nâng lên gối gập 90 độ.",
+      "Xoay người đưa khuỷu tay phải chạm gối trái, đồng thời duỗi chân phải thẳng.",
+      "Đổi bên liên tục, khuỷu tay trái chạm gối phải.",
+      "Giữ nhịp thở đều, không kéo cổ bằng tay."
+    ],
+    "commonMistakes": [
+      "Kéo cổ bằng tay khi xoay người.",
+      "Thực hiện quá nhanh làm giảm biên độ xoay."
+    ],
+    "quickTip": "Tập trung xoay từ vùng bụng chứ không phải chỉ đưa khuỷu tay tới gần gối.",
+    "suggestedRestSeconds": 45,
+    "imageUrl": "https://images.pexels.com/photos/7721988/pexels-photo-7721988.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "bicycle crunch",
+    "isActive": true
+  },
+  {
+    "name": "Plank",
+    "primaryMuscle": "bung",
+    "secondaryMuscles": [
+      "lung_duoi"
+    ],
+    "equipment": [
+      "khong_dung_cu"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Chống hai khuỷu tay và mũi chân xuống sàn, cơ thể tạo đường thẳng từ đầu đến gót chân.",
+      "Siết chặt bụng và mông để giữ thân người ổn định.",
+      "Giữ tư thế theo thời gian quy định, thở đều.",
+      "Không để hông võng xuống hoặc nhô cao trong suốt bài tập."
+    ],
+    "commonMistakes": [
+      "Để hông võng xuống làm cong lưng dưới.",
+      "Nín thở thay vì thở đều khi giữ tư thế."
+    ],
+    "quickTip": "Giữ đúng tư thế trong thời gian ngắn hiệu quả hơn giữ sai tư thế lâu.",
+    "suggestedRestSeconds": 45,
+    "imageUrl": "https://images.pexels.com/photos/4047105/pexels-photo-4047105.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "plank exercise",
+    "isActive": true
+  },
+  {
+    "name": "Plank nghiêng (Side Plank)",
+    "primaryMuscle": "bung",
+    "secondaryMuscles": [
+      "lung_duoi"
+    ],
+    "equipment": [
+      "khong_dung_cu"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Nằm nghiêng một bên, chống một khuỷu tay xuống sàn ngay dưới vai.",
+      "Nâng hông lên cao, cơ thể tạo đường thẳng từ đầu đến chân.",
+      "Giữ tư thế theo thời gian quy định, siết chặt vùng bụng bên hông.",
+      "Hạ hông xuống, hoàn thành thời gian rồi đổi bên."
+    ],
+    "commonMistakes": [
+      "Để hông chùng xuống thấp hơn vai.",
+      "Xoay thân người ra trước hoặc sau thay vì giữ thẳng hàng."
+    ],
+    "quickTip": "Nếu khó giữ thăng bằng, có thể chống thêm bàn chân dưới lên trên để tạo điểm tựa rộng hơn.",
+    "suggestedRestSeconds": 45,
+    "imageUrl": "https://images.pexels.com/photos/8436141/pexels-photo-8436141.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "side plank exercise",
+    "isActive": true
+  },
+  {
+    "name": "Nâng chân treo xà (Hanging Leg Raise)",
+    "primaryMuscle": "bung",
+    "secondaryMuscles": [],
+    "equipment": [
+      "xa_ngang"
+    ],
+    "difficulty": "advanced",
+    "instructions": [
+      "Treo người trên xà, hai tay nắm rộng bằng vai.",
+      "Siết bụng, nâng hai chân thẳng lên đến ngang hông hoặc cao hơn.",
+      "Giữ 1 giây ở điểm cao nhất, tránh đung đưa thân người.",
+      "Hạ chân xuống từ từ về vị trí ban đầu."
+    ],
+    "commonMistakes": [
+      "Dùng đà đung đưa thân người để nâng chân lên.",
+      "Gập gối quá nhiều làm giảm hiệu quả lên cơ bụng dưới."
+    ],
+    "quickTip": "Nếu chưa đủ sức nâng chân thẳng, bắt đầu với nâng gối (knee raise) trước.",
+    "suggestedRestSeconds": 75,
+    "imageUrl": "https://images.pexels.com/photos/7592439/pexels-photo-7592439.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "hanging leg raise",
+    "isActive": true
+  },
+  {
+    "name": "Nâng gối treo xà (Hanging Knee Raise)",
+    "primaryMuscle": "bung",
+    "secondaryMuscles": [],
+    "equipment": [
+      "xa_ngang"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Treo người trên xà, hai tay nắm rộng bằng vai.",
+      "Siết bụng, gập gối và nâng đầu gối lên sát ngực.",
+      "Giữ 1 giây ở điểm cao nhất.",
+      "Hạ chân xuống từ từ về vị trí ban đầu, tránh đung đưa."
+    ],
+    "commonMistakes": [
+      "Đung đưa thân người để lấy đà nâng gối.",
+      "Chỉ nâng gối lên rất thấp, không đủ biên độ."
+    ],
+    "quickTip": "Bài tập phù hợp làm bước đệm trước khi tập nâng chân thẳng khó hơn.",
+    "suggestedRestSeconds": 60,
+    "imageUrl": "https://images.pexels.com/photos/6009289/pexels-photo-6009289.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "hanging knee raise",
+    "isActive": true
+  },
+  {
+    "name": "Gập bụng bằng cáp (Cable Crunch)",
+    "primaryMuscle": "bung",
+    "secondaryMuscles": [],
+    "equipment": [
+      "may_keo_xo"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Quỳ xuống đối diện máy cáp cao, nắm dây thừng hai bên đầu, đặt sát hai bên đầu.",
+      "Siết bụng, gập người xuống cong lưng trên, khuỷu tay hướng về phía gối.",
+      "Giữ 1 giây ở điểm gập thấp nhất.",
+      "Trở về tư thế thẳng người ban đầu có kiểm soát."
+    ],
+    "commonMistakes": [
+      "Dùng lực tay kéo dây xuống thay vì gập bằng cơ bụng.",
+      "Gập hông thay vì gập cột sống trên."
+    ],
+    "quickTip": "Chuyển động chính đến từ việc cong cột sống, không phải cúi hông về trước.",
+    "suggestedRestSeconds": 60,
+    "imageUrl": "https://images.pexels.com/photos/3930989/pexels-photo-3930989.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "cable crunch exercise",
+    "isActive": true
+  },
+  {
+    "name": "Nâng chân nằm (Lying Leg Raise)",
+    "primaryMuscle": "bung",
+    "secondaryMuscles": [],
+    "equipment": [
+      "khong_dung_cu"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Nằm ngửa trên sàn, hai tay đặt dưới mông hoặc để dọc thân người, chân duỗi thẳng.",
+      "Siết bụng, nâng hai chân thẳng lên đến khoảng 90 độ.",
+      "Hạ chân xuống từ từ, không chạm sàn hoàn toàn giữa các lần lặp.",
+      "Giữ lưng dưới áp sát sàn trong suốt bài tập."
+    ],
+    "commonMistakes": [
+      "Để lưng dưới cong lên khỏi sàn khi hạ chân.",
+      "Hạ chân quá nhanh mất kiểm soát."
+    ],
+    "quickTip": "Nếu lưng dưới khó chịu, gập nhẹ đầu gối để giảm tải trong khi vẫn tập đúng nhóm cơ.",
+    "suggestedRestSeconds": 45,
+    "imageUrl": "https://images.pexels.com/photos/6516222/pexels-photo-6516222.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "lying leg raise",
+    "isActive": true
+  },
+  {
+    "name": "Plank leo núi (Mountain Climber)",
+    "primaryMuscle": "bung",
+    "secondaryMuscles": [
+      "dui_truoc"
+    ],
+    "equipment": [
+      "khong_dung_cu"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Vào tư thế plank cao, hai tay chống thẳng dưới vai.",
+      "Kéo nhanh một gối về phía ngực, sau đó trả về vị trí ban đầu.",
+      "Đổi chân liên tục theo nhịp nhanh, giữ hông ổn định.",
+      "Siết bụng suốt bài tập, không để hông nhô cao."
+    ],
+    "commonMistakes": [
+      "Nhô hông lên cao làm mất tư thế plank chuẩn.",
+      "Chuyển động quá nhanh làm mất kiểm soát tư thế."
+    ],
+    "quickTip": "Có thể điều chỉnh tốc độ chậm hơn để tập trung siết cơ bụng thay vì chỉ luyện tim mạch.",
+    "suggestedRestSeconds": 45,
+    "imageUrl": "https://images.pexels.com/photos/6516165/pexels-photo-6516165.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "mountain climber exercise",
+    "isActive": true
+  },
+  {
+    "name": "Gập bụng có tạ",
+    "primaryMuscle": "bung",
+    "secondaryMuscles": [],
+    "equipment": [
+      "ta_don"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Nằm ngửa, gối gập, hai bàn chân đặt sát sàn, ôm tạ đơn trước ngực.",
+      "Siết bụng, nâng thân người lên đến khi lưng gần vuông góc sàn.",
+      "Giữ 1 giây ở điểm cao nhất.",
+      "Hạ người xuống từ từ về vị trí ban đầu."
+    ],
+    "commonMistakes": [
+      "Dùng đà giật người lên thay vì kiểm soát bằng cơ bụng.",
+      "Ôm tạ quá xa ngực làm mất thăng bằng."
+    ],
+    "quickTip": "Chỉ thêm tạ khi đã thực hiện tốt gập bụng thường với kỹ thuật chuẩn.",
+    "suggestedRestSeconds": 60,
+    "imageUrl": "https://images.pexels.com/photos/3931367/pexels-photo-3931367.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "weighted sit up dumbbell",
+    "isActive": true
+  },
+  {
+    "name": "Xoay người Nga (Russian Twist)",
+    "primaryMuscle": "bung",
+    "secondaryMuscles": [],
+    "equipment": [
+      "ta_don"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Ngồi trên sàn, gối gập, nâng hai chân khỏi sàn hoặc giữ chạm nhẹ để dễ hơn.",
+      "Ngả thân người ra sau khoảng 45 độ, hai tay cầm tạ đơn trước bụng.",
+      "Xoay thân người sang một bên, chạm tạ gần sàn, rồi xoay sang bên kia.",
+      "Giữ lưng thẳng, siết bụng suốt quá trình xoay."
+    ],
+    "commonMistakes": [
+      "Gù lưng thay vì giữ thân người thẳng khi ngả ra sau.",
+      "Xoay chỉ bằng cánh tay, không xoay từ vùng bụng."
+    ],
+    "quickTip": "Chạm chân xuống sàn nếu mới tập để giảm độ khó, nâng chân lên khi đã quen.",
+    "suggestedRestSeconds": 45,
+    "imageUrl": "https://images.pexels.com/photos/5128466/pexels-photo-5128466.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "russian twist dumbbell",
+    "isActive": true
+  },
+  {
+    "name": "Dead Bug",
+    "primaryMuscle": "bung",
+    "secondaryMuscles": [
+      "lung_duoi"
+    ],
+    "equipment": [
+      "khong_dung_cu"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Nằm ngửa, hai tay duỗi thẳng lên trần, gối gập 90 độ nâng khỏi sàn.",
+      "Siết bụng, ép lưng dưới sát sàn.",
+      "Duỗi thẳng đồng thời tay phải và chân trái xuống gần sàn, giữ lưng không nhấc lên.",
+      "Trở về vị trí ban đầu, đổi bên với tay trái và chân phải."
+    ],
+    "commonMistakes": [
+      "Để lưng dưới nhấc khỏi sàn khi duỗi tay chân.",
+      "Duỗi tay chân quá nhanh, mất kiểm soát."
+    ],
+    "quickTip": "Bài tập tốt để luyện khả năng giữ ổn định cột sống, phù hợp cả người mới và phục hồi chấn thương nhẹ.",
+    "suggestedRestSeconds": 45,
+    "imageUrl": "https://images.pexels.com/photos/38760563/pexels-photo-38760563.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "dead bug exercise",
+    "isActive": true
+  },
+  {
+    "name": "Plank chạm vai (Shoulder Tap Plank)",
+    "primaryMuscle": "bung",
+    "secondaryMuscles": [
+      "vai_truoc"
+    ],
+    "equipment": [
+      "khong_dung_cu"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Vào tư thế plank cao, hai tay chống thẳng dưới vai, chân mở rộng bằng vai để tăng độ vững.",
+      "Nâng một tay lên chạm vào vai đối diện.",
+      "Đặt tay trở lại sàn, đổi tay chạm vai còn lại.",
+      "Giữ hông ổn định, không xoay lắc trong suốt bài tập."
+    ],
+    "commonMistakes": [
+      "Để hông xoay lắc theo tay đang chạm vai.",
+      "Chân đặt quá hẹp làm giảm độ vững của thân người."
+    ],
+    "quickTip": "Càng giữ hông bất động càng chứng tỏ cơ bụng đang làm việc hiệu quả.",
+    "suggestedRestSeconds": 45,
+    "imageUrl": "https://images.pexels.com/photos/4998815/pexels-photo-4998815.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "shoulder tap plank",
+    "isActive": true
+  },
+  {
+    "name": "Gập bụng chữ V (V-up)",
+    "primaryMuscle": "bung",
+    "secondaryMuscles": [],
+    "equipment": [
+      "khong_dung_cu"
+    ],
+    "difficulty": "advanced",
+    "instructions": [
+      "Nằm ngửa trên sàn, hai tay duỗi thẳng qua đầu, hai chân duỗi thẳng.",
+      "Đồng thời nâng thân trên và hai chân lên, cố gắng chạm tay vào mũi chân tạo hình chữ V.",
+      "Giữ 1 giây ở điểm cao nhất, siết chặt cơ bụng.",
+      "Hạ người xuống từ từ về vị trí ban đầu."
+    ],
+    "commonMistakes": [
+      "Gập gối để dễ chạm chân hơn thay vì giữ chân thẳng.",
+      "Dùng đà hất người lên thay vì kiểm soát bằng cơ bụng."
+    ],
+    "quickTip": "Nếu chưa đủ sức, có thể gập gối nhẹ hoặc chỉ nâng thân trên trước khi tập biến thể đầy đủ.",
+    "suggestedRestSeconds": 60,
+    "imageUrl": "https://images.pexels.com/photos/8402224/pexels-photo-8402224.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "v-up exercise",
+    "isActive": true
+  },
+  {
+    "name": "Gập bụng đứng bằng dây kháng lực",
+    "primaryMuscle": "bung",
+    "secondaryMuscles": [],
+    "equipment": [
+      "day_khang_luc"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Cố định dây kháng lực phía trên cao, đứng quay lưng lại điểm cố định, hai tay nắm dây ngang đầu.",
+      "Giữ hông cố định, gập người về phía trước bằng cách cong cột sống trên.",
+      "Giữ 1 giây ở điểm gập thấp nhất, siết chặt bụng.",
+      "Trở về tư thế đứng thẳng ban đầu có kiểm soát."
+    ],
+    "commonMistakes": [
+      "Gập hông thay vì gập cột sống trên.",
+      "Dùng lực tay kéo dây xuống thay vì gập bằng cơ bụng."
+    ],
+    "quickTip": "Đây là biến thể đứng của gập bụng cáp, phù hợp khi không có máy cáp cố định.",
+    "suggestedRestSeconds": 45,
+    "imageUrl": "https://images.pexels.com/photos/8846567/pexels-photo-8846567.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "standing resistance band crunch",
+    "isActive": true
+  }
+]

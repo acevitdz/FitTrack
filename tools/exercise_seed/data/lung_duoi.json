@@ -1,0 +1,244 @@
+[
+  {
+    "name": "Superman",
+    "primaryMuscle": "lung_duoi",
+    "secondaryMuscles": [
+      "mong"
+    ],
+    "equipment": [
+      "khong_dung_cu"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Nằm sấp trên sàn hoặc thảm tập, hai tay duỗi thẳng qua đầu.",
+      "Đồng thời nâng tay, ngực và chân lên khỏi sàn.",
+      "Giữ tư thế 1-2 giây ở điểm cao nhất, siết chặt lưng dưới và mông.",
+      "Hạ người xuống từ từ về vị trí ban đầu."
+    ],
+    "commonMistakes": [
+      "Nâng người quá cao gây ưỡn cột sống quá mức.",
+      "Nín thở thay vì thở đều trong lúc giữ tư thế."
+    ],
+    "quickTip": "Chuyển động nên chậm và kiểm soát, không dùng đà hất người lên.",
+    "suggestedRestSeconds": 45,
+    "imageUrl": "https://images.pexels.com/photos/4976936/pexels-photo-4976936.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "superman back exercise",
+    "isActive": true
+  },
+  {
+    "name": "Nâng tạ đòn kiểu Deadlift",
+    "primaryMuscle": "lung_duoi",
+    "secondaryMuscles": [
+      "mong",
+      "dui_sau"
+    ],
+    "equipment": [
+      "ta_doi"
+    ],
+    "difficulty": "advanced",
+    "instructions": [
+      "Đứng chân rộng bằng hông, thanh tạ sát ống chân, cúi người nắm tạ rộng bằng vai.",
+      "Giữ lưng thẳng, ngực ưỡn, mắt nhìn về phía trước.",
+      "Đứng thẳng dậy bằng lực đẩy từ chân và hông, kéo tạ sát người.",
+      "Hạ tạ xuống có kiểm soát theo đúng quỹ đạo lúc nâng lên."
+    ],
+    "commonMistakes": [
+      "Cong lưng khi nâng tạ, đặc biệt lúc tạ rời sàn.",
+      "Để tạ ra xa cơ thể làm tăng áp lực lên lưng dưới."
+    ],
+    "quickTip": "Học đúng kỹ thuật với tạ nhẹ trước khi tăng mức tạ, đây là bài dễ chấn thương nếu sai form.",
+    "suggestedRestSeconds": 150,
+    "imageUrl": "https://images.pexels.com/photos/19132573/pexels-photo-19132573.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "barbell deadlift",
+    "isActive": true
+  },
+  {
+    "name": "Nâng tạ đơn kiểu Deadlift",
+    "primaryMuscle": "lung_duoi",
+    "secondaryMuscles": [
+      "mong",
+      "dui_sau"
+    ],
+    "equipment": [
+      "ta_don"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Đứng chân rộng bằng hông, mỗi tay cầm một tạ đơn phía trước đùi.",
+      "Đẩy hông ra sau, cúi người xuống trong khi giữ lưng thẳng, tạ sát ống chân.",
+      "Đứng thẳng dậy bằng lực chân và hông.",
+      "Siết mông ở điểm cao nhất, không ngả người ra sau quá mức."
+    ],
+    "commonMistakes": [
+      "Cúi người bằng cách gập lưng thay vì gập hông.",
+      "Đầu gối đẩy về trước quá nhiều biến thành động tác squat."
+    ],
+    "quickTip": "Phù hợp làm bài khởi động kỹ thuật trước khi tập deadlift tạ đòn nặng.",
+    "suggestedRestSeconds": 90,
+    "imageUrl": "https://images.pexels.com/photos/9171160/pexels-photo-9171160.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "dumbbell deadlift",
+    "isActive": true
+  },
+  {
+    "name": "Good Morning tạ đòn",
+    "primaryMuscle": "lung_duoi",
+    "secondaryMuscles": [
+      "dui_sau",
+      "mong"
+    ],
+    "equipment": [
+      "ta_doi"
+    ],
+    "difficulty": "advanced",
+    "instructions": [
+      "Đặt thanh đòn nhẹ lên vai như tư thế squat, đứng chân rộng bằng hông.",
+      "Giữ lưng thẳng, gối hơi khuỵu, đẩy hông ra sau và cúi người về trước.",
+      "Cúi đến khi thân người gần song song sàn, cảm nhận căng ở đùi sau và lưng dưới.",
+      "Đứng thẳng dậy trở lại bằng lực hông."
+    ],
+    "commonMistakes": [
+      "Dùng tạ quá nặng khi chưa vững kỹ thuật, rất dễ gây chấn thương lưng.",
+      "Cong lưng trên trong lúc cúi người."
+    ],
+    "quickTip": "Bắt đầu với thanh đòn không tạ hoặc tạ rất nhẹ để làm quen chuyển động gập hông.",
+    "suggestedRestSeconds": 120,
+    "imageUrl": "https://images.pexels.com/photos/5327456/pexels-photo-5327456.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "barbell good morning exercise",
+    "isActive": true
+  },
+  {
+    "name": "Nâng lưng dưới trên ghế (Hyperextension)",
+    "primaryMuscle": "lung_duoi",
+    "secondaryMuscles": [
+      "mong",
+      "dui_sau"
+    ],
+    "equipment": [
+      "ghe_tap"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Nằm sấp trên ghế, cố định phần hông và cổ chân, thân trên thả tự do phía trước.",
+      "Khoanh tay trước ngực hoặc đặt sau đầu.",
+      "Nâng thân trên lên đến khi thân người thẳng hàng với chân.",
+      "Hạ người xuống từ từ đến khi cảm nhận căng nhẹ ở lưng dưới."
+    ],
+    "commonMistakes": [
+      "Nâng người quá cao, ưỡn lưng quá mức ở điểm cao nhất.",
+      "Dùng đà hất người thay vì kiểm soát bằng cơ lưng dưới."
+    ],
+    "quickTip": "Có thể ôm thêm tạ đơn trước ngực khi động tác đã trở nên dễ dàng.",
+    "suggestedRestSeconds": 75,
+    "imageUrl": "https://images.pexels.com/photos/13460171/pexels-photo-13460171.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "back hyperextension exercise",
+    "isActive": true
+  },
+  {
+    "name": "Bird Dog",
+    "primaryMuscle": "lung_duoi",
+    "secondaryMuscles": [
+      "bung",
+      "mong"
+    ],
+    "equipment": [
+      "khong_dung_cu"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Quỳ bốn điểm chống trên sàn, tay thẳng dưới vai, gối thẳng dưới hông.",
+      "Duỗi thẳng đồng thời một tay và chân đối diện ra xa.",
+      "Giữ thân người ổn định, không để hông xoay hoặc lưng võng.",
+      "Trở về tư thế ban đầu và đổi bên."
+    ],
+    "commonMistakes": [
+      "Xoay hông theo tay/chân đang duỗi thay vì giữ thẳng.",
+      "Duỗi tay chân quá nhanh, mất kiểm soát thăng bằng."
+    ],
+    "quickTip": "Tập chậm và giữ 2-3 giây ở điểm duỗi xa nhất để tăng hiệu quả ổn định cột sống.",
+    "suggestedRestSeconds": 45,
+    "imageUrl": "https://images.pexels.com/photos/37835856/pexels-photo-37835856.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "bird dog exercise",
+    "isActive": true
+  },
+  {
+    "name": "Plank ngửa (Reverse Plank)",
+    "primaryMuscle": "lung_duoi",
+    "secondaryMuscles": [
+      "mong",
+      "bung"
+    ],
+    "equipment": [
+      "khong_dung_cu"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Ngồi trên sàn, hai chân duỗi thẳng, hai tay chống sau lưng ngang vai.",
+      "Nâng hông lên cao cho đến khi thân người tạo đường thẳng từ vai đến gót chân.",
+      "Siết mông và lưng dưới, giữ đầu thẳng hàng với thân.",
+      "Giữ tư thế theo thời gian quy định rồi hạ hông xuống."
+    ],
+    "commonMistakes": [
+      "Để hông chùng xuống thấp hơn vai và gót chân.",
+      "Ngửa cổ ra sau quá mức thay vì giữ thẳng hàng."
+    ],
+    "quickTip": "Nếu cổ tay khó chịu, có thể chống trên nắm tay thay vì lòng bàn tay.",
+    "suggestedRestSeconds": 45,
+    "imageUrl": "https://images.pexels.com/photos/5038855/pexels-photo-5038855.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "reverse plank exercise",
+    "isActive": true
+  },
+  {
+    "name": "Chèo tạ đòn kiểu Pendlay",
+    "primaryMuscle": "lung_duoi",
+    "secondaryMuscles": [
+      "lung_tren",
+      "tay_truoc"
+    ],
+    "equipment": [
+      "ta_doi"
+    ],
+    "difficulty": "advanced",
+    "instructions": [
+      "Cúi người song song sàn, nắm tạ đòn đặt trên sàn rộng bằng vai.",
+      "Giữ lưng thẳng cố định trong suốt bài tập, không đứng lên giữa các lần lặp.",
+      "Kéo tạ từ sàn lên chạm bụng dưới bằng lực lưng.",
+      "Hạ tạ chạm sàn hoàn toàn trước khi thực hiện lần lặp tiếp theo."
+    ],
+    "commonMistakes": [
+      "Đứng thẳng người lên giữa các lần lặp thay vì giữ nguyên góc cúi.",
+      "Giật tạ bằng lực lưng dưới thay vì kéo có kiểm soát."
+    ],
+    "quickTip": "Bài này đòi hỏi sức bền lưng dưới lớn, nên tập với tạ nhẹ hơn chèo tạ đòn thông thường.",
+    "suggestedRestSeconds": 120,
+    "imageUrl": "https://images.pexels.com/photos/6551083/pexels-photo-6551083.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "pendlay row exercise",
+    "isActive": true
+  },
+  {
+    "name": "Nâng tạ đòn kiểu Sumo Deadlift",
+    "primaryMuscle": "lung_duoi",
+    "secondaryMuscles": [
+      "mong",
+      "dui_truoc"
+    ],
+    "equipment": [
+      "ta_doi"
+    ],
+    "difficulty": "advanced",
+    "instructions": [
+      "Đứng chân rộng hơn vai, mũi chân hướng chéo ra ngoài, thanh tạ sát ống chân.",
+      "Cúi người nắm tạ bằng hai tay ở giữa hai chân, giữ lưng thẳng.",
+      "Đứng thẳng dậy bằng lực đẩy chân và hông, kéo tạ sát người.",
+      "Hạ tạ xuống có kiểm soát về vị trí ban đầu."
+    ],
+    "commonMistakes": [
+      "Đứng chân chưa đủ rộng khiến bài tập giống deadlift thường.",
+      "Đầu gối đổ vào trong khi đứng lên."
+    ],
+    "quickTip": "Tư thế chân rộng giúp giảm biên độ di chuyển, phù hợp người có lưng dưới nhạy cảm hơn deadlift thường.",
+    "suggestedRestSeconds": 150,
+    "imageUrl": "https://images.pexels.com/photos/13822300/pexels-photo-13822300.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "sumo deadlift exercise",
+    "isActive": true
+  }
+]

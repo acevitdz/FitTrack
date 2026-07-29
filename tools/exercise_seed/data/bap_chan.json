@@ -1,0 +1,220 @@
+[
+  {
+    "name": "Nhón gót đứng tạ đơn",
+    "primaryMuscle": "bap_chan",
+    "secondaryMuscles": [],
+    "equipment": [
+      "ta_don"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Đứng thẳng, mỗi tay cầm tạ đơn, mũi chân đứng trên bục thấp hoặc sàn phẳng.",
+      "Nhón gót lên cao hết mức có thể.",
+      "Giữ 1 giây ở điểm cao nhất, siết chặt bắp chân.",
+      "Hạ gót xuống từ từ, cảm nhận căng nhẹ ở bắp chân."
+    ],
+    "commonMistakes": [
+      "Nhón lên quá nhanh dùng đà thay vì kiểm soát.",
+      "Không hạ hết gót xuống giữa các lần lặp, cắt ngắn biên độ."
+    ],
+    "quickTip": "Đứng trên bục thấp để tăng biên độ chuyển động, giúp bắp chân căng giãn nhiều hơn.",
+    "suggestedRestSeconds": 45,
+    "imageUrl": "https://images.pexels.com/photos/4587372/pexels-photo-4587372.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "standing dumbbell calf raise",
+    "isActive": true
+  },
+  {
+    "name": "Nhón gót đứng trên máy",
+    "primaryMuscle": "bap_chan",
+    "secondaryMuscles": [],
+    "equipment": [
+      "may_tap_chan"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Đứng vào máy, vai tựa vào đệm, mũi chân đặt trên bệ, gót chân treo tự do.",
+      "Nhón gót lên cao hết mức có thể.",
+      "Giữ 1 giây ở điểm cao nhất.",
+      "Hạ gót xuống thấp hơn mặt bệ để kéo giãn bắp chân trước khi lặp lại."
+    ],
+    "commonMistakes": [
+      "Gập gối trong lúc nhón gót thay vì giữ chân thẳng.",
+      "Nhón quá nhanh liên tục không kiểm soát."
+    ],
+    "quickTip": "Máy cho phép tập với tạ nặng hơn tạ đơn, phù hợp khi bắp chân đã quen bài tập cơ bản.",
+    "suggestedRestSeconds": 60,
+    "imageUrl": "https://images.pexels.com/photos/3775599/pexels-photo-3775599.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "standing calf raise machine",
+    "isActive": true
+  },
+  {
+    "name": "Nhón gót ngồi trên máy",
+    "primaryMuscle": "bap_chan",
+    "secondaryMuscles": [],
+    "equipment": [
+      "may_tap_chan"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Ngồi vào máy, đặt đệm chặn lên đùi ngay trên gối.",
+      "Mũi chân đặt trên bệ, gót chân treo tự do.",
+      "Nhón gót lên cao hết mức có thể.",
+      "Hạ gót xuống thấp để kéo giãn bắp chân trước khi lặp lại."
+    ],
+    "commonMistakes": [
+      "Đặt đệm chặn sai vị trí gây khó chịu ở đầu gối.",
+      "Nhón không hết biên độ, cắt ngắn chuyển động."
+    ],
+    "quickTip": "Tư thế ngồi nhắm nhiều hơn vào phần bắp chân bên trong (soleus) so với đứng.",
+    "suggestedRestSeconds": 60,
+    "imageUrl": "https://images.pexels.com/photos/3768183/pexels-photo-3768183.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "seated calf raise machine",
+    "isActive": true
+  },
+  {
+    "name": "Nhón gót không tạ",
+    "primaryMuscle": "bap_chan",
+    "secondaryMuscles": [],
+    "equipment": [
+      "khong_dung_cu"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Đứng thẳng, hai chân rộng bằng hông, có thể vịn nhẹ vào tường hoặc ghế để giữ thăng bằng.",
+      "Nhón gót lên cao hết mức có thể.",
+      "Giữ 1 giây ở điểm cao nhất.",
+      "Hạ gót xuống từ từ về vị trí ban đầu."
+    ],
+    "commonMistakes": [
+      "Nhún gối để lấy đà thay vì nhón bằng lực bắp chân.",
+      "Thực hiện quá nhanh, không giữ ở điểm cao nhất."
+    ],
+    "quickTip": "Bài tập cơ bản phù hợp làm khởi động hoặc tập tại nhà không cần dụng cụ.",
+    "suggestedRestSeconds": 30,
+    "imageUrl": "https://images.pexels.com/photos/4803714/pexels-photo-4803714.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "bodyweight calf raise",
+    "isActive": true
+  },
+  {
+    "name": "Nhón gót một chân",
+    "primaryMuscle": "bap_chan",
+    "secondaryMuscles": [],
+    "equipment": [
+      "khong_dung_cu"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Đứng thẳng trên một chân, chân kia co nhẹ ra sau, vịn nhẹ vào tường để giữ thăng bằng.",
+      "Nhón gót chân trụ lên cao hết mức có thể.",
+      "Giữ 1 giây ở điểm cao nhất.",
+      "Hạ gót xuống từ từ, hoàn thành hiệp rồi đổi chân."
+    ],
+    "commonMistakes": [
+      "Dựa quá nhiều vào tay vịn làm giảm tải lên bắp chân.",
+      "Mất thăng bằng do nhón quá nhanh."
+    ],
+    "quickTip": "Bài tập một chân giúp phát hiện mất cân bằng sức mạnh giữa hai bên bắp chân.",
+    "suggestedRestSeconds": 45,
+    "imageUrl": "https://images.pexels.com/photos/7298422/pexels-photo-7298422.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "single leg calf raise",
+    "isActive": true
+  },
+  {
+    "name": "Nhón gót trên máy đẩy đùi",
+    "primaryMuscle": "bap_chan",
+    "secondaryMuscles": [],
+    "equipment": [
+      "may_tap_chan"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Ngồi vào máy đẩy đùi, đặt mũi chân lên mép dưới bệ đẩy, gót chân treo tự do.",
+      "Duỗi chân gần thẳng như khi đẩy đùi bình thường, giữ nguyên vị trí.",
+      "Nhón mũi chân đẩy bệ ra xa thêm bằng lực bắp chân.",
+      "Hạ gót xuống từ từ để kéo giãn bắp chân trước khi lặp lại."
+    ],
+    "commonMistakes": [
+      "Gập gối trong lúc nhón thay vì giữ chân cố định.",
+      "Đặt mũi chân quá cao hoặc quá thấp trên bệ."
+    ],
+    "quickTip": "Tận dụng máy đẩy đùi sẵn có để tập bắp chân mà không cần đổi máy.",
+    "suggestedRestSeconds": 60,
+    "imageUrl": "https://images.pexels.com/photos/6844939/pexels-photo-6844939.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "calf press on leg press machine",
+    "isActive": true
+  },
+  {
+    "name": "Nhón gót tạ đòn",
+    "primaryMuscle": "bap_chan",
+    "secondaryMuscles": [],
+    "equipment": [
+      "ta_doi"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Đặt thanh đòn lên lưng trên như tư thế squat, đứng thẳng, mũi chân trên bục thấp nếu có.",
+      "Nhón gót lên cao hết mức có thể.",
+      "Giữ 1 giây ở điểm cao nhất.",
+      "Hạ gót xuống từ từ về vị trí ban đầu."
+    ],
+    "commonMistakes": [
+      "Mất thăng bằng khi đứng trên bục với tạ nặng trên vai.",
+      "Nhón không đều hai bên chân."
+    ],
+    "quickTip": "Chỉ nên thêm tạ đòn khi đã kiểm soát tốt các biến thể nhón gót không tạ hoặc tạ đơn.",
+    "suggestedRestSeconds": 75,
+    "imageUrl": "https://images.pexels.com/photos/5837263/pexels-photo-5837263.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "barbell calf raise",
+    "isActive": true
+  },
+  {
+    "name": "Nhón gót bằng dây kháng lực",
+    "primaryMuscle": "bap_chan",
+    "secondaryMuscles": [],
+    "equipment": [
+      "day_khang_luc"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Ngồi trên sàn, chân duỗi thẳng, quấn dây kháng lực quanh lòng bàn chân.",
+      "Hai tay giữ hai đầu dây, giữ dây căng vừa phải.",
+      "Đẩy mũi chân xuống (nhón gót) đẩy dây căng ra.",
+      "Trả chân về vị trí ban đầu từ từ."
+    ],
+    "commonMistakes": [
+      "Gập gối trong lúc đẩy mũi chân xuống.",
+      "Dùng dây quá lỏng làm giảm lực cản."
+    ],
+    "quickTip": "Bài tập tiện lợi để tập bắp chân khi ngồi làm việc hoặc xem TV.",
+    "suggestedRestSeconds": 45,
+    "imageUrl": "https://images.pexels.com/photos/6516206/pexels-photo-6516206.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "resistance band calf raise seated",
+    "isActive": true
+  },
+  {
+    "name": "Nhảy dây",
+    "primaryMuscle": "bap_chan",
+    "secondaryMuscles": [
+      "dui_truoc"
+    ],
+    "equipment": [
+      "khong_dung_cu"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Đứng thẳng, cầm hai đầu dây nhảy, khuỷu tay sát thân người.",
+      "Xoay cổ tay để dây quay qua đầu và xuống dưới chân.",
+      "Bật nhảy nhẹ bằng mũi chân đúng lúc dây chạm sàn.",
+      "Giữ nhịp đều, tiếp đất êm bằng mũi chân."
+    ],
+    "commonMistakes": [
+      "Nhảy quá cao gây mỏi chân nhanh và dễ vướng dây.",
+      "Tiếp đất bằng cả bàn chân gây áp lực lên khớp gối và mắt cá."
+    ],
+    "quickTip": "Bắt đầu với nhịp chậm để làm quen phối hợp tay và chân trước khi tăng tốc độ.",
+    "suggestedRestSeconds": 45,
+    "imageUrl": "https://images.pexels.com/photos/4945535/pexels-photo-4945535.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "jump rope exercise",
+    "isActive": true
+  }
+]

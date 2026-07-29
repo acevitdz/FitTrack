@@ -1,0 +1,312 @@
+[
+  {
+    "name": "Nâng hông tạ đòn (Hip Thrust)",
+    "primaryMuscle": "mong",
+    "secondaryMuscles": [
+      "dui_sau"
+    ],
+    "equipment": [
+      "ta_doi",
+      "ghe_tap"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Ngồi trên sàn, lưng trên tựa vào mép ghế, thanh đòn đặt ngang hông (có đệm lót).",
+      "Đặt hai chân rộng bằng vai, bàn chân sát mông.",
+      "Đẩy hông lên cao cho đến khi thân người tạo đường thẳng từ vai đến gối.",
+      "Siết chặt mông ở điểm cao nhất, sau đó hạ hông xuống có kiểm soát."
+    ],
+    "commonMistakes": [
+      "Ưỡn lưng dưới quá mức thay vì đẩy hông bằng lực mông.",
+      "Đặt chân quá gần hoặc quá xa mông làm giảm hiệu quả."
+    ],
+    "quickTip": "Dùng đệm lót thanh đòn để tránh đau vùng hông khi tập nặng.",
+    "suggestedRestSeconds": 120,
+    "imageUrl": "https://images.pexels.com/photos/2261483/pexels-photo-2261483.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "barbell hip thrust",
+    "isActive": true
+  },
+  {
+    "name": "Nâng hông tạ đơn",
+    "primaryMuscle": "mong",
+    "secondaryMuscles": [
+      "dui_sau"
+    ],
+    "equipment": [
+      "ta_don",
+      "ghe_tap"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Ngồi trên sàn, lưng trên tựa vào mép ghế, đặt một tạ đơn ngang hông.",
+      "Giữ tạ bằng hai tay, đặt hai chân rộng bằng vai.",
+      "Đẩy hông lên cao đến khi thân người thẳng hàng từ vai đến gối.",
+      "Siết mông rồi hạ hông xuống có kiểm soát."
+    ],
+    "commonMistakes": [
+      "Không siết mông ở điểm cao nhất, chỉ đẩy hông bằng quán tính.",
+      "Để tạ lăn hoặc lệch khỏi vị trí giữa hông."
+    ],
+    "quickTip": "Phù hợp thay thế hip thrust tạ đòn khi phòng tập không có đệm lót thanh đòn.",
+    "suggestedRestSeconds": 90,
+    "imageUrl": "https://images.pexels.com/photos/14099909/pexels-photo-14099909.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "dumbbell hip thrust",
+    "isActive": true
+  },
+  {
+    "name": "Nâng hông không tạ (Glute Bridge)",
+    "primaryMuscle": "mong",
+    "secondaryMuscles": [
+      "dui_sau",
+      "bung"
+    ],
+    "equipment": [
+      "khong_dung_cu"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Nằm ngửa trên sàn, gối gập, hai bàn chân đặt sát mông rộng bằng hông.",
+      "Siết bụng và mông, đẩy hông lên cao.",
+      "Giữ 1-2 giây ở điểm cao nhất, thân người tạo đường thẳng từ vai đến gối.",
+      "Hạ hông xuống từ từ, không chạm sàn hoàn toàn giữa các lần lặp."
+    ],
+    "commonMistakes": [
+      "Đẩy hông lên quá cao gây ưỡn lưng dưới quá mức.",
+      "Dùng lực đùi sau thay vì kích hoạt mông."
+    ],
+    "quickTip": "Bài khởi động rất tốt để kích hoạt cơ mông trước khi squat hoặc deadlift.",
+    "suggestedRestSeconds": 45,
+    "imageUrl": "https://images.pexels.com/photos/36400032/pexels-photo-36400032.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "glute bridge bodyweight",
+    "isActive": true
+  },
+  {
+    "name": "Nâng hông một chân",
+    "primaryMuscle": "mong",
+    "secondaryMuscles": [
+      "dui_sau",
+      "bung"
+    ],
+    "equipment": [
+      "khong_dung_cu"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Nằm ngửa trên sàn, gối gập, một chân duỗi thẳng lên trần hoặc giữ song song sàn.",
+      "Chân còn lại đặt sát mông, siết bụng và mông.",
+      "Đẩy hông lên cao bằng lực chân trụ duy nhất.",
+      "Hạ hông xuống có kiểm soát, hoàn thành hiệp rồi đổi chân."
+    ],
+    "commonMistakes": [
+      "Xoay hông lệch sang một bên khi đẩy lên.",
+      "Dùng chân đang duỗi để hỗ trợ lực đẩy."
+    ],
+    "quickTip": "Bài tập một chân giúp phát hiện mất cân bằng lực giữa hai bên mông.",
+    "suggestedRestSeconds": 60,
+    "imageUrl": "https://images.pexels.com/photos/25596682/pexels-photo-25596682.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "single leg glute bridge",
+    "isActive": true
+  },
+  {
+    "name": "Đá chân sau bằng dây kháng lực",
+    "primaryMuscle": "mong",
+    "secondaryMuscles": [
+      "dui_sau"
+    ],
+    "equipment": [
+      "day_khang_luc"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Quấn dây kháng lực quanh hai mắt cá chân, chống hai tay và hai gối trên sàn.",
+      "Giữ lưng thẳng, siết bụng.",
+      "Đá thẳng một chân ra sau và lên cao, giữ gối gập nhẹ.",
+      "Hạ chân xuống có kiểm soát, hoàn thành hiệp rồi đổi chân."
+    ],
+    "commonMistakes": [
+      "Ưỡn lưng dưới quá mức khi đá chân lên cao.",
+      "Đá chân quá nhanh dùng đà thay vì kiểm soát bằng cơ mông."
+    ],
+    "quickTip": "Siết bụng suốt bài để tránh lưng dưới phải bù trừ lực.",
+    "suggestedRestSeconds": 45,
+    "imageUrl": "https://images.pexels.com/photos/4148956/pexels-photo-4148956.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "resistance band donkey kick",
+    "isActive": true
+  },
+  {
+    "name": "Đá chân sau trên máy cáp",
+    "primaryMuscle": "mong",
+    "secondaryMuscles": [
+      "dui_sau"
+    ],
+    "equipment": [
+      "may_keo_xo"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Gắn dây cáp vào cổ chân, đứng đối diện máy, hai tay vịn nhẹ vào khung máy.",
+      "Giữ thân người ổn định, chân trụ hơi khuỵu.",
+      "Đá thẳng chân gắn dây ra sau và lên cao.",
+      "Trả chân về vị trí ban đầu có kiểm soát, hoàn thành hiệp rồi đổi bên."
+    ],
+    "commonMistakes": [
+      "Đổ người về trước quá nhiều để đá chân cao hơn.",
+      "Dùng đà lắc hông thay vì kiểm soát bằng cơ mông."
+    ],
+    "quickTip": "Máy cáp giữ lực căng liên tục, hiệu quả hơn đá chân không tạ khi đã quen bài tập.",
+    "suggestedRestSeconds": 60,
+    "imageUrl": "https://images.pexels.com/photos/4807549/pexels-photo-4807549.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "cable kickback glute",
+    "isActive": true
+  },
+  {
+    "name": "Đá chân sau không tạ (Donkey Kick)",
+    "primaryMuscle": "mong",
+    "secondaryMuscles": [
+      "dui_sau"
+    ],
+    "equipment": [
+      "khong_dung_cu"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Chống hai tay và hai gối trên sàn, lưng giữ thẳng tự nhiên.",
+      "Giữ gối gập 90 độ, đá một chân lên cao về phía trần nhà.",
+      "Siết mông ở điểm cao nhất.",
+      "Hạ gối về gần sàn có kiểm soát, hoàn thành hiệp rồi đổi chân."
+    ],
+    "commonMistakes": [
+      "Ưỡn lưng dưới để đá chân cao hơn.",
+      "Duỗi thẳng chân thay vì giữ gối gập 90 độ."
+    ],
+    "quickTip": "Tập chậm và siết chặt ở điểm cao nhất quan trọng hơn đá nhanh nhiều lần.",
+    "suggestedRestSeconds": 45,
+    "imageUrl": "https://images.pexels.com/photos/8472148/pexels-photo-8472148.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "donkey kick bodyweight",
+    "isActive": true
+  },
+  {
+    "name": "Bước tấn kiểu Curtsy",
+    "primaryMuscle": "mong",
+    "secondaryMuscles": [
+      "dui_truoc"
+    ],
+    "equipment": [
+      "ta_don"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Đứng thẳng, mỗi tay cầm tạ đơn hoặc không cầm tạ nếu mới tập.",
+      "Bước một chân ra sau chéo qua chân trụ như động tác cúi chào.",
+      "Hạ người xuống đến khi gối chân sau gần chạm sàn.",
+      "Đẩy người trở lại vị trí đứng ban đầu, hoàn thành hiệp rồi đổi chân."
+    ],
+    "commonMistakes": [
+      "Xoay hông quá nhiều làm mất thăng bằng.",
+      "Bước chân chéo không đủ xa khiến bài tập mất tác dụng lên mông."
+    ],
+    "quickTip": "Bài tập tốt để nhắm vào phần cơ mông bên ngoài (gluteus medius).",
+    "suggestedRestSeconds": 75,
+    "imageUrl": "https://images.pexels.com/photos/4587359/pexels-photo-4587359.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "curtsy lunge dumbbell",
+    "isActive": true
+  },
+  {
+    "name": "Squat chân rộng (Sumo Squat)",
+    "primaryMuscle": "mong",
+    "secondaryMuscles": [
+      "dui_truoc"
+    ],
+    "equipment": [
+      "ta_doi"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Đứng chân rộng hơn vai, mũi chân hướng chéo ra ngoài, tạ đòn đặt trên lưng trên.",
+      "Siết bụng, hạ người xuống thẳng giữa hai chân.",
+      "Hạ đến khi đùi song song sàn, đầu gối hướng theo mũi chân.",
+      "Đứng thẳng dậy trở lại, siết mông ở điểm cao nhất."
+    ],
+    "commonMistakes": [
+      "Đầu gối đổ vào trong thay vì hướng theo mũi chân.",
+      "Chân chưa đủ rộng khiến bài tập giống squat thường."
+    ],
+    "quickTip": "Tư thế chân rộng và mũi chân mở giúp nhắm nhiều hơn vào mông và đùi trong.",
+    "suggestedRestSeconds": 120,
+    "imageUrl": "https://images.pexels.com/photos/1552249/pexels-photo-1552249.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "sumo squat barbell",
+    "isActive": true
+  },
+  {
+    "name": "Đi bộ cua bằng dây kháng lực",
+    "primaryMuscle": "mong",
+    "secondaryMuscles": [],
+    "equipment": [
+      "day_khang_luc"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Quấn dây kháng lực quanh hai mắt cá chân hoặc trên đầu gối, đứng chân rộng bằng hông.",
+      "Hạ người xuống tư thế squat nhẹ (half squat), giữ nguyên độ hạ suốt bài.",
+      "Bước sang ngang từng bước nhỏ, giữ dây luôn căng.",
+      "Bước đủ số bước quy định rồi đổi hướng ngược lại."
+    ],
+    "commonMistakes": [
+      "Đứng thẳng người lên trong lúc bước làm mất lực căng của dây.",
+      "Bước quá dài khiến đầu gối xoay lệch."
+    ],
+    "quickTip": "Bài khởi động phổ biến trước buổi tập chân để kích hoạt cơ mông ngoài.",
+    "suggestedRestSeconds": 45,
+    "imageUrl": "https://images.pexels.com/photos/5163843/pexels-photo-5163843.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "lateral band walk",
+    "isActive": true
+  },
+  {
+    "name": "Nâng chân sang ngang nằm nghiêng",
+    "primaryMuscle": "mong",
+    "secondaryMuscles": [],
+    "equipment": [
+      "khong_dung_cu"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Nằm nghiêng một bên trên thảm, chân dưới gập nhẹ để giữ thăng bằng.",
+      "Chân trên duỗi thẳng, giữ hông vuông góc với sàn.",
+      "Nâng chân trên lên cao hết mức có thể mà không xoay hông ra sau.",
+      "Hạ chân xuống từ từ, hoàn thành hiệp rồi đổi bên."
+    ],
+    "commonMistakes": [
+      "Xoay hông ra sau để nâng chân cao hơn.",
+      "Dùng đà đá chân thay vì nâng có kiểm soát."
+    ],
+    "quickTip": "Bài tập nhẹ nhàng phù hợp làm khởi động hoặc tập bổ trợ cuối buổi.",
+    "suggestedRestSeconds": 45,
+    "imageUrl": "https://images.pexels.com/photos/7530016/pexels-photo-7530016.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "side lying leg raise",
+    "isActive": true
+  },
+  {
+    "name": "Đạp đùi trên máy (Hip Abduction)",
+    "primaryMuscle": "mong",
+    "secondaryMuscles": [],
+    "equipment": [
+      "may_tap_chan"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Ngồi vào máy, đặt hai chân vào đệm chặn phía ngoài đùi.",
+      "Lưng tựa chắc vào ghế, hai tay nắm tay cầm hai bên.",
+      "Đẩy hai chân mở rộng ra ngoài hết mức có thể.",
+      "Khép chân trở lại từ từ về vị trí ban đầu."
+    ],
+    "commonMistakes": [
+      "Dùng đà thân trên để đẩy chân ra thay vì lực cơ mông.",
+      "Khép chân quá nhanh mất kiểm soát."
+    ],
+    "quickTip": "Máy cô lập tốt phần cơ mông bên ngoài, phù hợp tập cuối buổi chân.",
+    "suggestedRestSeconds": 60,
+    "imageUrl": "https://images.pexels.com/photos/6539849/pexels-photo-6539849.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "hip abduction machine",
+    "isActive": true
+  }
+]

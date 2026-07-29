@@ -1,0 +1,345 @@
+[
+  {
+    "name": "Kéo xà đơn nắm rộng",
+    "primaryMuscle": "lung_tren",
+    "secondaryMuscles": [
+      "tay_truoc"
+    ],
+    "equipment": [
+      "xa_ngang"
+    ],
+    "difficulty": "advanced",
+    "instructions": [
+      "Nắm xà rộng hơn vai, lòng bàn tay hướng ra trước.",
+      "Treo người thẳng, siết bả vai trước khi kéo.",
+      "Kéo người lên đến khi cằm qua xà, khuỷu tay hướng xuống sau.",
+      "Hạ người xuống từ từ đến khi tay gần thẳng."
+    ],
+    "commonMistakes": [
+      "Đung đưa thân người để lấy đà thay vì dùng lực lưng.",
+      "Chỉ kéo được nửa biên độ, không hạ hết tay."
+    ],
+    "quickTip": "Nếu chưa kéo được, dùng dây kháng lực hỗ trợ để tập đúng kỹ thuật trước.",
+    "suggestedRestSeconds": 120,
+    "imageUrl": "https://images.pexels.com/photos/4162478/pexels-photo-4162478.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "wide grip pull up",
+    "isActive": true
+  },
+  {
+    "name": "Kéo xà đơn nắm ngược",
+    "primaryMuscle": "lung_tren",
+    "secondaryMuscles": [
+      "tay_truoc"
+    ],
+    "equipment": [
+      "xa_ngang"
+    ],
+    "difficulty": "advanced",
+    "instructions": [
+      "Nắm xà rộng bằng vai, lòng bàn tay hướng vào người (nắm ngược).",
+      "Treo người thẳng, siết bụng và bả vai.",
+      "Kéo người lên đến khi cằm qua xà.",
+      "Hạ người xuống có kiểm soát, không thả rơi tự do."
+    ],
+    "commonMistakes": [
+      "Kéo bằng lực tay trước thay vì kích hoạt lưng và tay sau.",
+      "Co chân đá lên để lấy đà."
+    ],
+    "quickTip": "Nắm ngược giúp tay trước hỗ trợ nhiều hơn, phù hợp cho người mới tập kéo xà.",
+    "suggestedRestSeconds": 120,
+    "imageUrl": "https://images.pexels.com/photos/3838290/pexels-photo-3838290.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "chin up exercise",
+    "isActive": true
+  },
+  {
+    "name": "Kéo cáp lưng xô nắm rộng",
+    "primaryMuscle": "lung_tren",
+    "secondaryMuscles": [
+      "tay_truoc"
+    ],
+    "equipment": [
+      "may_keo_xo"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Ngồi vào máy, đùi cố định dưới đệm, nắm thanh kéo rộng hơn vai.",
+      "Ngả người ra sau nhẹ, ưỡn ngực.",
+      "Kéo thanh xuống đến ngang cằm hoặc ngực trên, siết bả vai.",
+      "Trả thanh lên từ từ, giữ tay hơi căng ở điểm cao nhất."
+    ],
+    "commonMistakes": [
+      "Ngả người ra sau quá nhiều biến thành kéo bằng lưng dưới.",
+      "Kéo thanh xuống sau gáy gây căng khớp vai."
+    ],
+    "quickTip": "Tập trung cảm nhận lực kéo ở xương bả vai thay vì ở cánh tay.",
+    "suggestedRestSeconds": 90,
+    "imageUrl": "https://images.pexels.com/photos/6922157/pexels-photo-6922157.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "wide grip lat pulldown",
+    "isActive": true
+  },
+  {
+    "name": "Kéo cáp lưng xô nắm hẹp",
+    "primaryMuscle": "lung_tren",
+    "secondaryMuscles": [
+      "tay_truoc"
+    ],
+    "equipment": [
+      "may_keo_xo"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Ngồi vào máy, nắm tay cầm chữ V hoặc nắm hẹp, lòng bàn tay hướng vào nhau.",
+      "Kéo tay cầm xuống ngang ngực, khuỷu tay ép sát thân người.",
+      "Siết lưng xô ở điểm thấp nhất trong 1 giây.",
+      "Trả tay cầm lên từ từ, kiểm soát tốc độ."
+    ],
+    "commonMistakes": [
+      "Dùng tay kéo là chính, không siết lưng xô.",
+      "Kéo quá nhanh mất kiểm soát ở pha trả tay lên."
+    ],
+    "quickTip": "Nắm hẹp giúp biên độ dài hơn, phù hợp cảm nhận rõ lưng xô phần dưới.",
+    "suggestedRestSeconds": 90,
+    "imageUrl": "https://images.pexels.com/photos/3927026/pexels-photo-3927026.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "close grip lat pulldown",
+    "isActive": true
+  },
+  {
+    "name": "Chèo tạ đòn",
+    "primaryMuscle": "lung_tren",
+    "secondaryMuscles": [
+      "tay_truoc",
+      "lung_duoi"
+    ],
+    "equipment": [
+      "ta_doi"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Đứng hai chân rộng bằng vai, cúi người về trước khoảng 45 độ, lưng thẳng.",
+      "Nắm tạ rộng bằng vai, tay duỗi tự nhiên.",
+      "Kéo tạ lên sát bụng dưới, khuỷu tay hướng lên sau.",
+      "Hạ tạ xuống từ từ, giữ lưng thẳng suốt bài tập."
+    ],
+    "commonMistakes": [
+      "Đứng thẳng người dần lên khi mỏi thay vì giữ góc cúi cố định.",
+      "Giật tạ bằng lực lưng dưới thay vì kéo bằng lưng trên."
+    ],
+    "quickTip": "Siết bụng suốt bài để bảo vệ lưng dưới khi cúi người.",
+    "suggestedRestSeconds": 120,
+    "imageUrl": "https://images.pexels.com/photos/12890895/pexels-photo-12890895.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "barbell bent over row",
+    "isActive": true
+  },
+  {
+    "name": "Chèo tạ đơn một tay",
+    "primaryMuscle": "lung_tren",
+    "secondaryMuscles": [
+      "tay_truoc"
+    ],
+    "equipment": [
+      "ta_don",
+      "ghe_tap"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Chống một tay và một gối lên ghế, lưng giữ thẳng song song sàn.",
+      "Tay còn lại cầm tạ, duỗi thẳng xuống dưới vai.",
+      "Kéo tạ lên sát hông, khuỷu tay hướng lên sau.",
+      "Hạ tạ xuống từ từ, đổi bên sau khi hoàn thành hiệp."
+    ],
+    "commonMistakes": [
+      "Xoay thân người theo tạ khi kéo lên thay vì giữ lưng cố định.",
+      "Kéo tạ ra ngoài quá xa thay vì hướng vào hông."
+    ],
+    "quickTip": "Tưởng tượng đang kéo khuỷu tay hướng lên trần nhà để cảm nhận đúng lưng xô.",
+    "suggestedRestSeconds": 90,
+    "imageUrl": "https://images.pexels.com/photos/14209250/pexels-photo-14209250.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "one arm dumbbell row",
+    "isActive": true
+  },
+  {
+    "name": "Chèo tạ đơn hai tay cúi người",
+    "primaryMuscle": "lung_tren",
+    "secondaryMuscles": [
+      "tay_truoc",
+      "lung_duoi"
+    ],
+    "equipment": [
+      "ta_don"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Đứng hai chân rộng bằng vai, mỗi tay cầm một tạ đơn, cúi người 45 độ.",
+      "Giữ lưng thẳng, mắt nhìn xuống sàn phía trước.",
+      "Kéo hai tạ lên sát hông cùng lúc, siết bả vai.",
+      "Hạ tạ xuống có kiểm soát, không để lưng cong."
+    ],
+    "commonMistakes": [
+      "Cúi người quá thấp hoặc quá cao làm mất góc chèo hiệu quả.",
+      "Dùng tạ quá nặng khiến phải giật người để kéo."
+    ],
+    "quickTip": "Nếu lưng dưới yếu, có thể tựa trán vào ghế nghiêng để giảm tải cột sống.",
+    "suggestedRestSeconds": 90,
+    "imageUrl": "https://images.pexels.com/photos/136410/pexels-photo-136410.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "two arm bent over dumbbell row",
+    "isActive": true
+  },
+  {
+    "name": "Kéo cáp ngồi",
+    "primaryMuscle": "lung_tren",
+    "secondaryMuscles": [
+      "tay_truoc"
+    ],
+    "equipment": [
+      "may_keo_xo"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Ngồi thẳng lưng, chân đạp nhẹ vào bệ, nắm tay cầm chữ V.",
+      "Kéo tay cầm về phía bụng, khuỷu tay ép sát thân người.",
+      "Siết bả vai lại với nhau ở điểm cuối.",
+      "Thả tay cầm ra từ từ, thân người giữ thẳng không đổ về sau."
+    ],
+    "commonMistakes": [
+      "Đổ người ra sau quá nhiều để kéo được nặng hơn.",
+      "Gù lưng ở pha thả tay cầm ra."
+    ],
+    "quickTip": "Giữ ngực ưỡn nhẹ suốt bài để lưng trên làm việc đúng vai trò.",
+    "suggestedRestSeconds": 90,
+    "imageUrl": "https://images.pexels.com/photos/14094850/pexels-photo-14094850.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "seated cable row",
+    "isActive": true
+  },
+  {
+    "name": "Chèo dây kháng lực",
+    "primaryMuscle": "lung_tren",
+    "secondaryMuscles": [
+      "tay_truoc"
+    ],
+    "equipment": [
+      "day_khang_luc"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Cố định dây kháng lực phía trước ngang bụng, ngồi hoặc đứng đối diện điểm cố định.",
+      "Mỗi tay cầm một đầu dây, tay duỗi thẳng về phía trước.",
+      "Kéo hai tay về phía hông, khuỷu tay ép sát thân người.",
+      "Trả tay về vị trí ban đầu, giữ dây luôn căng."
+    ],
+    "commonMistakes": [
+      "Ngồi quá gần điểm cố định làm dây chùng, mất lực cản.",
+      "Gù lưng khi kéo thay vì giữ lưng thẳng."
+    ],
+    "quickTip": "Bài tập này tiện để tập lưng tại nhà khi không có máy kéo cáp.",
+    "suggestedRestSeconds": 60,
+    "imageUrl": "https://images.pexels.com/photos/5067749/pexels-photo-5067749.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "resistance band seated row",
+    "isActive": true
+  },
+  {
+    "name": "Kéo xà đơn hỗ trợ dây kháng lực",
+    "primaryMuscle": "lung_tren",
+    "secondaryMuscles": [
+      "tay_truoc"
+    ],
+    "equipment": [
+      "xa_ngang",
+      "day_khang_luc"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Quấn dây kháng lực quanh xà, luồn một đầu dây qua đầu kia tạo vòng.",
+      "Đặt một chân hoặc đầu gối vào vòng dây để giảm tải trọng lượng cơ thể.",
+      "Kéo người lên như kéo xà thông thường đến khi cằm qua xà.",
+      "Hạ người xuống từ từ, giữ dây luôn căng hỗ trợ."
+    ],
+    "commonMistakes": [
+      "Chọn dây có lực hỗ trợ quá lớn khiến bài tập mất tác dụng.",
+      "Đạp chân nhún vào dây để lấy đà thay vì kéo bằng lưng."
+    ],
+    "quickTip": "Giảm dần độ hỗ trợ của dây theo thời gian để tiến tới kéo xà không hỗ trợ.",
+    "suggestedRestSeconds": 90,
+    "imageUrl": "https://images.pexels.com/photos/6339607/pexels-photo-6339607.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "resistance band assisted pull up",
+    "isActive": true
+  },
+  {
+    "name": "Chèo tạ đòn cầm ngược",
+    "primaryMuscle": "lung_tren",
+    "secondaryMuscles": [
+      "tay_truoc"
+    ],
+    "equipment": [
+      "ta_doi"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Đứng cúi người 45 độ, nắm tạ đòn ngược (lòng bàn tay hướng lên), rộng bằng vai.",
+      "Giữ lưng thẳng, siết bụng.",
+      "Kéo tạ lên sát bụng trên, khuỷu tay ép gần thân người.",
+      "Hạ tạ xuống từ từ về vị trí ban đầu."
+    ],
+    "commonMistakes": [
+      "Đứng thẳng dần lên khi tạ nặng, làm giảm hiệu quả bài tập.",
+      "Kéo tạ quá nhanh gây mất kiểm soát ở điểm thấp nhất."
+    ],
+    "quickTip": "Cầm ngược giúp tay trước tham gia nhiều hơn, tạo cảm giác khác biệt so với chèo cầm sấp.",
+    "suggestedRestSeconds": 100,
+    "imageUrl": "https://images.pexels.com/photos/949134/pexels-photo-949134.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "underhand grip barbell row",
+    "isActive": true
+  },
+  {
+    "name": "Kéo cáp một tay",
+    "primaryMuscle": "lung_tren",
+    "secondaryMuscles": [
+      "tay_truoc"
+    ],
+    "equipment": [
+      "may_keo_xo"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Ngồi vào máy kéo cáp, chỉnh tay cầm đơn ngang tầm ngực.",
+      "Cầm tay cầm bằng một tay, tay còn lại chống nhẹ lên đùi.",
+      "Kéo tay cầm về phía hông, xoay nhẹ thân trên theo lực kéo.",
+      "Trả tay cầm về vị trí ban đầu có kiểm soát, đổi bên sau khi hết hiệp."
+    ],
+    "commonMistakes": [
+      "Xoay thân người quá nhiều thay vì để lưng làm việc chính.",
+      "Không kéo hết biên độ về phía hông."
+    ],
+    "quickTip": "Tập một tay giúp phát hiện và khắc phục sự mất cân bằng lực giữa hai bên lưng.",
+    "suggestedRestSeconds": 90,
+    "imageUrl": "https://images.pexels.com/photos/5327505/pexels-photo-5327505.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "single arm cable row",
+    "isActive": true
+  },
+  {
+    "name": "Chèo tạ đơn tư thế plank",
+    "primaryMuscle": "lung_tren",
+    "secondaryMuscles": [
+      "bung",
+      "tay_truoc"
+    ],
+    "equipment": [
+      "ta_don"
+    ],
+    "difficulty": "advanced",
+    "instructions": [
+      "Vào tư thế plank cao, hai tay chống lên hai tạ đơn, chân mở rộng bằng vai để giữ thăng bằng.",
+      "Kéo một tạ lên sát hông, giữ hông không xoay theo.",
+      "Hạ tạ về sàn có kiểm soát, đổi bên liên tục.",
+      "Siết bụng và mông suốt bài để giữ thân người ổn định."
+    ],
+    "commonMistakes": [
+      "Để hông xoay và võng xuống khi kéo tạ lên.",
+      "Chọn tạ quá nặng khiến mất thăng bằng plank."
+    ],
+    "quickTip": "Mở rộng chân hơn để tăng độ vững, giảm dần khi đã quen với bài tập.",
+    "suggestedRestSeconds": 90,
+    "imageUrl": "https://images.pexels.com/photos/2247179/pexels-photo-2247179.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "renegade row plank",
+    "isActive": true
+  }
+]

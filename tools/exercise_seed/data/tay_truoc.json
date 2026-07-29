@@ -1,0 +1,297 @@
+[
+  {
+    "name": "Cuốn tạ đòn đứng",
+    "primaryMuscle": "tay_truoc",
+    "secondaryMuscles": [],
+    "equipment": [
+      "ta_doi"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Đứng thẳng, nắm tạ đòn rộng bằng vai, tay duỗi trước đùi.",
+      "Giữ khuỷu tay sát thân người, cuốn tạ lên đến ngang vai.",
+      "Giữ 1 giây ở điểm cao nhất, siết cơ tay trước.",
+      "Hạ tạ xuống từ từ về vị trí ban đầu."
+    ],
+    "commonMistakes": [
+      "Đung đưa thân người và hông để lấy đà cuốn tạ lên.",
+      "Đẩy khuỷu tay ra trước thay vì giữ cố định sát thân người."
+    ],
+    "quickTip": "Nếu phải đung đưa người mới cuốn được tạ lên, đó là dấu hiệu tạ quá nặng.",
+    "suggestedRestSeconds": 75,
+    "imageUrl": "https://images.pexels.com/photos/9361335/pexels-photo-9361335.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "standing barbell curl",
+    "isActive": true
+  },
+  {
+    "name": "Cuốn tạ đơn đứng",
+    "primaryMuscle": "tay_truoc",
+    "secondaryMuscles": [],
+    "equipment": [
+      "ta_don"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Đứng thẳng, mỗi tay cầm tạ đơn, lòng bàn tay hướng ra trước.",
+      "Giữ khuỷu tay sát thân người, cuốn hai tạ lên đồng thời.",
+      "Giữ 1 giây ở điểm cao nhất.",
+      "Hạ tạ xuống từ từ về vị trí ban đầu."
+    ],
+    "commonMistakes": [
+      "Xoay cổ tay không hết khiến lực không tập trung vào tay trước.",
+      "Hạ tạ quá nhanh, mất kiểm soát pha âm."
+    ],
+    "quickTip": "Xoay cổ tay để lòng bàn tay hướng lên hoàn toàn ở điểm cao nhất để tối ưu co cơ.",
+    "suggestedRestSeconds": 75,
+    "imageUrl": "https://images.pexels.com/photos/3763115/pexels-photo-3763115.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "standing dumbbell curl",
+    "isActive": true
+  },
+  {
+    "name": "Cuốn tạ đơn luân phiên",
+    "primaryMuscle": "tay_truoc",
+    "secondaryMuscles": [],
+    "equipment": [
+      "ta_don"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Đứng thẳng, mỗi tay cầm tạ đơn thả tự nhiên hai bên đùi.",
+      "Cuốn tạ bên phải lên ngang vai trong khi tay trái giữ nguyên.",
+      "Hạ tay phải xuống đồng thời cuốn tay trái lên, luân phiên đều nhịp.",
+      "Giữ thân người thẳng, không xoay hông theo tay đang cuốn."
+    ],
+    "commonMistakes": [
+      "Xoay hông và vai theo tay đang cuốn để lấy đà.",
+      "Không hạ tạ hết biên độ trước khi cuốn tay tiếp theo."
+    ],
+    "quickTip": "Luân phiên tay giúp tập trung hơn vào từng bên, dễ phát hiện bên yếu hơn.",
+    "suggestedRestSeconds": 75,
+    "imageUrl": "https://images.pexels.com/photos/3917659/pexels-photo-3917659.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "alternating dumbbell curl",
+    "isActive": true
+  },
+  {
+    "name": "Cuốn tạ đơn kiểu búa",
+    "primaryMuscle": "tay_truoc",
+    "secondaryMuscles": [],
+    "equipment": [
+      "ta_don"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Đứng thẳng, mỗi tay cầm tạ đơn, lòng bàn tay hướng vào thân người (như cầm búa).",
+      "Giữ khuỷu tay sát thân người, cuốn tạ lên ngang vai.",
+      "Giữ 1 giây ở điểm cao nhất.",
+      "Hạ tạ xuống từ từ về vị trí ban đầu."
+    ],
+    "commonMistakes": [
+      "Xoay cổ tay trong lúc cuốn thay vì giữ nguyên góc cầm búa.",
+      "Dùng vai để hất tạ lên khi tạ quá nặng."
+    ],
+    "quickTip": "Bài này tác động thêm vào cơ cẳng tay, tốt để tăng lực nắm tổng thể.",
+    "suggestedRestSeconds": 75,
+    "imageUrl": "https://images.pexels.com/photos/917660/pexels-photo-917660.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "hammer curl dumbbell",
+    "isActive": true
+  },
+  {
+    "name": "Cuốn tạ đơn ghế Scott",
+    "primaryMuscle": "tay_truoc",
+    "secondaryMuscles": [],
+    "equipment": [
+      "ta_don",
+      "ghe_tap"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Ngồi vào ghế Scott, tựa mặt sau cánh tay lên đệm nghiêng, nách sát mép đệm.",
+      "Cầm tạ đơn, tay duỗi gần thẳng.",
+      "Cuốn tạ lên ngang vai, giữ cánh tay trên áp chặt đệm.",
+      "Hạ tạ xuống từ từ nhưng không duỗi thẳng hoàn toàn để tránh áp lực lên khớp khuỷu."
+    ],
+    "commonMistakes": [
+      "Nhấc cánh tay trên khỏi đệm khi cuốn tạ nặng.",
+      "Duỗi tay quá thẳng ở điểm thấp nhất gây căng khớp khuỷu."
+    ],
+    "quickTip": "Ghế Scott loại bỏ hoàn toàn khả năng dùng đà, rất tốt để tập trung cô lập tay trước.",
+    "suggestedRestSeconds": 75,
+    "imageUrl": "https://images.pexels.com/photos/12314077/pexels-photo-12314077.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "preacher curl bench",
+    "isActive": true
+  },
+  {
+    "name": "Cuốn tạ đòn EZ",
+    "primaryMuscle": "tay_truoc",
+    "secondaryMuscles": [],
+    "equipment": [
+      "ta_doi"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Đứng thẳng, nắm tạ đòn ở phần tay cầm chéo (gờ cong), rộng bằng vai.",
+      "Giữ khuỷu tay sát thân người, cuốn tạ lên ngang vai.",
+      "Giữ 1 giây ở điểm cao nhất.",
+      "Hạ tạ xuống từ từ về vị trí ban đầu."
+    ],
+    "commonMistakes": [
+      "Nắm tạ quá hẹp hoặc quá rộng so với gờ cong thiết kế của thanh EZ.",
+      "Ưỡn lưng để lấy đà khi tạ nặng."
+    ],
+    "quickTip": "Tay cầm chéo của thanh EZ giúp cổ tay thoải mái hơn tạ đòn thẳng với người bị đau cổ tay.",
+    "suggestedRestSeconds": 75,
+    "imageUrl": "https://images.pexels.com/photos/6999014/pexels-photo-6999014.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "ez bar curl",
+    "isActive": true
+  },
+  {
+    "name": "Cuốn tạ đơn ghế nghiêng",
+    "primaryMuscle": "tay_truoc",
+    "secondaryMuscles": [],
+    "equipment": [
+      "ta_don",
+      "ghe_tap"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Chỉnh ghế nghiêng khoảng 45-60 độ, ngồi tựa lưng, hai tay thả thẳng xuống.",
+      "Mỗi tay cầm tạ đơn, cuốn tạ lên ngang vai.",
+      "Giữ khuỷu tay cố định không đưa ra trước.",
+      "Hạ tạ xuống từ từ, cảm nhận căng ở tay trước tại điểm thấp nhất."
+    ],
+    "commonMistakes": [
+      "Đưa khuỷu tay ra trước khi cuốn tạ, làm giảm biên độ căng cơ.",
+      "Chỉnh ghế nghiêng chưa đủ khiến bài tập giống cuốn tạ đứng thường."
+    ],
+    "quickTip": "Tư thế ghế nghiêng kéo dài biên độ chuyển động, tạo cảm giác căng cơ rõ hơn ở điểm thấp.",
+    "suggestedRestSeconds": 75,
+    "imageUrl": "https://images.pexels.com/photos/7187900/pexels-photo-7187900.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "incline dumbbell curl",
+    "isActive": true
+  },
+  {
+    "name": "Cuốn cáp đứng",
+    "primaryMuscle": "tay_truoc",
+    "secondaryMuscles": [],
+    "equipment": [
+      "may_keo_xo"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Đứng đối diện máy cáp, nắm thanh tay cầm thấp rộng bằng vai.",
+      "Giữ khuỷu tay sát thân người, cuốn tay cầm lên ngang vai.",
+      "Giữ 1 giây ở điểm cao nhất.",
+      "Hạ tay cầm xuống từ từ, giữ lực căng liên tục."
+    ],
+    "commonMistakes": [
+      "Đứng quá xa hoặc quá gần máy làm sai góc kéo.",
+      "Dùng đà thân người để cuốn tay cầm lên."
+    ],
+    "quickTip": "Máy cáp giữ lực căng liên tục suốt bài, khác với tạ chỉ căng nhất ở giữa biên độ.",
+    "suggestedRestSeconds": 75,
+    "imageUrl": "https://images.pexels.com/photos/5327510/pexels-photo-5327510.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "cable bicep curl",
+    "isActive": true
+  },
+  {
+    "name": "Cuốn tạ đơn tập trung",
+    "primaryMuscle": "tay_truoc",
+    "secondaryMuscles": [],
+    "equipment": [
+      "ta_don",
+      "ghe_tap"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Ngồi trên ghế, chân mở rộng, một tay chống lên đùi.",
+      "Tay còn lại cầm tạ, tựa khuỷu tay vào mặt trong đùi cùng bên.",
+      "Cuốn tạ lên ngang vai, giữ khuỷu tay cố định.",
+      "Hạ tạ xuống từ từ, đổi bên sau khi hết hiệp."
+    ],
+    "commonMistakes": [
+      "Nhấc khuỷu tay khỏi đùi trong lúc cuốn tạ.",
+      "Dùng vai để hỗ trợ lực khi tạ quá nặng."
+    ],
+    "quickTip": "Bài tập cô lập tốt nhất cho tay trước, phù hợp để hoàn thiện hình dáng cơ ở cuối buổi tập.",
+    "suggestedRestSeconds": 60,
+    "imageUrl": "https://images.pexels.com/photos/8401861/pexels-photo-8401861.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "concentration curl",
+    "isActive": true
+  },
+  {
+    "name": "Cuốn tay bằng dây kháng lực",
+    "primaryMuscle": "tay_truoc",
+    "secondaryMuscles": [],
+    "equipment": [
+      "day_khang_luc"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Đứng lên giữa dây kháng lực, mỗi tay cầm một đầu dây.",
+      "Giữ khuỷu tay sát thân người, cuốn tay lên ngang vai.",
+      "Giữ 1 giây ở điểm cao nhất.",
+      "Hạ tay xuống từ từ, giữ dây luôn căng."
+    ],
+    "commonMistakes": [
+      "Đứng lên dây quá lỏng làm giảm lực cản.",
+      "Đưa khuỷu tay ra trước trong lúc cuốn."
+    ],
+    "quickTip": "Phù hợp tập tại nhà hoặc bổ sung cuối buổi khi đã hết tạ phù hợp.",
+    "suggestedRestSeconds": 60,
+    "imageUrl": "https://images.pexels.com/photos/5714259/pexels-photo-5714259.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "resistance band bicep curl",
+    "isActive": true
+  },
+  {
+    "name": "Kéo xà nắm ngược hẹp tay",
+    "primaryMuscle": "tay_truoc",
+    "secondaryMuscles": [
+      "lung_tren"
+    ],
+    "equipment": [
+      "xa_ngang"
+    ],
+    "difficulty": "advanced",
+    "instructions": [
+      "Nắm xà hẹp hơn vai, lòng bàn tay hướng vào người.",
+      "Treo người thẳng, siết bụng và tay trước.",
+      "Kéo người lên đến khi cằm qua xà, tập trung lực vào tay trước.",
+      "Hạ người xuống từ từ, kiểm soát tốc độ."
+    ],
+    "commonMistakes": [
+      "Đung đưa thân người để lấy đà.",
+      "Không hạ hết tay ở điểm thấp nhất."
+    ],
+    "quickTip": "Nắm hẹp và ngược làm tay trước tham gia nhiều hơn so với kéo xà nắm rộng.",
+    "suggestedRestSeconds": 100,
+    "imageUrl": "https://images.pexels.com/photos/17101707/pexels-photo-17101707.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "close grip chin up",
+    "isActive": true
+  },
+  {
+    "name": "Cuốn tạ đòn nắm ngược",
+    "primaryMuscle": "tay_truoc",
+    "secondaryMuscles": [
+      "tay_sau"
+    ],
+    "equipment": [
+      "ta_doi"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Đứng thẳng, nắm tạ đòn rộng bằng vai, lòng bàn tay hướng xuống (nắm ngược).",
+      "Giữ khuỷu tay sát thân người, cuốn tạ lên ngang vai.",
+      "Giữ 1 giây ở điểm cao nhất.",
+      "Hạ tạ xuống từ từ về vị trí ban đầu."
+    ],
+    "commonMistakes": [
+      "Dùng tạ quá nặng khiến cổ tay bị gập gây khó chịu.",
+      "Đung đưa thân người để lấy đà cuốn tạ lên."
+    ],
+    "quickTip": "Bài này tác động nhiều vào cẳng tay và cơ brachialis, giúp tay trông dày hơn khi nhìn nghiêng.",
+    "suggestedRestSeconds": 75,
+    "imageUrl": "https://images.pexels.com/photos/14085138/pexels-photo-14085138.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "reverse grip barbell curl",
+    "isActive": true
+  }
+]

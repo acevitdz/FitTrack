@@ -1,0 +1,382 @@
+[
+  {
+    "name": "Đẩy ngực tạ đòn trên ghế phẳng",
+    "primaryMuscle": "nguc",
+    "secondaryMuscles": [
+      "tay_sau",
+      "vai_truoc"
+    ],
+    "equipment": [
+      "ta_doi",
+      "ghe_tap"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Nằm ngửa trên ghế phẳng, hai chân đặt vững trên sàn, mắt ngay dưới thanh đòn.",
+      "Nắm tạ rộng hơn vai một chút, hạ thanh đòn xuống chạm nhẹ giữa ngực.",
+      "Đẩy thanh đòn thẳng lên trên vai cho đến khi tay gần thẳng, không khóa cứng khuỷu tay.",
+      "Hít vào khi hạ tạ, thở ra khi đẩy lên."
+    ],
+    "commonMistakes": [
+      "Nảy tạ trên ngực để lấy đà thay vì kiểm soát chuyển động.",
+      "Đẩy tạ lệch về phía mặt hoặc bụng thay vì thẳng trên vai."
+    ],
+    "quickTip": "Siết bả vai xuống ghế và giữ lưng hơi ưỡn tự nhiên để bảo vệ vai.",
+    "suggestedRestSeconds": 120,
+    "imageUrl": "https://images.pexels.com/photos/12752465/pexels-photo-12752465.png?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "barbell bench press",
+    "isActive": true
+  },
+  {
+    "name": "Đẩy ngực tạ đơn trên ghế phẳng",
+    "primaryMuscle": "nguc",
+    "secondaryMuscles": [
+      "tay_sau",
+      "vai_truoc"
+    ],
+    "equipment": [
+      "ta_don",
+      "ghe_tap"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Nằm ngửa trên ghế phẳng, mỗi tay cầm một quả tạ đơn ngang ngực.",
+      "Đẩy hai tạ lên thẳng phía trên vai cho đến khi tay gần thẳng.",
+      "Hạ tạ xuống từ từ đến khi khuỷu tay ngang ghế, giữ cổ tay thẳng.",
+      "Lặp lại đều nhịp, không để tạ va chạm nhau ở đỉnh chuyển động."
+    ],
+    "commonMistakes": [
+      "Hạ tạ quá sâu khiến vai bị kéo căng quá mức.",
+      "Để hai tay tách quá rộng làm mất lực đẩy vào ngực."
+    ],
+    "quickTip": "Dùng tạ đơn giúp mỗi bên ngực làm việc độc lập, tốt để cân bằng lực hai bên.",
+    "suggestedRestSeconds": 90,
+    "imageUrl": "https://images.pexels.com/photos/3839310/pexels-photo-3839310.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "dumbbell bench press",
+    "isActive": true
+  },
+  {
+    "name": "Đẩy ngực tạ đòn ghế nghiêng",
+    "primaryMuscle": "nguc",
+    "secondaryMuscles": [
+      "vai_truoc",
+      "tay_sau"
+    ],
+    "equipment": [
+      "ta_doi",
+      "ghe_tap"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Chỉnh ghế nghiêng khoảng 30-45 độ, nằm ngửa và nắm tạ rộng hơn vai.",
+      "Hạ thanh đòn xuống chạm nhẹ phần ngực trên, gần xương đòn.",
+      "Đẩy tạ thẳng lên trên, hướng nhẹ về phía đầu theo góc ghế.",
+      "Kiểm soát tốc độ hạ tạ, tránh để tạ rơi nhanh."
+    ],
+    "commonMistakes": [
+      "Chỉnh ghế nghiêng quá cao (trên 45 độ) làm bài tập ngả sang vai trước.",
+      "Chống chân không vững khiến mất thăng bằng khi đẩy nặng."
+    ],
+    "quickTip": "Góc ghế 30 độ là đủ để nhắm vào ngực trên mà không lấn sang vai quá nhiều.",
+    "suggestedRestSeconds": 120,
+    "imageUrl": "https://images.pexels.com/photos/4047156/pexels-photo-4047156.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "incline barbell bench press",
+    "isActive": true
+  },
+  {
+    "name": "Đẩy ngực tạ đơn ghế nghiêng",
+    "primaryMuscle": "nguc",
+    "secondaryMuscles": [
+      "vai_truoc",
+      "tay_sau"
+    ],
+    "equipment": [
+      "ta_don",
+      "ghe_tap"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Chỉnh ghế nghiêng 30-45 độ, ngồi tựa lưng, mỗi tay cầm một tạ đơn ngang vai.",
+      "Đẩy tạ lên trên theo hướng chéo, hai tạ gần chạm nhau ở đỉnh.",
+      "Hạ tạ xuống từ từ đến khi khuỷu tay ngang vai.",
+      "Giữ core siết chặt trong suốt bài tập."
+    ],
+    "commonMistakes": [
+      "Đẩy tạ thẳng đứng thay vì theo hướng vai, làm giảm hiệu quả lên ngực trên.",
+      "Dùng tạ quá nặng khiến biên độ chuyển động bị rút ngắn."
+    ],
+    "quickTip": "Ưu tiên biên độ đầy đủ với tạ vừa sức hơn là tạ nặng nhưng cụt biên độ.",
+    "suggestedRestSeconds": 90,
+    "imageUrl": "https://images.pexels.com/photos/18060077/pexels-photo-18060077.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "incline dumbbell press",
+    "isActive": true
+  },
+  {
+    "name": "Đẩy ngực tạ đơn ghế dốc xuống",
+    "primaryMuscle": "nguc",
+    "secondaryMuscles": [
+      "tay_sau"
+    ],
+    "equipment": [
+      "ta_don",
+      "ghe_tap"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Chỉnh ghế dốc xuống nhẹ (đầu thấp hơn chân) hoặc nằm ghế phẳng với chân kê cao.",
+      "Cầm tạ đơn ngang ngực dưới, giữ chặt phần thân trên.",
+      "Đẩy tạ lên trên theo hướng thẳng, tập trung lực vào ngực dưới.",
+      "Hạ tạ chậm rãi về vị trí ban đầu."
+    ],
+    "commonMistakes": [
+      "Chỉnh độ dốc quá lớn gây khó chịu vùng đầu và cổ.",
+      "Không siết core khiến lưng dưới bị ưỡn quá mức."
+    ],
+    "quickTip": "Nếu không có ghế dốc chuyên dụng, kê chân cao trên ghế phẳng là đủ hiệu quả.",
+    "suggestedRestSeconds": 90,
+    "imageUrl": "https://images.pexels.com/photos/38576478/pexels-photo-38576478.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "decline dumbbell press",
+    "isActive": true
+  },
+  {
+    "name": "Ép ngực tạ đơn",
+    "primaryMuscle": "nguc",
+    "secondaryMuscles": [
+      "vai_truoc"
+    ],
+    "equipment": [
+      "ta_don",
+      "ghe_tap"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Nằm ngửa trên ghế phẳng, hai tay cầm tạ đơn duỗi thẳng trên ngực, lòng bàn tay hướng vào nhau.",
+      "Hạ tạ sang hai bên theo cung tròn, khuỷu tay hơi gập cố định.",
+      "Hạ đến khi cảm nhận ngực căng nhẹ, không hạ quá sâu gây đau vai.",
+      "Khép tay lại theo đúng cung tròn ban đầu để về vị trí trên ngực."
+    ],
+    "commonMistakes": [
+      "Gập duỗi khuỷu tay như đang đẩy tạ thay vì giữ cố định để ép ngực.",
+      "Dùng tạ quá nặng làm mất kiểm soát ở điểm thấp nhất."
+    ],
+    "quickTip": "Tưởng tượng đang ôm một thân cây lớn để giữ đúng quỹ đạo cung tròn.",
+    "suggestedRestSeconds": 75,
+    "imageUrl": "https://images.pexels.com/photos/18060076/pexels-photo-18060076.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "dumbbell chest fly",
+    "isActive": true
+  },
+  {
+    "name": "Ép ngực tạ đơn ghế nghiêng",
+    "primaryMuscle": "nguc",
+    "secondaryMuscles": [
+      "vai_truoc"
+    ],
+    "equipment": [
+      "ta_don",
+      "ghe_tap"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Chỉnh ghế nghiêng 30 độ, nằm tựa lưng, hai tay cầm tạ duỗi thẳng trên ngực trên.",
+      "Hạ tạ sang hai bên theo cung tròn, khuỷu tay hơi gập cố định.",
+      "Ép ngực để khép tay về vị trí ban đầu.",
+      "Giữ nhịp thở đều, không nín thở khi ép tạ."
+    ],
+    "commonMistakes": [
+      "Chỉnh ghế quá cao khiến bài tập thiên về vai thay vì ngực trên.",
+      "Ép tạ quá nhanh làm mất kiểm soát biên độ chuyển động."
+    ],
+    "quickTip": "Dùng tạ nhẹ hơn bài đẩy để giữ đúng kỹ thuật cung tròn.",
+    "suggestedRestSeconds": 75,
+    "imageUrl": "https://images.pexels.com/photos/18060023/pexels-photo-18060023.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "incline dumbbell fly",
+    "isActive": true
+  },
+  {
+    "name": "Đẩy ngực trên máy",
+    "primaryMuscle": "nguc",
+    "secondaryMuscles": [
+      "tay_sau",
+      "vai_truoc"
+    ],
+    "equipment": [
+      "may_tap_nguc"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Ngồi vào máy, chỉnh độ cao ghế sao cho tay cầm ngang ngực.",
+      "Nắm hai tay cầm, lưng tựa chắc vào đệm.",
+      "Đẩy tay cầm về phía trước cho đến khi tay gần thẳng, không khóa khớp khuỷu.",
+      "Từ từ trả lại về vị trí ban đầu theo kiểm soát."
+    ],
+    "commonMistakes": [
+      "Chỉnh ghế sai độ cao khiến tay cầm không ngang ngực.",
+      "Đẩy quá nhanh, dựa vào đà thay vì lực cơ ngực."
+    ],
+    "quickTip": "Máy tập ngực phù hợp để làm nóng cơ hoặc tập khi mới bắt đầu vì dễ kiểm soát quỹ đạo.",
+    "suggestedRestSeconds": 90,
+    "imageUrl": "https://images.pexels.com/photos/6539838/pexels-photo-6539838.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "machine chest press",
+    "isActive": true
+  },
+  {
+    "name": "Ép ngực trên máy (Pec Deck)",
+    "primaryMuscle": "nguc",
+    "secondaryMuscles": [
+      "vai_truoc"
+    ],
+    "equipment": [
+      "may_tap_nguc"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Ngồi vào máy, lưng tựa thẳng, tay đặt lên đệm hoặc nắm tay cầm ngang vai.",
+      "Khép hai tay vào nhau ở phía trước ngực theo cung tròn.",
+      "Giữ 1 giây khi hai tay gần chạm nhau, siết chặt cơ ngực.",
+      "Mở tay trở lại từ từ, không để đệm va mạnh vào khung máy."
+    ],
+    "commonMistakes": [
+      "Dùng đà thân trên để đẩy tay thay vì lực cơ ngực.",
+      "Mở tay quá rộng ra sau gây căng khớp vai."
+    ],
+    "quickTip": "Siết và giữ 1 giây ở điểm khép tay để tăng hiệu quả kích hoạt cơ ngực.",
+    "suggestedRestSeconds": 75,
+    "imageUrl": "https://images.pexels.com/photos/3768913/pexels-photo-3768913.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "pec deck machine fly",
+    "isActive": true
+  },
+  {
+    "name": "Chống đẩy",
+    "primaryMuscle": "nguc",
+    "secondaryMuscles": [
+      "tay_sau",
+      "bung"
+    ],
+    "equipment": [
+      "khong_dung_cu"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Chống hai tay xuống sàn rộng hơn vai một chút, cơ thể tạo thành đường thẳng từ đầu đến gót chân.",
+      "Hạ người xuống đến khi ngực gần chạm sàn, khuỷu tay hướng chéo ra sau.",
+      "Đẩy người lên trở lại vị trí ban đầu, siết chặt bụng và mông.",
+      "Giữ đầu thẳng hàng với cột sống trong suốt bài tập."
+    ],
+    "commonMistakes": [
+      "Để hông võng xuống hoặc nhô cao làm sai tư thế plank.",
+      "Chỉ hạ người một nửa biên độ, không chạm gần sàn."
+    ],
+    "quickTip": "Nếu chưa đủ sức, chống đầu gối xuống sàn để giảm tải mà vẫn giữ đúng kỹ thuật.",
+    "suggestedRestSeconds": 60,
+    "imageUrl": "https://images.pexels.com/photos/4775232/pexels-photo-4775232.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "push up exercise",
+    "isActive": true
+  },
+  {
+    "name": "Chống đẩy chân cao",
+    "primaryMuscle": "nguc",
+    "secondaryMuscles": [
+      "vai_truoc",
+      "tay_sau"
+    ],
+    "equipment": [
+      "khong_dung_cu",
+      "ghe_tap"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Đặt hai chân lên ghế, hai tay chống xuống sàn rộng hơn vai.",
+      "Giữ cơ thể thẳng hàng từ vai đến gót chân.",
+      "Hạ ngực xuống gần sàn rồi đẩy người lên trở lại.",
+      "Siết bụng để tránh hông bị võng trong suốt chuyển động."
+    ],
+    "commonMistakes": [
+      "Kê chân quá cao khi chưa đủ sức, làm mất kiểm soát tư thế.",
+      "Đẩy người lên không hết biên độ, khuỷu tay còn gập."
+    ],
+    "quickTip": "Chân càng cao thì phần ngực trên và vai càng phải làm việc nhiều hơn.",
+    "suggestedRestSeconds": 75,
+    "imageUrl": "https://images.pexels.com/photos/8401198/pexels-photo-8401198.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "decline push up feet elevated",
+    "isActive": true
+  },
+  {
+    "name": "Chống đẩy tay rộng",
+    "primaryMuscle": "nguc",
+    "secondaryMuscles": [
+      "vai_truoc"
+    ],
+    "equipment": [
+      "khong_dung_cu"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Chống hai tay xuống sàn rộng hơn vai khoảng 1.5 lần so với chống đẩy thường.",
+      "Hạ người xuống đến khi ngực gần chạm sàn.",
+      "Đẩy người lên, tập trung siết cơ ngực ở điểm cao nhất.",
+      "Giữ thân người thẳng, không để hông chùng xuống."
+    ],
+    "commonMistakes": [
+      "Chống tay quá rộng gây căng khớp vai và cổ tay.",
+      "Hạ người quá nhanh, không kiểm soát tốc độ."
+    ],
+    "quickTip": "Tay càng rộng thì biên độ càng ngắn nhưng cơ ngực ngoài được kích hoạt nhiều hơn.",
+    "suggestedRestSeconds": 60,
+    "imageUrl": "https://images.pexels.com/photos/4803878/pexels-photo-4803878.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "wide grip push up",
+    "isActive": true
+  },
+  {
+    "name": "Đẩy ngực bằng dây kháng lực",
+    "primaryMuscle": "nguc",
+    "secondaryMuscles": [
+      "tay_sau",
+      "vai_truoc"
+    ],
+    "equipment": [
+      "day_khang_luc"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Cố định dây kháng lực phía sau lưng ngang ngực (cột, cửa, hoặc quấn quanh vật chắc chắn).",
+      "Mỗi tay cầm một đầu dây, đứng chân trước chân sau để giữ thăng bằng.",
+      "Đẩy hai tay về phía trước cho đến khi tay gần thẳng.",
+      "Từ từ đưa tay trở lại vị trí ban đầu, giữ dây luôn căng."
+    ],
+    "commonMistakes": [
+      "Đứng quá gần điểm cố định làm dây bị chùng, mất lực cản.",
+      "Ưỡn lưng quá mức để lấy đà đẩy."
+    ],
+    "quickTip": "Chọn dây có độ căng vừa đủ để hoàn thành hết biên độ mà vẫn kiểm soát được.",
+    "suggestedRestSeconds": 60,
+    "imageUrl": "https://images.pexels.com/photos/15917308/pexels-photo-15917308.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "resistance band chest press",
+    "isActive": true
+  },
+  {
+    "name": "Ép ngực bằng dây kháng lực",
+    "primaryMuscle": "nguc",
+    "secondaryMuscles": [
+      "vai_truoc"
+    ],
+    "equipment": [
+      "day_khang_luc"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Cố định dây kháng lực phía sau ngang vai, mỗi tay cầm một đầu dây, hai tay dang ngang.",
+      "Bước một chân lên trước để tạo thế vững.",
+      "Khép hai tay lại phía trước ngực theo cung tròn.",
+      "Mở tay trở lại từ từ, giữ dây luôn căng trong suốt bài tập."
+    ],
+    "commonMistakes": [
+      "Gập khuỷu tay quá nhiều biến bài ép thành bài đẩy.",
+      "Thả lỏng dây ở điểm mở tay khiến mất lực cản."
+    ],
+    "quickTip": "Giữ khuỷu tay hơi cong cố định trong suốt bài để cơ ngực làm việc đúng vai trò.",
+    "suggestedRestSeconds": 60,
+    "imageUrl": "https://images.pexels.com/photos/6667512/pexels-photo-6667512.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "resistance band chest fly",
+    "isActive": true
+  }
+]

@@ -1,0 +1,392 @@
+[
+  {
+    "name": "Squat tạ đòn sau gáy",
+    "primaryMuscle": "dui_truoc",
+    "secondaryMuscles": [
+      "mong"
+    ],
+    "equipment": [
+      "ta_doi"
+    ],
+    "difficulty": "advanced",
+    "instructions": [
+      "Đặt thanh đòn lên phần trên lưng trên (trapezius), đứng chân rộng bằng vai.",
+      "Siết bụng, hạ người xuống bằng cách gập gối và đẩy hông ra sau, giữ lưng thẳng.",
+      "Hạ đến khi đùi song song sàn hoặc thấp hơn nếu độ linh hoạt cho phép.",
+      "Đứng thẳng dậy trở lại bằng lực đẩy từ chân."
+    ],
+    "commonMistakes": [
+      "Đầu gối đổ vào trong khi đứng lên.",
+      "Cong lưng dưới ở điểm thấp nhất của squat."
+    ],
+    "quickTip": "Luôn có giá đỡ an toàn (rack) hoặc người hỗ trợ khi tập squat nặng.",
+    "suggestedRestSeconds": 150,
+    "imageUrl": "https://images.pexels.com/photos/38576481/pexels-photo-38576481.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "barbell back squat",
+    "isActive": true
+  },
+  {
+    "name": "Squat tạ đòn trước",
+    "primaryMuscle": "dui_truoc",
+    "secondaryMuscles": [
+      "bung"
+    ],
+    "equipment": [
+      "ta_doi"
+    ],
+    "difficulty": "advanced",
+    "instructions": [
+      "Đặt thanh đòn lên phía trước vai, khuỷu tay nâng cao để giữ tạ ổn định.",
+      "Đứng chân rộng bằng vai, siết bụng.",
+      "Hạ người xuống giữ thân trên thẳng đứng hơn so với squat sau gáy.",
+      "Đứng thẳng dậy trở lại bằng lực đẩy từ chân."
+    ],
+    "commonMistakes": [
+      "Hạ khuỷu tay xuống khiến tạ dễ tuột khỏi vai.",
+      "Đổ người về trước quá nhiều khi xuống thấp."
+    ],
+    "quickTip": "Squat trước đòi hỏi cổ tay và vai linh hoạt hơn, có thể tập làm quen tư thế trước khi thêm tạ.",
+    "suggestedRestSeconds": 150,
+    "imageUrl": "https://images.pexels.com/photos/3926639/pexels-photo-3926639.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "front squat barbell",
+    "isActive": true
+  },
+  {
+    "name": "Squat tạ đơn (Goblet Squat)",
+    "primaryMuscle": "dui_truoc",
+    "secondaryMuscles": [
+      "mong",
+      "bung"
+    ],
+    "equipment": [
+      "ta_don"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Đứng chân rộng hơn vai một chút, hai tay cầm một tạ đơn sát ngực.",
+      "Siết bụng, hạ người xuống giữa hai chân, giữ lưng thẳng.",
+      "Hạ đến khi khuỷu tay chạm nhẹ vào đùi trong.",
+      "Đứng thẳng dậy trở lại bằng lực đẩy từ chân."
+    ],
+    "commonMistakes": [
+      "Cúi người về trước thay vì hạ thẳng xuống.",
+      "Nhấc gót chân khỏi sàn khi xuống thấp."
+    ],
+    "quickTip": "Bài tập vào squat lý tưởng cho người mới vì tạ ở phía trước giúp giữ thăng bằng tự nhiên.",
+    "suggestedRestSeconds": 90,
+    "imageUrl": "https://images.pexels.com/photos/4587364/pexels-photo-4587364.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "goblet squat dumbbell",
+    "isActive": true
+  },
+  {
+    "name": "Đẩy đùi trên máy (Leg Press)",
+    "primaryMuscle": "dui_truoc",
+    "secondaryMuscles": [
+      "mong"
+    ],
+    "equipment": [
+      "may_tap_chan"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Ngồi vào máy, đặt hai chân rộng bằng vai lên bệ đẩy.",
+      "Đẩy bệ ra xa cho đến khi chân gần thẳng, không khóa cứng khớp gối.",
+      "Hạ bệ về gần cơ thể đến khi gối gập khoảng 90 độ.",
+      "Đẩy bệ ra trở lại, kiểm soát tốc độ suốt bài tập."
+    ],
+    "commonMistakes": [
+      "Hạ bệ quá sâu khiến hông nhấc khỏi ghế tựa.",
+      "Khóa cứng khớp gối ở điểm đẩy xa nhất."
+    ],
+    "quickTip": "Đặt chân cao trên bệ để nhắm nhiều hơn vào mông, đặt thấp để nhắm nhiều hơn vào đùi trước.",
+    "suggestedRestSeconds": 120,
+    "imageUrl": "https://images.pexels.com/photos/3076512/pexels-photo-3076512.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "leg press machine",
+    "isActive": true
+  },
+  {
+    "name": "Duỗi chân trên máy (Leg Extension)",
+    "primaryMuscle": "dui_truoc",
+    "secondaryMuscles": [],
+    "equipment": [
+      "may_tap_chan"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Ngồi vào máy, chỉnh đệm chặn sao cho nằm ngay trên mắt cá chân.",
+      "Lưng tựa chắc vào ghế, hai tay nắm tay cầm hai bên.",
+      "Duỗi thẳng chân lên đến khi gần thẳng hoàn toàn.",
+      "Hạ chân xuống từ từ về vị trí ban đầu."
+    ],
+    "commonMistakes": [
+      "Duỗi và hạ chân quá nhanh, dùng đà thay vì kiểm soát.",
+      "Chỉnh đệm chặn sai vị trí gây khó chịu ở mắt cá chân."
+    ],
+    "quickTip": "Giữ 1 giây ở điểm duỗi thẳng để tăng hiệu quả kích hoạt cơ đùi trước.",
+    "suggestedRestSeconds": 75,
+    "imageUrl": "https://images.pexels.com/photos/6539840/pexels-photo-6539840.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "leg extension machine",
+    "isActive": true
+  },
+  {
+    "name": "Đẩy đùi kiểu Hack Squat",
+    "primaryMuscle": "dui_truoc",
+    "secondaryMuscles": [
+      "mong"
+    ],
+    "equipment": [
+      "may_tap_chan"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Đứng vào máy Hack Squat, lưng và vai tựa chắc vào đệm, chân đặt rộng bằng vai trên bệ.",
+      "Mở khóa an toàn, hạ người xuống bằng cách gập gối.",
+      "Hạ đến khi đùi song song bệ hoặc thấp hơn nếu thoải mái.",
+      "Đẩy người lên trở lại vị trí ban đầu."
+    ],
+    "commonMistakes": [
+      "Đặt chân quá cao hoặc quá thấp trên bệ gây lệch trọng tâm.",
+      "Không khóa an toàn trước khi bắt đầu, gây nguy hiểm."
+    ],
+    "quickTip": "Máy Hack Squat cố định quỹ đạo chuyển động, an toàn hơn squat tự do khi tập một mình.",
+    "suggestedRestSeconds": 120,
+    "imageUrl": "https://images.pexels.com/photos/19025671/pexels-photo-19025671.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "hack squat machine",
+    "isActive": true
+  },
+  {
+    "name": "Bước tấn tạ đơn",
+    "primaryMuscle": "dui_truoc",
+    "secondaryMuscles": [
+      "mong"
+    ],
+    "equipment": [
+      "ta_don"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Đứng thẳng, mỗi tay cầm tạ đơn thả tự nhiên hai bên.",
+      "Bước một chân dài về phía trước, hạ người xuống đến khi cả hai gối gập khoảng 90 độ.",
+      "Đẩy người trở lại vị trí đứng ban đầu bằng lực chân trước.",
+      "Đổi chân, thực hiện đều hai bên."
+    ],
+    "commonMistakes": [
+      "Gối chân trước vượt quá mũi chân quá nhiều.",
+      "Bước quá ngắn khiến trọng tâm mất cân bằng."
+    ],
+    "quickTip": "Giữ thân người thẳng đứng, không đổ người về trước khi bước.",
+    "suggestedRestSeconds": 90,
+    "imageUrl": "https://images.pexels.com/photos/6339676/pexels-photo-6339676.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "dumbbell lunge",
+    "isActive": true
+  },
+  {
+    "name": "Bước tấn tạ đòn",
+    "primaryMuscle": "dui_truoc",
+    "secondaryMuscles": [
+      "mong"
+    ],
+    "equipment": [
+      "ta_doi"
+    ],
+    "difficulty": "advanced",
+    "instructions": [
+      "Đặt thanh đòn lên lưng trên như tư thế squat, đứng thẳng.",
+      "Bước một chân dài về phía trước, hạ người xuống đến khi gối gập khoảng 90 độ.",
+      "Đẩy người trở lại vị trí đứng ban đầu.",
+      "Đổi chân, thực hiện đều hai bên."
+    ],
+    "commonMistakes": [
+      "Mất thăng bằng do tạ đòn cố định trên vai khó điều chỉnh giữa chừng.",
+      "Bước quá ngắn hoặc quá dài so với chiều cao cơ thể."
+    ],
+    "quickTip": "Làm quen bước tấn với tạ đơn trước khi chuyển sang tạ đòn để quen giữ thăng bằng.",
+    "suggestedRestSeconds": 120,
+    "imageUrl": "https://images.pexels.com/photos/30994841/pexels-photo-30994841.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "barbell lunge",
+    "isActive": true
+  },
+  {
+    "name": "Bước tấn đi bộ tạ đơn",
+    "primaryMuscle": "dui_truoc",
+    "secondaryMuscles": [
+      "mong"
+    ],
+    "equipment": [
+      "ta_don"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Đứng thẳng, mỗi tay cầm tạ đơn, chuẩn bị không gian di chuyển về phía trước.",
+      "Bước một chân dài về phía trước, hạ người xuống đến khi gối gập 90 độ.",
+      "Đẩy người lên và bước tiếp chân sau lên phía trước để tiếp tục bước tấn.",
+      "Di chuyển liên tục về phía trước, luân phiên hai chân."
+    ],
+    "commonMistakes": [
+      "Bước không đủ dài khiến gối trước bị dồn áp lực.",
+      "Mất thăng bằng khi chuyển trọng tâm giữa các bước."
+    ],
+    "quickTip": "Cần không gian di chuyển đủ dài, phù hợp tập ngoài trời hoặc phòng tập rộng.",
+    "suggestedRestSeconds": 90,
+    "imageUrl": "https://images.pexels.com/photos/6339695/pexels-photo-6339695.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "walking lunge dumbbell",
+    "isActive": true
+  },
+  {
+    "name": "Squat Bulgarian một chân",
+    "primaryMuscle": "dui_truoc",
+    "secondaryMuscles": [
+      "mong"
+    ],
+    "equipment": [
+      "ta_don",
+      "ghe_tap"
+    ],
+    "difficulty": "advanced",
+    "instructions": [
+      "Đứng quay lưng về phía ghế, đặt mu bàn chân sau lên mặt ghế.",
+      "Mỗi tay cầm tạ đơn, hạ người xuống bằng chân trước đến khi gối gập khoảng 90 độ.",
+      "Đẩy người lên trở lại vị trí ban đầu bằng lực chân trước.",
+      "Hoàn thành hiệp rồi đổi chân."
+    ],
+    "commonMistakes": [
+      "Đặt chân sau quá gần hoặc quá xa ghế làm mất thăng bằng.",
+      "Đổ người về trước quá nhiều thay vì giữ thân thẳng."
+    ],
+    "quickTip": "Bài tập một chân giúp phát hiện rõ sự mất cân bằng sức mạnh giữa hai bên chân.",
+    "suggestedRestSeconds": 90,
+    "imageUrl": "https://images.pexels.com/photos/4662333/pexels-photo-4662333.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "bulgarian split squat",
+    "isActive": true
+  },
+  {
+    "name": "Squat không tạ",
+    "primaryMuscle": "dui_truoc",
+    "secondaryMuscles": [
+      "mong"
+    ],
+    "equipment": [
+      "khong_dung_cu"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Đứng chân rộng bằng vai, hai tay duỗi thẳng trước mặt để giữ thăng bằng.",
+      "Hạ người xuống bằng cách gập gối và đẩy hông ra sau, giữ lưng thẳng.",
+      "Hạ đến khi đùi song song sàn hoặc thấp hơn nếu thoải mái.",
+      "Đứng thẳng dậy trở lại vị trí ban đầu."
+    ],
+    "commonMistakes": [
+      "Nhấc gót chân khỏi sàn khi hạ người xuống.",
+      "Đầu gối đổ vào trong khi đứng lên."
+    ],
+    "quickTip": "Bài tập nền tảng nên tập thành thạo trước khi thêm tạ vào squat.",
+    "suggestedRestSeconds": 60,
+    "imageUrl": "https://images.pexels.com/photos/8401827/pexels-photo-8401827.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "bodyweight squat",
+    "isActive": true
+  },
+  {
+    "name": "Squat nhảy",
+    "primaryMuscle": "dui_truoc",
+    "secondaryMuscles": [
+      "mong",
+      "bap_chan"
+    ],
+    "equipment": [
+      "khong_dung_cu"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Đứng chân rộng bằng vai, hạ người xuống tư thế squat.",
+      "Bật nhảy thẳng lên cao hết sức, duỗi thẳng thân người trên không.",
+      "Tiếp đất nhẹ nhàng bằng cả bàn chân, gập gối để giảm chấn động.",
+      "Hạ ngay xuống tư thế squat để chuẩn bị lần nhảy tiếp theo."
+    ],
+    "commonMistakes": [
+      "Tiếp đất bằng mũi chân cứng, không gập gối giảm chấn.",
+      "Nhảy liên tục quá nhanh mà không kiểm soát tư thế mỗi lần."
+    ],
+    "quickTip": "Bài tập cường độ cao, nên khởi động kỹ khớp gối và mắt cá trước khi tập.",
+    "suggestedRestSeconds": 75,
+    "imageUrl": "https://images.pexels.com/photos/2468366/pexels-photo-2468366.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "jump squat",
+    "isActive": true
+  },
+  {
+    "name": "Bước lên bục tạ đơn",
+    "primaryMuscle": "dui_truoc",
+    "secondaryMuscles": [
+      "mong"
+    ],
+    "equipment": [
+      "ta_don",
+      "ghe_tap"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Đứng đối diện ghế hoặc bục chắc chắn, mỗi tay cầm tạ đơn.",
+      "Bước một chân lên bục, đẩy người lên bằng lực chân đó cho đến khi đứng thẳng trên bục.",
+      "Bước chân còn lại lên theo, sau đó bước xuống lần lượt từng chân.",
+      "Đổi chân dẫn đầu sau mỗi hiệp."
+    ],
+    "commonMistakes": [
+      "Đẩy người lên bằng lực chân dưới (đạp đất) thay vì chân trên bục.",
+      "Chọn bục quá cao khiến mất thăng bằng."
+    ],
+    "quickTip": "Chọn độ cao bục sao cho gối gập khoảng 90 độ khi đặt chân lên.",
+    "suggestedRestSeconds": 90,
+    "imageUrl": "https://images.pexels.com/photos/8401821/pexels-photo-8401821.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "dumbbell step up",
+    "isActive": true
+  },
+  {
+    "name": "Squat tường (Wall Sit)",
+    "primaryMuscle": "dui_truoc",
+    "secondaryMuscles": [],
+    "equipment": [
+      "khong_dung_cu"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Đứng tựa lưng vào tường, hai chân bước ra trước khoảng một bước chân.",
+      "Trượt lưng xuống theo tường đến khi gối gập khoảng 90 độ.",
+      "Giữ tư thế này, đùi song song sàn, lưng áp sát tường.",
+      "Giữ theo thời gian quy định rồi trượt lưng lên đứng thẳng."
+    ],
+    "commonMistakes": [
+      "Gối vượt quá mũi chân gây áp lực lên khớp gối.",
+      "Không giữ lưng áp sát tường trong suốt thời gian giữ."
+    ],
+    "quickTip": "Bài tập tĩnh tốt để tăng sức bền cơ đùi trước, không cần thiết bị.",
+    "suggestedRestSeconds": 45,
+    "imageUrl": "https://images.pexels.com/photos/8401958/pexels-photo-8401958.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "wall sit exercise",
+    "isActive": true
+  },
+  {
+    "name": "Squat bằng dây kháng lực",
+    "primaryMuscle": "dui_truoc",
+    "secondaryMuscles": [
+      "mong"
+    ],
+    "equipment": [
+      "day_khang_luc"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Đứng lên giữa dây kháng lực, kéo hai đầu dây lên đặt ngang vai.",
+      "Đứng chân rộng bằng vai, siết bụng.",
+      "Hạ người xuống tư thế squat, giữ lưng thẳng.",
+      "Đứng thẳng dậy trở lại, dây luôn căng trong suốt bài tập."
+    ],
+    "commonMistakes": [
+      "Đứng lên dây quá lỏng làm giảm lực cản.",
+      "Cúi người về trước thay vì hạ thẳng xuống."
+    ],
+    "quickTip": "Phù hợp tập squat có kháng lực khi không có tạ, ví dụ khi tập tại nhà hoặc đi công tác.",
+    "suggestedRestSeconds": 60,
+    "imageUrl": "https://images.pexels.com/photos/6339655/pexels-photo-6339655.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "resistance band squat",
+    "isActive": true
+  }
+]

@@ -1,0 +1,299 @@
+[
+  {
+    "name": "Đẩy tạ sau đầu tạ đơn hai tay",
+    "primaryMuscle": "tay_sau",
+    "secondaryMuscles": [],
+    "equipment": [
+      "ta_don"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Ngồi hoặc đứng thẳng, hai tay cùng cầm một tạ đơn, nâng thẳng lên qua đầu.",
+      "Gập khuỷu tay hạ tạ xuống sau đầu, khuỷu tay hướng lên trần nhà.",
+      "Duỗi thẳng tay trở lại vị trí trên đầu.",
+      "Giữ khuỷu tay cố định gần đầu trong suốt bài tập."
+    ],
+    "commonMistakes": [
+      "Để khuỷu tay mở rộng ra hai bên thay vì hướng thẳng lên.",
+      "Hạ tạ quá thấp gây căng khớp vai và khuỷu tay."
+    ],
+    "quickTip": "Siết bụng để tránh ưỡn lưng khi nâng tạ qua đầu.",
+    "suggestedRestSeconds": 75,
+    "imageUrl": "https://images.pexels.com/photos/6388359/pexels-photo-6388359.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "overhead dumbbell triceps extension",
+    "isActive": true
+  },
+  {
+    "name": "Đẩy tạ sau đầu tạ đơn một tay",
+    "primaryMuscle": "tay_sau",
+    "secondaryMuscles": [],
+    "equipment": [
+      "ta_don"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Đứng hoặc ngồi thẳng, một tay cầm tạ đơn nâng thẳng lên qua đầu.",
+      "Tay còn lại có thể đỡ nhẹ khuỷu tay đang tập để giữ ổn định.",
+      "Gập khuỷu tay hạ tạ xuống sau đầu, sau đó duỗi thẳng trở lại.",
+      "Hoàn thành hiệp rồi đổi bên."
+    ],
+    "commonMistakes": [
+      "Để khuỷu tay đổ ra ngoài thay vì hướng thẳng lên trần.",
+      "Dùng tạ quá nặng khiến vai phải bù trừ lực."
+    ],
+    "quickTip": "Tập một tay giúp phát hiện và khắc phục mất cân bằng sức mạnh giữa hai bên tay sau.",
+    "suggestedRestSeconds": 60,
+    "imageUrl": "https://images.pexels.com/photos/18060079/pexels-photo-18060079.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "single arm overhead triceps extension",
+    "isActive": true
+  },
+  {
+    "name": "Đẩy ngực tạ đòn nắm hẹp",
+    "primaryMuscle": "tay_sau",
+    "secondaryMuscles": [
+      "nguc"
+    ],
+    "equipment": [
+      "ta_doi",
+      "ghe_tap"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Nằm ngửa trên ghế phẳng, nắm tạ đòn hẹp hơn vai một chút.",
+      "Hạ thanh đòn xuống chạm ngực dưới, khuỷu tay ép sát thân người.",
+      "Đẩy tạ lên thẳng trên vai, tập trung lực vào tay sau.",
+      "Hạ tạ xuống có kiểm soát, không để khuỷu tay mở rộng ra ngoài."
+    ],
+    "commonMistakes": [
+      "Nắm tay quá hẹp gây căng khớp cổ tay và khuỷu tay.",
+      "Để khuỷu tay mở rộng ra ngoài làm bài tập chuyển thành đẩy ngực thường."
+    ],
+    "quickTip": "Nắm tay bằng khoảng vai hoặc hẹp hơn một chút, không cần quá hẹp để tránh chấn thương cổ tay.",
+    "suggestedRestSeconds": 100,
+    "imageUrl": "https://images.pexels.com/photos/3837743/pexels-photo-3837743.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "close grip barbell bench press",
+    "isActive": true
+  },
+  {
+    "name": "Duỗi tay sau bằng cáp",
+    "primaryMuscle": "tay_sau",
+    "secondaryMuscles": [],
+    "equipment": [
+      "may_keo_xo"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Đứng đối diện máy cáp, nắm thanh tay cầm thẳng rộng bằng vai.",
+      "Giữ khuỷu tay sát thân người, đẩy tay cầm xuống đến khi tay gần thẳng.",
+      "Giữ 1 giây ở điểm thấp nhất, siết tay sau.",
+      "Trả tay cầm lên từ từ, giữ khuỷu tay cố định."
+    ],
+    "commonMistakes": [
+      "Đưa khuỷu tay ra khỏi thân người khi đẩy xuống.",
+      "Dùng thân trên đổ về trước để lấy đà."
+    ],
+    "quickTip": "Chỉ có cẳng tay di chuyển, khuỷu tay giữ như bản lề cố định suốt bài tập.",
+    "suggestedRestSeconds": 60,
+    "imageUrl": "https://images.pexels.com/photos/17559311/pexels-photo-17559311.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "triceps pushdown cable",
+    "isActive": true
+  },
+  {
+    "name": "Duỗi tay sau bằng cáp dây thừng",
+    "primaryMuscle": "tay_sau",
+    "secondaryMuscles": [],
+    "equipment": [
+      "may_keo_xo"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Đứng đối diện máy cáp, nắm hai đầu dây thừng, khuỷu tay sát thân người.",
+      "Đẩy dây thừng xuống, tách hai đầu dây ra ngoài ở điểm thấp nhất.",
+      "Giữ 1 giây, siết chặt tay sau.",
+      "Trả dây lên từ từ về vị trí ban đầu."
+    ],
+    "commonMistakes": [
+      "Không tách dây thừng ở điểm thấp, giảm hiệu quả co cơ.",
+      "Cúi người quá nhiều để đẩy dây xuống."
+    ],
+    "quickTip": "Dây thừng cho phép xoay cổ tay tự nhiên, giúp cô lập tay sau tốt hơn thanh thẳng.",
+    "suggestedRestSeconds": 60,
+    "imageUrl": "https://images.pexels.com/photos/5327498/pexels-photo-5327498.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "rope triceps pushdown",
+    "isActive": true
+  },
+  {
+    "name": "Duỗi tay sau tạ đơn cúi người",
+    "primaryMuscle": "tay_sau",
+    "secondaryMuscles": [],
+    "equipment": [
+      "ta_don",
+      "ghe_tap"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Chống một tay và một gối lên ghế, lưng giữ song song sàn.",
+      "Tay còn lại cầm tạ, khuỷu tay gập 90 độ sát thân người.",
+      "Duỗi thẳng cẳng tay ra sau đến khi tay gần thẳng hoàn toàn.",
+      "Gập tay trở lại 90 độ, giữ khuỷu tay cố định không hạ xuống."
+    ],
+    "commonMistakes": [
+      "Hạ khuỷu tay xuống trong lúc duỗi, mất góc cố định 90 độ.",
+      "Dùng đà vung tay thay vì duỗi có kiểm soát."
+    ],
+    "quickTip": "Giữ cẳng tay trên song song sàn trong suốt bài, chỉ cẳng tay dưới di chuyển.",
+    "suggestedRestSeconds": 60,
+    "imageUrl": "https://images.pexels.com/photos/19025674/pexels-photo-19025674.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "dumbbell kickback",
+    "isActive": true
+  },
+  {
+    "name": "Chống đẩy tay hẹp (Diamond Push-up)",
+    "primaryMuscle": "tay_sau",
+    "secondaryMuscles": [
+      "nguc"
+    ],
+    "equipment": [
+      "khong_dung_cu"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Chống hai tay xuống sàn sát nhau, ngón cái và ngón trỏ hai tay chạm nhau tạo hình kim cương.",
+      "Giữ thân người thẳng từ đầu đến gót chân.",
+      "Hạ ngực xuống gần chạm tay, khuỷu tay ép sát thân người.",
+      "Đẩy người lên trở lại vị trí ban đầu."
+    ],
+    "commonMistakes": [
+      "Để khuỷu tay mở rộng ra ngoài thay vì ép sát thân người.",
+      "Hông võng xuống làm sai tư thế plank."
+    ],
+    "quickTip": "Nếu chưa đủ sức, chống đầu gối xuống sàn để giảm tải mà vẫn giữ đúng kỹ thuật.",
+    "suggestedRestSeconds": 60,
+    "imageUrl": "https://images.pexels.com/photos/7187898/pexels-photo-7187898.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "diamond push up",
+    "isActive": true
+  },
+  {
+    "name": "Nhúng người trên ghế (Bench Dip)",
+    "primaryMuscle": "tay_sau",
+    "secondaryMuscles": [
+      "vai_truoc"
+    ],
+    "equipment": [
+      "ghe_tap"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Ngồi trên mép ghế, hai tay chống xuống ghế cạnh hông, chân duỗi thẳng ra trước.",
+      "Di chuyển hông ra khỏi ghế, hạ người xuống bằng cách gập khuỷu tay.",
+      "Hạ đến khi khuỷu tay gập khoảng 90 độ.",
+      "Đẩy người lên trở lại vị trí ban đầu bằng lực tay sau."
+    ],
+    "commonMistakes": [
+      "Hạ người quá thấp gây căng khớp vai.",
+      "Để vai nhô lên gần tai thay vì giữ thả lỏng."
+    ],
+    "quickTip": "Co gối lại gần ghế để giảm độ khó nếu bài tập chuẩn còn quá nặng.",
+    "suggestedRestSeconds": 60,
+    "imageUrl": "https://images.pexels.com/photos/4803875/pexels-photo-4803875.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "bench dip triceps",
+    "isActive": true
+  },
+  {
+    "name": "Đẩy tạ đòn EZ nằm (Skull Crusher)",
+    "primaryMuscle": "tay_sau",
+    "secondaryMuscles": [],
+    "equipment": [
+      "ta_doi",
+      "ghe_tap"
+    ],
+    "difficulty": "advanced",
+    "instructions": [
+      "Nằm ngửa trên ghế phẳng, nắm tạ đòn EZ, tay duỗi thẳng trên vai.",
+      "Gập khuỷu tay hạ tạ xuống gần trán, giữ khuỷu tay cố định hướng lên trần.",
+      "Duỗi thẳng tay trở lại vị trí ban đầu.",
+      "Kiểm soát tốc độ hạ tạ, tránh để tạ rơi quá nhanh gần đầu."
+    ],
+    "commonMistakes": [
+      "Để khuỷu tay di chuyển ra trước hoặc ra sau thay vì cố định.",
+      "Dùng tạ quá nặng gây mất kiểm soát gần vùng đầu."
+    ],
+    "quickTip": "Luôn có người hỗ trợ (spotter) khi tập nặng vì tạ di chuyển gần vùng đầu.",
+    "suggestedRestSeconds": 90,
+    "imageUrl": "https://images.pexels.com/photos/12775400/pexels-photo-12775400.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "skull crusher lying triceps extension",
+    "isActive": true
+  },
+  {
+    "name": "Duỗi tay sau bằng dây kháng lực",
+    "primaryMuscle": "tay_sau",
+    "secondaryMuscles": [],
+    "equipment": [
+      "day_khang_luc"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Cố định dây kháng lực phía trên cao (cửa, cột), đứng quay lưng lại điểm cố định.",
+      "Nắm dây bằng hai tay, khuỷu tay gập sát đầu.",
+      "Duỗi thẳng tay xuống dưới trước mặt.",
+      "Trả tay về vị trí ban đầu từ từ, giữ dây luôn căng."
+    ],
+    "commonMistakes": [
+      "Mở rộng khuỷu tay ra hai bên thay vì giữ sát đầu.",
+      "Đứng quá gần điểm cố định làm dây chùng."
+    ],
+    "quickTip": "Có thể thực hiện từng tay một để tăng độ tập trung vào tay sau.",
+    "suggestedRestSeconds": 60,
+    "imageUrl": "https://images.pexels.com/photos/6295978/pexels-photo-6295978.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "resistance band triceps extension",
+    "isActive": true
+  },
+  {
+    "name": "Duỗi tay sau cáp một tay",
+    "primaryMuscle": "tay_sau",
+    "secondaryMuscles": [],
+    "equipment": [
+      "may_keo_xo"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Đứng quay lưng về phía máy cáp, một tay cầm tay cầm đơn, khuỷu tay gập sát đầu.",
+      "Duỗi thẳng tay về phía trước xuống dưới.",
+      "Giữ 1 giây ở điểm duỗi thẳng, siết tay sau.",
+      "Trả tay về vị trí ban đầu từ từ, đổi bên sau khi hết hiệp."
+    ],
+    "commonMistakes": [
+      "Để khuỷu tay rời khỏi vị trí sát đầu khi duỗi.",
+      "Xoay thân người để lấy đà thay vì duỗi bằng lực tay sau."
+    ],
+    "quickTip": "Máy cáp giữ lực căng liên tục, giúp cảm nhận rõ cơ tay sau hơn tạ đơn ở tư thế này.",
+    "suggestedRestSeconds": 60,
+    "imageUrl": "https://images.pexels.com/photos/20556197/pexels-photo-20556197.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "single arm cable overhead triceps extension",
+    "isActive": true
+  },
+  {
+    "name": "Duỗi tay sau cáp nắm ngược",
+    "primaryMuscle": "tay_sau",
+    "secondaryMuscles": [],
+    "equipment": [
+      "may_keo_xo"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Đứng đối diện máy cáp, nắm thanh tay cầm thẳng bằng cách lòng bàn tay hướng lên (nắm ngược).",
+      "Giữ khuỷu tay sát thân người, đẩy tay cầm xuống đến khi tay gần thẳng.",
+      "Giữ 1 giây ở điểm thấp nhất.",
+      "Trả tay cầm lên từ từ, giữ khuỷu tay cố định."
+    ],
+    "commonMistakes": [
+      "Xoay cổ tay giữa chừng thay vì giữ nắm ngược cố định.",
+      "Dùng thân trên đổ về trước để lấy đà."
+    ],
+    "quickTip": "Nắm ngược nhấn mạnh hơn vào phần đầu dài của cơ tay sau so với nắm thường.",
+    "suggestedRestSeconds": 60,
+    "imageUrl": "https://images.pexels.com/photos/14423610/pexels-photo-14423610.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "reverse grip triceps pushdown",
+    "isActive": true
+  }
+]

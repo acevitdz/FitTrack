@@ -1,0 +1,260 @@
+[
+  {
+    "name": "Đẩy vai tạ đòn đứng",
+    "primaryMuscle": "vai_truoc",
+    "secondaryMuscles": [
+      "tay_sau"
+    ],
+    "equipment": [
+      "ta_doi"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Đứng chân rộng bằng vai, tạ đòn đặt ngang vai, lòng bàn tay hướng ra trước.",
+      "Siết bụng và mông để giữ ổn định cột sống.",
+      "Đẩy tạ thẳng lên trên đầu cho đến khi tay gần thẳng.",
+      "Hạ tạ xuống có kiểm soát về ngang vai."
+    ],
+    "commonMistakes": [
+      "Ưỡn lưng dưới quá mức để đẩy tạ lên.",
+      "Đẩy tạ chếch ra trước thay vì thẳng trên đầu."
+    ],
+    "quickTip": "Siết cơ mông và bụng như đang chuẩn bị bị đấm vào bụng để giữ thân người ổn định.",
+    "suggestedRestSeconds": 120,
+    "imageUrl": "https://images.pexels.com/photos/14591561/pexels-photo-14591561.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "standing barbell overhead press",
+    "isActive": true
+  },
+  {
+    "name": "Đẩy vai tạ đơn đứng",
+    "primaryMuscle": "vai_truoc",
+    "secondaryMuscles": [
+      "tay_sau"
+    ],
+    "equipment": [
+      "ta_don"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Đứng chân rộng bằng vai, mỗi tay cầm tạ đơn ngang vai, lòng bàn tay hướng ra trước.",
+      "Siết bụng, đẩy hai tạ thẳng lên trên đầu.",
+      "Hai tạ gần chạm nhau ở điểm cao nhất, không khóa cứng khuỷu tay.",
+      "Hạ tạ xuống từ từ về ngang vai."
+    ],
+    "commonMistakes": [
+      "Dùng lực chân nhún để đẩy tạ lên (biến thành push press không chủ đích).",
+      "Để cổ tay gập ra sau làm mất lực đẩy."
+    ],
+    "quickTip": "Tạ đơn cho phép vai di chuyển tự nhiên hơn tạ đòn, tốt cho người có vai nhạy cảm.",
+    "suggestedRestSeconds": 90,
+    "imageUrl": "https://images.pexels.com/photos/7289370/pexels-photo-7289370.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "standing dumbbell shoulder press",
+    "isActive": true
+  },
+  {
+    "name": "Đẩy vai tạ đơn ngồi",
+    "primaryMuscle": "vai_truoc",
+    "secondaryMuscles": [
+      "tay_sau"
+    ],
+    "equipment": [
+      "ta_don",
+      "ghe_tap"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Ngồi trên ghế có tựa lưng, mỗi tay cầm tạ đơn ngang vai.",
+      "Lưng tựa chắc vào ghế, siết bụng.",
+      "Đẩy tạ thẳng lên trên đầu cho đến khi tay gần thẳng.",
+      "Hạ tạ xuống có kiểm soát về vị trí ban đầu."
+    ],
+    "commonMistakes": [
+      "Không tựa lưng vào ghế khiến lưng dưới phải bù trừ.",
+      "Đẩy tạ ra trước thay vì thẳng lên trên."
+    ],
+    "quickTip": "Ghế có tựa lưng giúp cô lập vai tốt hơn, phù hợp khi muốn tập nặng an toàn.",
+    "suggestedRestSeconds": 90,
+    "imageUrl": "https://images.pexels.com/photos/4164841/pexels-photo-4164841.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "seated dumbbell shoulder press",
+    "isActive": true
+  },
+  {
+    "name": "Nâng tạ đơn trước mặt",
+    "primaryMuscle": "vai_truoc",
+    "secondaryMuscles": [],
+    "equipment": [
+      "ta_don"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Đứng thẳng, mỗi tay cầm tạ đơn trước đùi, lòng bàn tay hướng vào người.",
+      "Nâng một hoặc hai tạ thẳng lên trước đến ngang vai.",
+      "Giữ 1 giây ở điểm cao nhất, khuỷu tay hơi cong cố định.",
+      "Hạ tạ xuống từ từ về vị trí ban đầu."
+    ],
+    "commonMistakes": [
+      "Dùng đà thân người đung đưa để nâng tạ lên.",
+      "Nâng tạ cao quá vai gây căng khớp."
+    ],
+    "quickTip": "Có thể nâng luân phiên từng tay để giữ nhịp thở ổn định hơn khi nâng nặng.",
+    "suggestedRestSeconds": 60,
+    "imageUrl": "https://images.pexels.com/photos/4842732/pexels-photo-4842732.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "dumbbell front raise",
+    "isActive": true
+  },
+  {
+    "name": "Đẩy vai tạ đòn ngồi",
+    "primaryMuscle": "vai_truoc",
+    "secondaryMuscles": [
+      "tay_sau"
+    ],
+    "equipment": [
+      "ta_doi",
+      "ghe_tap"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Ngồi trên ghế có tựa lưng, tạ đòn đặt ngang vai trên trước ngực.",
+      "Siết bụng, lưng tựa chắc vào ghế.",
+      "Đẩy tạ thẳng lên trên đầu cho đến khi tay gần thẳng.",
+      "Hạ tạ xuống có kiểm soát về ngang vai."
+    ],
+    "commonMistakes": [
+      "Đẩy tạ chạm vào cằm hoặc mặt khi hạ xuống do góc ghế không phù hợp.",
+      "Không siết bụng khiến lưng dưới bị ép quá mức."
+    ],
+    "quickTip": "Nhờ người hỗ trợ lấy tạ ở lần đầu nếu chưa quen tư thế ngồi đẩy vai.",
+    "suggestedRestSeconds": 120,
+    "imageUrl": "https://images.pexels.com/photos/17944268/pexels-photo-17944268.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "seated barbell shoulder press",
+    "isActive": true
+  },
+  {
+    "name": "Nâng tạ đơn trước mặt luân phiên",
+    "primaryMuscle": "vai_truoc",
+    "secondaryMuscles": [],
+    "equipment": [
+      "ta_don"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Đứng thẳng, mỗi tay cầm một tạ đơn trước đùi.",
+      "Nâng tạ bên phải lên ngang vai trong khi tay trái giữ nguyên.",
+      "Hạ tay phải xuống đồng thời nâng tay trái lên, luân phiên đều nhịp.",
+      "Giữ thân người thẳng, không đung đưa theo tạ."
+    ],
+    "commonMistakes": [
+      "Xoay hông theo tay đang nâng để lấy đà.",
+      "Nâng tạ quá nhanh không kiểm soát pha hạ xuống."
+    ],
+    "quickTip": "Luân phiên hai tay giúp giữ nhịp tim ổn định hơn khi tập với tạ nặng hơn.",
+    "suggestedRestSeconds": 60,
+    "imageUrl": "https://images.pexels.com/photos/3775524/pexels-photo-3775524.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "alternating dumbbell front raise",
+    "isActive": true
+  },
+  {
+    "name": "Đẩy vai Arnold Press",
+    "primaryMuscle": "vai_truoc",
+    "secondaryMuscles": [
+      "vai_giua",
+      "tay_sau"
+    ],
+    "equipment": [
+      "ta_don",
+      "ghe_tap"
+    ],
+    "difficulty": "advanced",
+    "instructions": [
+      "Ngồi trên ghế tựa lưng, hai tạ đơn giữ ngang ngực, lòng bàn tay hướng vào người.",
+      "Vừa đẩy tạ lên vừa xoay cổ tay ra ngoài cho đến khi lòng bàn tay hướng ra trước.",
+      "Đẩy thẳng lên trên đầu đến khi tay gần thẳng.",
+      "Hạ tạ xuống theo chiều ngược lại, xoay cổ tay trở về vị trí ban đầu."
+    ],
+    "commonMistakes": [
+      "Xoay cổ tay quá nhanh không đồng bộ với pha đẩy lên.",
+      "Dùng tạ quá nặng khiến mất kiểm soát động tác xoay."
+    ],
+    "quickTip": "Đây là bài kết hợp nên tập với tạ nhẹ hơn đẩy vai thông thường để giữ đúng kỹ thuật.",
+    "suggestedRestSeconds": 100,
+    "imageUrl": "https://images.pexels.com/photos/18060165/pexels-photo-18060165.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "arnold press exercise",
+    "isActive": true
+  },
+  {
+    "name": "Chống đẩy trồng cây tường (Pike Push-up)",
+    "primaryMuscle": "vai_truoc",
+    "secondaryMuscles": [
+      "tay_sau"
+    ],
+    "equipment": [
+      "khong_dung_cu"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Vào tư thế chống đẩy, sau đó nâng hông cao tạo hình chữ V ngược, tay và chân gần thẳng.",
+      "Hạ đầu xuống gần sàn giữa hai tay bằng cách gập khuỷu tay.",
+      "Đẩy người lên trở lại tư thế chữ V ngược.",
+      "Giữ hông cao trong suốt bài tập, không để hông hạ thấp."
+    ],
+    "commonMistakes": [
+      "Hạ hông xuống khiến bài tập biến thành chống đẩy ngực thường.",
+      "Đặt tay quá gần chân làm mất thăng bằng."
+    ],
+    "quickTip": "Nâng chân lên ghế để tăng độ khó khi bài tập chuẩn trở nên dễ dàng.",
+    "suggestedRestSeconds": 75,
+    "imageUrl": "https://images.pexels.com/photos/5320023/pexels-photo-5320023.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "pike push up",
+    "isActive": true
+  },
+  {
+    "name": "Đẩy vai bằng dây kháng lực",
+    "primaryMuscle": "vai_truoc",
+    "secondaryMuscles": [
+      "tay_sau"
+    ],
+    "equipment": [
+      "day_khang_luc"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Đứng hai chân giữ chặt giữa dây kháng lực, mỗi tay cầm một đầu dây ngang vai.",
+      "Siết bụng, đẩy hai tay thẳng lên trên đầu.",
+      "Giữ 1 giây ở điểm cao nhất.",
+      "Hạ tay xuống từ từ về ngang vai, giữ dây luôn căng."
+    ],
+    "commonMistakes": [
+      "Đứng lên dây không chắc khiến dây tuột khi đẩy nặng.",
+      "Ưỡn lưng quá mức để đẩy tay lên cao hơn."
+    ],
+    "quickTip": "Phù hợp tập tại nhà hoặc khi đi công tác không có tạ.",
+    "suggestedRestSeconds": 60,
+    "imageUrl": "https://images.pexels.com/photos/4506166/pexels-photo-4506166.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "resistance band shoulder press",
+    "isActive": true
+  },
+  {
+    "name": "Nâng tạ trước bằng dây kháng lực",
+    "primaryMuscle": "vai_truoc",
+    "secondaryMuscles": [],
+    "equipment": [
+      "day_khang_luc"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Đứng lên giữa dây kháng lực, mỗi tay cầm một đầu dây trước đùi.",
+      "Nâng một hoặc hai tay thẳng lên trước đến ngang vai.",
+      "Giữ 1 giây rồi hạ tay xuống từ từ.",
+      "Giữ thân người thẳng, không ngả người ra sau để lấy đà."
+    ],
+    "commonMistakes": [
+      "Đứng lên dây quá lỏng làm giảm lực cản.",
+      "Nâng tay quá nhanh dựa vào đà thay vì lực cơ vai."
+    ],
+    "quickTip": "Chọn dây có lực cản phù hợp để hoàn thành hết biên độ mà vẫn kiểm soát tốt.",
+    "suggestedRestSeconds": 60,
+    "imageUrl": "https://images.pexels.com/photos/4970978/pexels-photo-4970978.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "resistance band front raise",
+    "isActive": true
+  }
+]

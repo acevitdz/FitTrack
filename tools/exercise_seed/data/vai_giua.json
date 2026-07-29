@@ -1,0 +1,253 @@
+[
+  {
+    "name": "Nâng tạ đơn sang ngang",
+    "primaryMuscle": "vai_giua",
+    "secondaryMuscles": [],
+    "equipment": [
+      "ta_don"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Đứng thẳng, mỗi tay cầm tạ đơn hai bên đùi, khuỷu tay hơi cong.",
+      "Nâng hai tạ sang ngang đến khi ngang vai, lòng bàn tay hướng xuống.",
+      "Giữ 1 giây ở điểm cao nhất.",
+      "Hạ tạ xuống từ từ về vị trí ban đầu."
+    ],
+    "commonMistakes": [
+      "Dùng đà thân người đung đưa để nâng tạ lên.",
+      "Nâng tạ cao quá vai gây căng khớp vai."
+    ],
+    "quickTip": "Nâng tạ nhẹ với kỹ thuật chuẩn hiệu quả hơn tạ nặng nhưng sai form.",
+    "suggestedRestSeconds": 60,
+    "imageUrl": "https://images.pexels.com/photos/6339688/pexels-photo-6339688.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "dumbbell lateral raise",
+    "isActive": true
+  },
+  {
+    "name": "Nâng tạ đơn sang ngang nghiêng người",
+    "primaryMuscle": "vai_giua",
+    "secondaryMuscles": [],
+    "equipment": [
+      "ta_don"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Đứng thẳng, nghiêng thân người sang một bên khoảng 15-20 độ.",
+      "Tay ở phía đối diện cầm tạ, nâng sang ngang đến ngang vai.",
+      "Giữ 1 giây ở điểm cao nhất, siết cơ vai giữa.",
+      "Hạ tạ xuống từ từ, hoàn thành hiệp rồi đổi bên."
+    ],
+    "commonMistakes": [
+      "Nghiêng người quá nhiều làm mất tác dụng cô lập vai giữa.",
+      "Dùng lực thân trên hất tạ lên thay vì nâng bằng vai."
+    ],
+    "quickTip": "Nghiêng người giúp giữ lực căng lên vai giữa suốt toàn bộ biên độ, kể cả điểm thấp nhất.",
+    "suggestedRestSeconds": 60,
+    "imageUrl": "https://images.pexels.com/photos/3837388/pexels-photo-3837388.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "leaning lateral raise",
+    "isActive": true
+  },
+  {
+    "name": "Nâng tạ sang ngang bằng dây kháng lực",
+    "primaryMuscle": "vai_giua",
+    "secondaryMuscles": [],
+    "equipment": [
+      "day_khang_luc"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Đứng lên giữa dây kháng lực, mỗi tay cầm một đầu dây hai bên đùi.",
+      "Nâng hai tay sang ngang đến khi ngang vai.",
+      "Giữ 1 giây rồi hạ tay xuống từ từ.",
+      "Giữ thân người thẳng, không dùng đà."
+    ],
+    "commonMistakes": [
+      "Đứng lên dây quá lỏng làm giảm lực cản ở điểm cuối.",
+      "Nâng tay cao hơn vai gây căng khớp."
+    ],
+    "quickTip": "Dây kháng lực tạo lực cản tăng dần, giúp cơ vai giữa làm việc nhiều nhất ở đỉnh chuyển động.",
+    "suggestedRestSeconds": 60,
+    "imageUrl": "https://images.pexels.com/photos/14925388/pexels-photo-14925388.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "resistance band lateral raise",
+    "isActive": true
+  },
+  {
+    "name": "Nâng tạ đơn sang ngang ngồi",
+    "primaryMuscle": "vai_giua",
+    "secondaryMuscles": [],
+    "equipment": [
+      "ta_don",
+      "ghe_tap"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Ngồi trên ghế, lưng thẳng, mỗi tay cầm tạ đơn hai bên đùi.",
+      "Nâng hai tạ sang ngang đến khi ngang vai.",
+      "Giữ 1 giây ở điểm cao nhất.",
+      "Hạ tạ xuống từ từ, kiểm soát tốc độ."
+    ],
+    "commonMistakes": [
+      "Ngồi không tựa thẳng lưng khiến dễ dùng đà thân trên.",
+      "Nâng tạ quá nhanh mất kiểm soát pha hạ xuống."
+    ],
+    "quickTip": "Ngồi giúp loại bỏ hoàn toàn đà từ chân và hông, cô lập tốt vai giữa.",
+    "suggestedRestSeconds": 60,
+    "imageUrl": "https://images.pexels.com/photos/5327477/pexels-photo-5327477.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "seated lateral raise",
+    "isActive": true
+  },
+  {
+    "name": "Kéo tạ đòn thẳng đứng",
+    "primaryMuscle": "vai_giua",
+    "secondaryMuscles": [
+      "lung_tren"
+    ],
+    "equipment": [
+      "ta_doi"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Đứng thẳng, nắm tạ đòn rộng bằng vai trước đùi.",
+      "Kéo tạ thẳng lên dọc theo thân người đến ngang ngực, khuỷu tay hướng lên cao.",
+      "Giữ 1 giây ở điểm cao nhất.",
+      "Hạ tạ xuống từ từ về vị trí ban đầu."
+    ],
+    "commonMistakes": [
+      "Kéo tạ quá cao gây chèn ép khớp vai.",
+      "Dùng đà thân người để kéo thay vì lực vai và tay."
+    ],
+    "quickTip": "Nếu cảm thấy khó chịu ở vai, thử nắm tay rộng hơn hoặc giảm độ cao kéo tạ.",
+    "suggestedRestSeconds": 90,
+    "imageUrl": "https://images.pexels.com/photos/4720793/pexels-photo-4720793.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "barbell upright row",
+    "isActive": true
+  },
+  {
+    "name": "Kéo tạ đơn thẳng đứng",
+    "primaryMuscle": "vai_giua",
+    "secondaryMuscles": [
+      "lung_tren"
+    ],
+    "equipment": [
+      "ta_don"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Đứng thẳng, mỗi tay cầm tạ đơn trước đùi.",
+      "Kéo hai tạ thẳng lên dọc theo thân người đến ngang ngực.",
+      "Khuỷu tay hướng lên cao hơn cổ tay trong suốt chuyển động.",
+      "Hạ tạ xuống từ từ về vị trí ban đầu."
+    ],
+    "commonMistakes": [
+      "Kéo tạ ra xa thân người thay vì sát người.",
+      "Nhún vai lên để lấy đà thay vì kéo bằng lực vai."
+    ],
+    "quickTip": "Tạ đơn cho phép mỗi tay di chuyển theo quỹ đạo tự nhiên hơn tạ đòn.",
+    "suggestedRestSeconds": 75,
+    "imageUrl": "https://images.pexels.com/photos/32543165/pexels-photo-32543165.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "dumbbell upright row",
+    "isActive": true
+  },
+  {
+    "name": "Nâng tạ sang ngang trên máy cáp",
+    "primaryMuscle": "vai_giua",
+    "secondaryMuscles": [],
+    "equipment": [
+      "may_keo_xo"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Đứng nghiêng người bên cạnh máy cáp, tay gần máy cầm tay cầm thấp.",
+      "Kéo tay cầm sang ngang lên đến ngang vai, khuỷu tay hơi cong.",
+      "Giữ 1 giây ở điểm cao nhất, siết vai giữa.",
+      "Hạ tay cầm xuống từ từ, hoàn thành hiệp rồi đổi bên."
+    ],
+    "commonMistakes": [
+      "Đứng quá gần máy làm giảm biên độ chuyển động.",
+      "Dùng lực thân trên xoay người để kéo tay cầm lên."
+    ],
+    "quickTip": "Máy cáp giữ lực căng liên tục lên vai giữa, khác với tạ đơn chỉ căng nhất ở giữa biên độ.",
+    "suggestedRestSeconds": 60,
+    "imageUrl": "https://images.pexels.com/photos/10754972/pexels-photo-10754972.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "cable lateral raise",
+    "isActive": true
+  },
+  {
+    "name": "Nâng tạ đơn sang ngang tựa ghế nghiêng",
+    "primaryMuscle": "vai_giua",
+    "secondaryMuscles": [],
+    "equipment": [
+      "ta_don",
+      "ghe_tap"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Chỉnh ghế nghiêng khoảng 30 độ, nằm nghiêng một bên tựa vào ghế.",
+      "Tay trên cầm tạ đơn, nâng sang ngang đến ngang vai.",
+      "Giữ 1 giây ở điểm cao nhất.",
+      "Hạ tạ xuống từ từ, hoàn thành hiệp rồi đổi bên."
+    ],
+    "commonMistakes": [
+      "Không tựa chắc vào ghế khiến thân người xoay theo tạ.",
+      "Nâng tạ bằng đà vai thay vì kiểm soát chậm rãi."
+    ],
+    "quickTip": "Tư thế tựa ghế loại bỏ hoàn toàn khả năng dùng đà, giúp cô lập vai giữa tối đa.",
+    "suggestedRestSeconds": 60,
+    "imageUrl": "https://images.pexels.com/photos/5327487/pexels-photo-5327487.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "incline bench lateral raise",
+    "isActive": true
+  },
+  {
+    "name": "Nâng tạ đơn hình chữ Y",
+    "primaryMuscle": "vai_giua",
+    "secondaryMuscles": [
+      "vai_sau"
+    ],
+    "equipment": [
+      "ta_don",
+      "ghe_tap"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Chỉnh ghế nghiêng khoảng 45 độ, nằm sấp tựa ngực vào ghế.",
+      "Mỗi tay cầm tạ đơn nhẹ, duỗi thẳng xuống dưới.",
+      "Nâng hai tay chéo lên tạo hình chữ Y, lòng bàn tay hướng vào nhau.",
+      "Hạ tay xuống từ từ về vị trí ban đầu."
+    ],
+    "commonMistakes": [
+      "Dùng tạ quá nặng khiến không nâng đúng hình chữ Y.",
+      "Nâng tay quá nhanh, không kiểm soát pha hạ xuống."
+    ],
+    "quickTip": "Dùng tạ rất nhẹ vì đây là bài tập bổ trợ cho vai giữa và vai sau, không phải bài tập chính.",
+    "suggestedRestSeconds": 60,
+    "imageUrl": "https://images.pexels.com/photos/6339681/pexels-photo-6339681.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "prone y raise dumbbell",
+    "isActive": true
+  },
+  {
+    "name": "Nâng tạ đơn chữ L xoay vai",
+    "primaryMuscle": "vai_giua",
+    "secondaryMuscles": [
+      "vai_sau"
+    ],
+    "equipment": [
+      "ta_don"
+    ],
+    "difficulty": "advanced",
+    "instructions": [
+      "Đứng thẳng, một tay cầm tạ đơn nhẹ, khuỷu tay gập 90 độ sát thân người.",
+      "Nâng khuỷu tay sang ngang đến ngang vai, giữ góc gập 90 độ.",
+      "Xoay cẳng tay lên trên tạo hình chữ L.",
+      "Đảo ngược trình tự để hạ tay về vị trí ban đầu, đổi bên sau khi hết hiệp."
+    ],
+    "commonMistakes": [
+      "Dùng tạ quá nặng khiến mất góc gập 90 độ chuẩn xác.",
+      "Thực hiện quá nhanh làm mất kiểm soát chuyển động phức tạp."
+    ],
+    "quickTip": "Bài tập kỹ thuật cao, nên tập không tạ trước để nhớ đúng trình tự chuyển động.",
+    "suggestedRestSeconds": 60,
+    "imageUrl": "https://images.pexels.com/photos/6550851/pexels-photo-6550851.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "dumbbell l-raise shoulder rotation",
+    "isActive": true
+  }
+]

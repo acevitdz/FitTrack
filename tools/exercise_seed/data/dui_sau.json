@@ -1,0 +1,287 @@
+[
+  {
+    "name": "Romanian Deadlift tạ đòn",
+    "primaryMuscle": "dui_sau",
+    "secondaryMuscles": [
+      "mong",
+      "lung_duoi"
+    ],
+    "equipment": [
+      "ta_doi"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Đứng thẳng, nắm tạ đòn rộng bằng vai, tạ sát đùi trước.",
+      "Đẩy hông ra sau, hạ tạ xuống dọc theo chân, giữ lưng thẳng và gối hơi khuỵu.",
+      "Hạ đến khi cảm nhận căng rõ ở đùi sau, thường ngang ống chân.",
+      "Đẩy hông về trước để đứng thẳng dậy trở lại."
+    ],
+    "commonMistakes": [
+      "Gập lưng thay vì gập hông khi hạ tạ xuống.",
+      "Gập gối quá nhiều biến thành động tác squat."
+    ],
+    "quickTip": "Giữ tạ sát chân suốt bài để bảo vệ lưng dưới và tối ưu lực vào đùi sau.",
+    "suggestedRestSeconds": 120,
+    "imageUrl": "https://images.pexels.com/photos/4853280/pexels-photo-4853280.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "romanian deadlift barbell",
+    "isActive": true
+  },
+  {
+    "name": "Romanian Deadlift tạ đơn",
+    "primaryMuscle": "dui_sau",
+    "secondaryMuscles": [
+      "mong",
+      "lung_duoi"
+    ],
+    "equipment": [
+      "ta_don"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Đứng thẳng, mỗi tay cầm tạ đơn trước đùi.",
+      "Đẩy hông ra sau, hạ tạ xuống dọc theo chân, giữ lưng thẳng.",
+      "Hạ đến khi cảm nhận căng ở đùi sau.",
+      "Đẩy hông về trước để đứng thẳng dậy trở lại."
+    ],
+    "commonMistakes": [
+      "Cong lưng trên khi cúi người xuống thấp.",
+      "Đẩy tạ ra xa thân người thay vì giữ sát chân."
+    ],
+    "quickTip": "Phù hợp làm bài học kỹ thuật gập hông trước khi tập RDL tạ đòn nặng hơn.",
+    "suggestedRestSeconds": 90,
+    "imageUrl": "https://images.pexels.com/photos/1552103/pexels-photo-1552103.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "romanian deadlift dumbbell",
+    "isActive": true
+  },
+  {
+    "name": "Gập gối trên máy nằm",
+    "primaryMuscle": "dui_sau",
+    "secondaryMuscles": [],
+    "equipment": [
+      "may_tap_chan"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Nằm sấp lên máy, đệm chặn đặt ngay trên gót chân.",
+      "Nắm tay cầm hai bên, giữ hông áp sát ghế.",
+      "Gập gối kéo đệm chặn lên sát mông.",
+      "Hạ chân xuống từ từ về vị trí ban đầu."
+    ],
+    "commonMistakes": [
+      "Nhấc hông khỏi ghế khi gập gối lên cao.",
+      "Dùng đà hất chân thay vì gập có kiểm soát."
+    ],
+    "quickTip": "Giữ 1 giây ở điểm gập cao nhất để tăng hiệu quả kích hoạt cơ đùi sau.",
+    "suggestedRestSeconds": 75,
+    "imageUrl": "https://images.pexels.com/photos/28731788/pexels-photo-28731788.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "lying leg curl machine",
+    "isActive": true
+  },
+  {
+    "name": "Gập gối trên máy ngồi",
+    "primaryMuscle": "dui_sau",
+    "secondaryMuscles": [],
+    "equipment": [
+      "may_tap_chan"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Ngồi vào máy, đệm chặn đặt ngay trên mắt cá chân, đùi cố định dưới đệm trên.",
+      "Nắm tay cầm hai bên để giữ ổn định thân người.",
+      "Gập gối kéo đệm chặn xuống dưới ghế.",
+      "Trả chân lên từ từ về vị trí ban đầu."
+    ],
+    "commonMistakes": [
+      "Dùng đà thân trên để kéo đệm xuống.",
+      "Không hạ hết biên độ về vị trí ban đầu giữa các lần lặp."
+    ],
+    "quickTip": "Máy ngồi giúp cô lập tốt đùi sau vì hông đã được cố định sẵn.",
+    "suggestedRestSeconds": 75,
+    "imageUrl": "https://images.pexels.com/photos/34433962/pexels-photo-34433962.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "seated leg curl machine",
+    "isActive": true
+  },
+  {
+    "name": "Deadlift chân thẳng tạ đơn",
+    "primaryMuscle": "dui_sau",
+    "secondaryMuscles": [
+      "mong",
+      "lung_duoi"
+    ],
+    "equipment": [
+      "ta_don"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Đứng thẳng, mỗi tay cầm tạ đơn trước đùi, chân giữ gần thẳng (chỉ hơi khuỵu nhẹ).",
+      "Gập hông hạ tạ xuống dọc theo chân, giữ lưng thẳng.",
+      "Hạ đến khi cảm nhận căng rõ rệt ở đùi sau, không cần chạm sàn.",
+      "Đẩy hông về trước để đứng thẳng dậy trở lại."
+    ],
+    "commonMistakes": [
+      "Khóa cứng hoàn toàn khớp gối gây áp lực lên khớp.",
+      "Cong lưng để cố hạ tạ thấp hơn khả năng linh hoạt cho phép."
+    ],
+    "quickTip": "Biên độ chuyển động phụ thuộc vào độ linh hoạt của từng người, không cần cố chạm sàn.",
+    "suggestedRestSeconds": 90,
+    "imageUrl": "https://images.pexels.com/photos/4793199/pexels-photo-4793199.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "stiff leg deadlift dumbbell",
+    "isActive": true
+  },
+  {
+    "name": "Deadlift chân thẳng tạ đòn",
+    "primaryMuscle": "dui_sau",
+    "secondaryMuscles": [
+      "mong",
+      "lung_duoi"
+    ],
+    "equipment": [
+      "ta_doi"
+    ],
+    "difficulty": "advanced",
+    "instructions": [
+      "Đứng thẳng, nắm tạ đòn rộng bằng vai, chân giữ gần thẳng.",
+      "Gập hông hạ tạ xuống dọc theo chân, giữ lưng thẳng suốt bài tập.",
+      "Hạ đến khi cảm nhận căng rõ ở đùi sau.",
+      "Đẩy hông về trước để đứng thẳng dậy trở lại."
+    ],
+    "commonMistakes": [
+      "Dùng tạ quá nặng khi độ linh hoạt đùi sau còn hạn chế.",
+      "Cong lưng dưới để cố hạ tạ thấp hơn."
+    ],
+    "quickTip": "Đây là biến thể nâng cao của Romanian Deadlift, chỉ nên tập khi đã vững kỹ thuật RDL.",
+    "suggestedRestSeconds": 120,
+    "imageUrl": "https://images.pexels.com/photos/5327527/pexels-photo-5327527.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "stiff leg deadlift barbell",
+    "isActive": true
+  },
+  {
+    "name": "Nordic Hamstring Curl",
+    "primaryMuscle": "dui_sau",
+    "secondaryMuscles": [
+      "mong"
+    ],
+    "equipment": [
+      "khong_dung_cu"
+    ],
+    "difficulty": "advanced",
+    "instructions": [
+      "Quỳ gối trên thảm, có người hoặc vật cố định giữ chặt cổ chân.",
+      "Giữ thân người thẳng từ đầu gối đến đầu, từ từ hạ người về phía trước.",
+      "Dùng cơ đùi sau kiểm soát tốc độ hạ xuống càng lâu càng tốt.",
+      "Khi không kiểm soát được nữa, dùng tay chống đỡ nhẹ xuống sàn rồi đẩy người trở lại."
+    ],
+    "commonMistakes": [
+      "Gập hông trong lúc hạ người thay vì giữ thân thẳng.",
+      "Hạ người quá nhanh không kiểm soát ở giai đoạn đầu."
+    ],
+    "quickTip": "Bài tập rất khó, nên bắt đầu với biên độ nhỏ và tăng dần theo thời gian.",
+    "suggestedRestSeconds": 90,
+    "imageUrl": "https://images.pexels.com/photos/4804303/pexels-photo-4804303.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "nordic hamstring curl",
+    "isActive": true
+  },
+  {
+    "name": "Romanian Deadlift một chân tạ đơn",
+    "primaryMuscle": "dui_sau",
+    "secondaryMuscles": [
+      "mong"
+    ],
+    "equipment": [
+      "ta_don"
+    ],
+    "difficulty": "advanced",
+    "instructions": [
+      "Đứng thẳng trên một chân, tay cùng bên hoặc đối diện cầm tạ đơn.",
+      "Gập hông, đưa chân kia duỗi thẳng ra sau, hạ tạ xuống dọc theo chân trụ.",
+      "Giữ lưng thẳng và hông vuông góc với sàn trong suốt chuyển động.",
+      "Đẩy hông về trước để đứng thẳng dậy, hoàn thành hiệp rồi đổi chân."
+    ],
+    "commonMistakes": [
+      "Xoay hông sang một bên thay vì giữ vuông góc với sàn.",
+      "Mất thăng bằng do dùng tạ quá nặng khi mới tập."
+    ],
+    "quickTip": "Tập không tạ trước để làm chủ thăng bằng, sau đó mới thêm tạ.",
+    "suggestedRestSeconds": 90,
+    "imageUrl": "https://images.pexels.com/photos/949129/pexels-photo-949129.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "single leg romanian deadlift",
+    "isActive": true
+  },
+  {
+    "name": "Kéo tạ dây thừng giữa hai chân (Cable Pull-through)",
+    "primaryMuscle": "dui_sau",
+    "secondaryMuscles": [
+      "mong",
+      "lung_duoi"
+    ],
+    "equipment": [
+      "may_keo_xo"
+    ],
+    "difficulty": "intermediate",
+    "instructions": [
+      "Đứng quay lưng về phía máy cáp thấp, dây thừng luồn giữa hai chân.",
+      "Đứng chân rộng bằng vai, cúi người về trước bằng cách gập hông, tay giữ dây thừng thả xuống.",
+      "Đẩy hông về trước đứng thẳng dậy, kéo dây thừng lên qua giữa hai chân.",
+      "Trở lại tư thế cúi người, lặp lại đều nhịp."
+    ],
+    "commonMistakes": [
+      "Gập lưng thay vì gập hông khi cúi người.",
+      "Đứng quá gần máy khiến biên độ chuyển động bị rút ngắn."
+    ],
+    "quickTip": "Bài tập giúp luyện đúng mẫu chuyển động gập hông (hip hinge) rất an toàn cho lưng.",
+    "suggestedRestSeconds": 90,
+    "imageUrl": "https://images.pexels.com/photos/5327503/pexels-photo-5327503.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "cable pull through hamstring",
+    "isActive": true
+  },
+  {
+    "name": "Gập gối bằng dây kháng lực",
+    "primaryMuscle": "dui_sau",
+    "secondaryMuscles": [],
+    "equipment": [
+      "day_khang_luc"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Cố định dây kháng lực quanh mắt cá chân và một điểm cố định phía sau.",
+      "Đứng thẳng, tay có thể vịn nhẹ vào tường hoặc ghế để giữ thăng bằng.",
+      "Gập gối kéo gót chân về phía mông.",
+      "Trả chân về vị trí ban đầu từ từ, đổi bên sau khi hết hiệp."
+    ],
+    "commonMistakes": [
+      "Đứng lắc lư mất thăng bằng trong lúc gập gối.",
+      "Gập gối không hết biên độ do dây quá căng."
+    ],
+    "quickTip": "Phù hợp tập bổ trợ đùi sau tại nhà khi không có máy gập gối.",
+    "suggestedRestSeconds": 60,
+    "imageUrl": "https://images.pexels.com/photos/4970967/pexels-photo-4970967.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "standing band leg curl",
+    "isActive": true
+  },
+  {
+    "name": "Deadlift một chân không tạ",
+    "primaryMuscle": "dui_sau",
+    "secondaryMuscles": [
+      "mong"
+    ],
+    "equipment": [
+      "khong_dung_cu"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "Đứng thẳng trên một chân, hai tay thả tự nhiên hoặc chống hông.",
+      "Gập hông, đưa chân kia duỗi thẳng ra sau, thân trên hạ xuống song song sàn.",
+      "Giữ lưng thẳng, hông vuông góc với sàn.",
+      "Đẩy hông về trước để đứng thẳng dậy, đổi chân sau khi hết hiệp."
+    ],
+    "commonMistakes": [
+      "Xoay hông hoặc vai để giữ thăng bằng thay vì siết core.",
+      "Cong lưng khi hạ thân người xuống thấp."
+    ],
+    "quickTip": "Bài tập tốt để luyện thăng bằng và kích hoạt đùi sau trước khi tập các biến thể có tạ.",
+    "suggestedRestSeconds": 60,
+    "imageUrl": "https://images.pexels.com/photos/841125/pexels-photo-841125.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=800&h=600",
+    "imageQuery": "single leg deadlift bodyweight",
+    "isActive": true
+  }
+]

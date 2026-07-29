@@ -1,0 +1,12 @@
+# Never commit Firebase credentials
+serviceAccountKey.json
+*.serviceAccountKey.json
+
+# Dependencies
+node_modules/
+
+# Generated output (regenerate with `npm run build`)
+exercises_seed.json
+
+# Raw API reference dump (not production content, see README)
+reference/
