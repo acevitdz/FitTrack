@@ -8,6 +8,7 @@ import '../../state/app_state.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/common_widgets.dart';
 import '../health/weight_screen.dart';
+import 'workout_completion_detail_screen.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key, required this.state});
@@ -33,23 +34,38 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final completions = start == null
         ? allCompletions
         : allCompletions
-              .where((item) => reportOccurrenceIds.contains(item.occurrenceId))
+              .where((item) => !item.completedAt.isBefore(start))
               .toList(growable: false);
     final scheduledCount = start == null
         ? _occurrencesInPeriod(state, null).length
         : reportOccurrences.length;
-    final completedOccurrenceIds = allCompletions
+    final participatingOccurrenceIds = allCompletions
+        .where((item) => item.hasParticipation)
         .map((item) => item.occurrenceId)
         .toSet();
     final attendedCount = reportOccurrenceIds
-        .where(completedOccurrenceIds.contains)
+        .where(participatingOccurrenceIds.contains)
         .length;
-    final completedSetCount = completions.fold<int>(
+    final fullyCompletedCount = completions
+        .where((item) => item.status == WorkoutCompletionStatus.completed)
+        .length;
+    final partialCount = completions
+        .where(
+          (item) => item.status == WorkoutCompletionStatus.partiallyCompleted,
+        )
+        .length;
+    final abandonedCount = completions
+        .where((item) => item.status == WorkoutCompletionStatus.abandoned)
+        .length;
+    final participatingCompletions = completions
+        .where((item) => item.hasParticipation)
+        .toList(growable: false);
+    final completedSetCount = participatingCompletions.fold<int>(
       0,
       (total, item) => total + item.completedSetCount,
     );
-    final topExercises = _topExercises(completions);
-    final muscleBalance = _muscleBalance(completions);
+    final topExercises = _topExercises(participatingCompletions);
+    final muscleBalance = _muscleBalance(participatingCompletions);
     final measurementUnit = MeasurementUnitSystem.fromStored(state.unit);
     return SafeArea(
       child: CustomScrollView(
@@ -63,8 +79,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   children: [
                     Expanded(
                       child: MetricCard(
-                        label: 'Buổi trong kỳ',
-                        value: '${completions.length}',
+                        label: 'Buổi có tham gia',
+                        value: '${fullyCompletedCount + partialCount}',
                         icon: Icons.task_alt,
                         color: AppColors.success,
                       ),
@@ -74,7 +90,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       child: MetricCard(
                         label: 'Thời gian trong kỳ',
                         value: _totalDuration(
-                          completions.fold<Duration>(
+                          participatingCompletions.fold<Duration>(
                             Duration.zero,
                             (total, item) =>
                                 total +
@@ -134,6 +150,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   periodDays: _periodDays,
                   completedCount: attendedCount,
                   scheduledCount: scheduledCount,
+                  fullyCompletedCount: fullyCompletedCount,
+                  partialCount: partialCount,
+                  abandonedCount: abandonedCount,
                   onPeriodChanged: (value) =>
                       setState(() => _periodDays = value),
                 ),
@@ -302,12 +321,18 @@ class _PeriodReportCard extends StatelessWidget {
     required this.periodDays,
     required this.completedCount,
     required this.scheduledCount,
+    required this.fullyCompletedCount,
+    required this.partialCount,
+    required this.abandonedCount,
     required this.onPeriodChanged,
   });
 
   final int periodDays;
   final int completedCount;
   final int scheduledCount;
+  final int fullyCompletedCount;
+  final int partialCount;
+  final int abandonedCount;
   final ValueChanged<int> onPeriodChanged;
 
   @override
@@ -351,7 +376,13 @@ class _PeriodReportCard extends StatelessWidget {
             Text(
               scheduledCount == 0
                   ? 'Chưa có occurrence đến hạn trong kỳ đã chọn.'
-                  : '$completedCount/$scheduledCount buổi đến hạn đã hoàn thành. Buổi legacy không được đưa vào báo cáo.',
+                  : '$completedCount/$scheduledCount buổi đến hạn có ít nhất một hiệp hoàn tất.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Hoàn tất đủ: $fullyCompletedCount • Một phần: $partialCount'
+              ' • 0 hiệp/bỏ dở: $abandonedCount',
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ],
@@ -618,17 +649,21 @@ class _CompletionTile extends StatelessWidget {
   Widget build(BuildContext context) => Card(
     child: ExpansionTile(
       leading: CircleAvatar(
-        backgroundColor: completion.status == WorkoutCompletionStatus.completed
-            ? const Color(0xFFE1F7EC)
-            : const Color(0xFFFFF1D5),
-        foregroundColor: completion.status == WorkoutCompletionStatus.completed
-            ? AppColors.success
-            : AppColors.warning,
-        child: Icon(
-          completion.status == WorkoutCompletionStatus.completed
-              ? Icons.check
-              : Icons.timelapse,
-        ),
+        backgroundColor: switch (completion.status) {
+          WorkoutCompletionStatus.completed => const Color(0xFFE1F7EC),
+          WorkoutCompletionStatus.partiallyCompleted => const Color(0xFFFFF1D5),
+          WorkoutCompletionStatus.abandoned => const Color(0xFFF1F3F5),
+        },
+        foregroundColor: switch (completion.status) {
+          WorkoutCompletionStatus.completed => AppColors.success,
+          WorkoutCompletionStatus.partiallyCompleted => AppColors.warning,
+          WorkoutCompletionStatus.abandoned => AppColors.textMuted,
+        },
+        child: Icon(switch (completion.status) {
+          WorkoutCompletionStatus.completed => Icons.check,
+          WorkoutCompletionStatus.partiallyCompleted => Icons.timelapse,
+          WorkoutCompletionStatus.abandoned => Icons.block_outlined,
+        }),
       ),
       title: Text(completion.snapshot.title),
       subtitle: Text(
@@ -643,7 +678,14 @@ class _CompletionTile extends StatelessWidget {
           child: Row(
             children: [
               Expanded(
-                child: Text('${completion.completedSetCount} hiệp hoàn tất'),
+                child: Text(switch (completion.status) {
+                  WorkoutCompletionStatus.completed =>
+                    '${completion.completedSetCount} hiệp hoàn tất',
+                  WorkoutCompletionStatus.partiallyCompleted =>
+                    '${completion.completedSetCount} hiệp • hoàn tất một phần',
+                  WorkoutCompletionStatus.abandoned =>
+                    'Bỏ dở, không hoàn tất hiệp nào',
+                }),
               ),
               if (completion.skippedSetCount > 0)
                 Text('${completion.skippedSetCount} hiệp bỏ qua'),
@@ -652,10 +694,49 @@ class _CompletionTile extends StatelessWidget {
         ),
         ListTile(
           dense: true,
+          leading: const Icon(Icons.receipt_long_outlined),
+          title: const Text('Xem chi tiết từng bài, từng hiệp'),
+          subtitle: const Text(
+            'Mục tiêu, kết quả thực tế, bài thay thế và bằng chứng AI',
+          ),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) =>
+                  WorkoutCompletionDetailScreen(completion: completion),
+            ),
+          ),
+        ),
+        ListTile(
+          dense: true,
           leading: const Icon(Icons.fact_check_outlined),
           title: const Text('Chế độ xác nhận'),
           subtitle: Text(_confirmationModes(completion)),
         ),
+        if (_timedEvents(completion) case final timedEvents
+            when timedEvents.isNotEmpty)
+          ListTile(
+            dense: true,
+            leading: const Icon(Icons.timer_outlined),
+            title: const Text('Hiệp tính giờ'),
+            subtitle: Text(
+              '${timedEvents.length} hiệp • '
+              '${timedEvents.fold<int>(0, (total, event) => total + event.timedDurationSeconds!)} giây thực tế',
+            ),
+          ),
+        if (completion.snapshot.exercises
+                .where((exercise) => exercise.isAlternative)
+                .toList()
+            case final alternatives when alternatives.isNotEmpty)
+          ListTile(
+            dense: true,
+            leading: const Icon(Icons.swap_horiz),
+            title: const Text('Bài thay thế đã dùng'),
+            subtitle: Text(
+              alternatives.map((exercise) => exercise.name).join(', '),
+            ),
+          ),
         ListTile(
           dense: true,
           leading: const Icon(Icons.account_tree_outlined),
@@ -691,4 +772,13 @@ class _CompletionTile extends StatelessWidget {
         )
         .join(' + ');
   }
+
+  List<SetEvent> _timedEvents(WorkoutCompletion completion) => completion
+      .setEvents
+      .where(
+        (event) =>
+            event.status == SetEventStatus.completed &&
+            event.timedDurationSeconds != null,
+      )
+      .toList(growable: false);
 }
