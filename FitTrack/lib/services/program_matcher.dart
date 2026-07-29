@@ -34,10 +34,10 @@ class ProgramMatchResult {
 
 /// Selects only published catalog content through deterministic rules.
 ///
-/// Normal matching hard-filters status, population, goal, experience and
-/// equipment. Audience and preferred weekly frequency are ranking preferences,
-/// never safety gates. A configured fallback may relax the goal only; it must
-/// still pass the published, population, experience and equipment gates.
+/// Normal matching hard-filters status, population, goal, experience,
+/// equipment and published weekly frequency. Audience remains a ranking
+/// preference. A configured fallback may relax the goal only; it must still
+/// pass every other catalog gate.
 class ProgramMatcher {
   const ProgramMatcher({this.fallbackProgramVersionId});
 
@@ -112,8 +112,10 @@ class ProgramMatcher {
     UserTrainingPreferences preferences,
   ) =>
       version.status == ProgramLifecycleStatus.published &&
+      version.guidedConfirmationAvailable &&
       _contains(version.populationKeys, preferences.populationKey) &&
       _contains(version.experienceKeys, preferences.experienceKey) &&
+      version.cadence.supports(preferences.sessionsPerWeek) &&
       _hasRequiredEquipment(
         required: version.equipmentKeys,
         available: preferences.equipmentKeys,
@@ -160,15 +162,8 @@ class ProgramMatcher {
       score += requiredEquipment.length * 5;
     }
 
-    final cadenceGap =
-        (version.cadence.sessionsPerWeek - preferences.sessionsPerWeek).abs();
-    if (cadenceGap == 0) {
-      score += 40;
-      reasons.add('cadence_exact');
-    } else {
-      score += (30 - cadenceGap * 10).clamp(0, 30).toInt();
-      reasons.add('cadence_nearest');
-    }
+    score += 40;
+    reasons.add('cadence_exact');
 
     // Prefer a focused eligibility definition over a broad catch-all when all
     // user-facing criteria otherwise tie.
