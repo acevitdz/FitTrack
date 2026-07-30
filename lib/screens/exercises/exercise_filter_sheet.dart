@@ -1,34 +1,26 @@
 import 'package:flutter/material.dart';
 
+import '../../data/exercise_repository.dart';
+import '../../models/exercise.dart';
+import '../../models/exercise_enums.dart';
 import '../../theme/app_colors.dart';
 
-class ExerciseFilterValue {
-  const ExerciseFilterValue({
-    this.difficulties = const {},
-    this.equipment = const {},
-    this.favoritesOnly = false,
-  });
-
-  final Set<String> difficulties;
-  final Set<String> equipment;
-  final bool favoritesOnly;
-
-  int get count =>
-      difficulties.length + equipment.length + (favoritesOnly ? 1 : 0);
-}
-
-Future<ExerciseFilterValue?> showExerciseFilterSheet(
+/// UI.pdf "Bộ lọc" (Filter Bottom Sheet). Returns the edited [ExerciseFilter]
+/// on "Áp dụng", or null if dismissed without applying.
+Future<ExerciseFilter?> showExerciseFilterSheet(
   BuildContext context, {
-  required ExerciseFilterValue initial,
-  required Set<String> availableEquipment,
+  required ExerciseFilter initial,
+  required List<Exercise> allExercises,
+  required Set<String> currentFavoriteIds,
 }) {
-  return showModalBottomSheet<ExerciseFilterValue>(
+  return showModalBottomSheet<ExerciseFilter>(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
     builder: (_) => _ExerciseFilterSheet(
       initial: initial,
-      availableEquipment: availableEquipment,
+      allExercises: allExercises,
+      currentFavoriteIds: currentFavoriteIds,
     ),
   );
 }
@@ -36,155 +28,198 @@ Future<ExerciseFilterValue?> showExerciseFilterSheet(
 class _ExerciseFilterSheet extends StatefulWidget {
   const _ExerciseFilterSheet({
     required this.initial,
-    required this.availableEquipment,
+    required this.allExercises,
+    required this.currentFavoriteIds,
   });
 
-  final ExerciseFilterValue initial;
-  final Set<String> availableEquipment;
+  final ExerciseFilter initial;
+  final List<Exercise> allExercises;
+
+  /// The user's actual current favorite ids (from FavoriteExerciseRepository),
+  /// used when the "chỉ hiện thị yêu thích" switch is on — NOT
+  /// `initial.favoriteIds`, which is only a snapshot from the last time this
+  /// filter was applied and is null the very first time the switch is used.
+  final Set<String> currentFavoriteIds;
 
   @override
   State<_ExerciseFilterSheet> createState() => _ExerciseFilterSheetState();
 }
 
 class _ExerciseFilterSheetState extends State<_ExerciseFilterSheet> {
-  late Set<String> _difficulties;
-  late Set<String> _equipment;
-  late bool _favoritesOnly;
+  late Muscle? _muscle = widget.initial.muscle;
+  late Set<Difficulty> _difficulties = {...widget.initial.difficulties};
+  late Set<Equipment> _equipment = {...widget.initial.equipment};
+  late bool _favoritesOnly = widget.initial.favoriteIds != null;
 
-  @override
-  void initState() {
-    super.initState();
-    _difficulties = Set.of(widget.initial.difficulties);
-    _equipment = Set.of(widget.initial.equipment);
-    _favoritesOnly = widget.initial.favoritesOnly;
+  int get _liveCount {
+    final draft = widget.initial.copyWith(
+      muscle: _muscle,
+      clearMuscle: _muscle == null,
+      difficulties: _difficulties,
+      equipment: _equipment,
+      favoriteIds: _favoritesOnly ? widget.currentFavoriteIds : null,
+      clearFavoriteIds: !_favoritesOnly,
+    );
+    return widget.allExercises.where(draft.matches).length;
   }
 
   @override
   Widget build(BuildContext context) {
-    final value = ExerciseFilterValue(
-      difficulties: _difficulties,
-      equipment: _equipment,
-      favoritesOnly: _favoritesOnly,
-    );
     return DraggableScrollableSheet(
+      initialChildSize: 0.85,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
       expand: false,
-      initialChildSize: .78,
-      minChildSize: .55,
-      builder: (context, controller) => Column(
-        children: [
-          const SizedBox(height: 10),
-          Container(
-            width: 42,
-            height: 4,
-            decoration: BoxDecoration(
-              color: AppColors.outline,
-              borderRadius: BorderRadius.circular(999),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(18, 16, 8, 8),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Bộ lọc bài tập',
-                    style: Theme.of(context).textTheme.titleLarge,
+      builder: (context, scrollController) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+          child: Column(
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.outline,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Text('Bộ lọc', style: Theme.of(context).textTheme.titleLarge),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close),
                   ),
-                ),
-                IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close),
-                ),
-              ],
-            ),
-          ),
-          const Divider(height: 1),
-          Expanded(
-            child: ListView(
-              controller: controller,
-              padding: const EdgeInsets.all(18),
-              children: [
-                Text('Mức độ', style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: ['Cơ bản', 'Trung bình', 'Nâng cao']
-                      .map(
-                        (item) => FilterChip(
-                          label: Text(item),
-                          selected: _difficulties.contains(item),
-                          onSelected: (selected) => setState(
-                            () => selected
-                                ? _difficulties.add(item)
-                                : _difficulties.remove(item),
-                          ),
+                ],
+              ),
+              Expanded(
+                child: ListView(
+                  controller: scrollController,
+                  children: [
+                    _sectionLabel('NHÓM CƠ'),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        ChoiceChip(
+                          label: const Text('Tất cả'),
+                          selected: _muscle == null,
+                          onSelected: (_) => setState(() => _muscle = null),
                         ),
-                      )
-                      .toList(),
-                ),
-                const SizedBox(height: 24),
-                Text('Dụng cụ', style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: widget.availableEquipment
-                      .map(
-                        (item) => FilterChip(
-                          label: Text(item),
-                          selected: _equipment.contains(item),
-                          onSelected: (selected) => setState(
-                            () => selected
-                                ? _equipment.add(item)
-                                : _equipment.remove(item),
+                        for (final muscle in Muscle.values)
+                          ChoiceChip(
+                            label: Text(muscle.label),
+                            selected: _muscle == muscle,
+                            onSelected: (_) =>
+                                setState(() => _muscle = muscle),
                           ),
-                        ),
-                      )
-                      .toList(),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    _sectionLabel('ĐỘ KHÓ'),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        for (final difficulty in Difficulty.values)
+                          FilterChip(
+                            label: Text(difficulty.label),
+                            selected: _difficulties.contains(difficulty),
+                            onSelected: (selected) => setState(() {
+                              if (selected) {
+                                _difficulties.add(difficulty);
+                              } else {
+                                _difficulties.remove(difficulty);
+                              }
+                            }),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    _sectionLabel('DỤNG CỤ'),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        for (final equipment in Equipment.values)
+                          FilterChip(
+                            label: Text(equipment.label),
+                            selected: _equipment.contains(equipment),
+                            onSelected: (selected) => setState(() {
+                              if (selected) {
+                                _equipment.add(equipment);
+                              } else {
+                                _equipment.remove(equipment);
+                              }
+                            }),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Chỉ hiện thị mức yêu thích'),
+                      value: _favoritesOnly,
+                      onChanged: (value) =>
+                          setState(() => _favoritesOnly = value),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 20),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Chỉ bài đã yêu thích'),
-                  value: _favoritesOnly,
-                  onChanged: (value) => setState(() => _favoritesOnly = value),
-                ),
-              ],
-            ),
-          ),
-          SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.all(18),
-              child: Row(
+              ),
+              Row(
                 children: [
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () => setState(() {
-                        _difficulties.clear();
-                        _equipment.clear();
+                        _muscle = null;
+                        _difficulties = {};
+                        _equipment = {};
                         _favoritesOnly = false;
                       }),
-                      child: const Text('Đặt lại'),
+                      child: const Text('Xóa bộ lọc'),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     flex: 2,
                     child: FilledButton(
-                      onPressed: () => Navigator.pop(context, value),
-                      child: Text(
-                        'Áp dụng${value.count > 0 ? ' (${value.count})' : ''}',
+                      onPressed: () => Navigator.pop(
+                        context,
+                        widget.initial.copyWith(
+                          muscle: _muscle,
+                          clearMuscle: _muscle == null,
+                          difficulties: _difficulties,
+                          equipment: _equipment,
+                          favoriteIds: _favoritesOnly
+                              ? widget.currentFavoriteIds
+                              : null,
+                          clearFavoriteIds: !_favoritesOnly,
+                        ),
                       ),
+                      child: Text('Áp dụng ($_liveCount)'),
                     ),
                   ),
                 ],
               ),
-            ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
+
+  Widget _sectionLabel(String text) => Padding(
+    padding: const EdgeInsets.only(bottom: 8),
+    child: Text(
+      text,
+      style: const TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w700,
+        color: AppColors.textMuted,
+        letterSpacing: .5,
+      ),
+    ),
+  );
 }

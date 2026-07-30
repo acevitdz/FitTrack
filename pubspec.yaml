@@ -9,6 +9,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  cloud_firestore: ^5.6.0
+  firebase_core: ^3.10.0
+  flutter_body_part_selector: ^1.2.0
 
 dev_dependencies:
   flutter_test:
