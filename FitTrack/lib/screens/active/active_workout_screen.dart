@@ -605,22 +605,28 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
             children: [
               Row(
                 children: [
-                  Chip(
-                    avatar: Icon(
-                      controller.confirmationMode ==
-                              WorkoutConfirmationMode.aiCamera
-                          ? Icons.camera_alt_outlined
-                          : Icons.touch_app_outlined,
-                      size: 18,
-                    ),
-                    label: Text(
-                      controller.confirmationMode ==
-                              WorkoutConfirmationMode.aiCamera
-                          ? 'AI Camera Coach'
-                          : 'Guided Confirmation',
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Chip(
+                        avatar: Icon(
+                          controller.confirmationMode ==
+                                  WorkoutConfirmationMode.aiCamera
+                              ? Icons.camera_alt_outlined
+                              : Icons.touch_app_outlined,
+                          size: 18,
+                        ),
+                        label: Text(
+                          controller.confirmationMode ==
+                                  WorkoutConfirmationMode.aiCamera
+                              ? 'AI Camera Coach'
+                              : 'Guided Confirmation',
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                     ),
                   ),
-                  const Spacer(),
+                  const SizedBox(width: 8),
                   Text(_duration(controller.activeDuration)),
                 ],
               ),
@@ -683,6 +689,8 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                 ),
               ],
               const SizedBox(height: 24),
+              _ExerciseGuidanceCard(exercise: exercise),
+              const SizedBox(height: 16),
               if (controller.confirmationMode ==
                       WorkoutConfirmationMode.aiCamera &&
                   cameraSupported)
@@ -713,44 +721,15 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                   onFallbackRequested: _useGuidedFallback,
                   onTargetReached: _completeAiSet,
                 )
-              else
+              else if (controller.confirmationMode ==
+                  WorkoutConfirmationMode.aiCamera)
                 Card(
                   color: AppColors.paleBlue.withValues(alpha: .45),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (controller.confirmationMode ==
-                                WorkoutConfirmationMode.aiCamera &&
-                            !cameraSupported) ...[
-                          const Text(
-                            'Camera Coach chưa hỗ trợ bài này. Chế độ Camera Coach vẫn được giữ; hãy bấm chuyển sang Hướng dẫn nếu muốn tiếp tục hiệp này.',
-                            style: TextStyle(color: AppColors.warning),
-                          ),
-                          const SizedBox(height: 8),
-                        ],
-                        Text(
-                          'Gợi ý kỹ thuật',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 8),
-                        for (final cue in exercise.cues.take(3))
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 6),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Icon(
-                                  Icons.check_circle_outline,
-                                  size: 18,
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(child: Text(cue)),
-                              ],
-                            ),
-                          ),
-                      ],
+                  child: const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Text(
+                      'Camera Coach chưa hỗ trợ bài này. Chế độ Camera Coach vẫn được giữ; hãy bấm chuyển sang Hướng dẫn nếu muốn tiếp tục hiệp này.',
+                      style: TextStyle(color: AppColors.warning),
                     ),
                   ),
                 ),
@@ -994,17 +973,18 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       'Camera Coach chưa khả dụng. Bạn có thể thử lại hoặc tự chuyển sang Hướng dẫn.',
   };
 
-  String _cameraUnavailable(PoseCapabilityUnavailableReason reason) =>
-      switch (reason) {
-        PoseCapabilityUnavailableReason.permissionDenied =>
-          'Chưa có quyền camera. Chế độ Camera Coach vẫn được giữ.',
-        PoseCapabilityUnavailableReason.trackingUnreliable =>
-          'Nhận diện chưa ổn định. Hãy chỉnh ánh sáng hoặc vị trí camera; chế độ sẽ không tự thay đổi.',
-        PoseCapabilityUnavailableReason.exerciseUnsupported =>
-          'Bài tập này chưa có rule Camera Coach đã xuất bản.',
-        _ =>
-          'Camera Coach chưa khả dụng. Hãy thử lại hoặc bấm chuyển sang Hướng dẫn.',
-      };
+  String _cameraUnavailable(
+    PoseCapabilityUnavailableReason reason,
+  ) => switch (reason) {
+    PoseCapabilityUnavailableReason.permissionDenied =>
+      'Chưa có quyền camera. Chế độ Camera Coach vẫn được giữ.',
+    PoseCapabilityUnavailableReason.trackingUnreliable =>
+      'Nhận diện chưa ổn định. Hãy chỉnh ánh sáng hoặc vị trí camera; chế độ sẽ không tự thay đổi.',
+    PoseCapabilityUnavailableReason.exerciseUnsupported =>
+      'Bài tập này chưa có rule Camera Coach đã xuất bản.',
+    _ =>
+      'Camera Coach chưa khả dụng. Hãy thử lại hoặc bấm chuyển sang Hướng dẫn.',
+  };
 }
 
 class _CameraEvidenceAccumulator {
@@ -1360,6 +1340,134 @@ class _ExerciseResultCard extends StatelessWidget {
     SetEventStatus.redone => AppColors.primary,
     SetEventStatus.skipped => AppColors.warning,
   };
+}
+
+class _ExerciseGuidanceCard extends StatelessWidget {
+  const _ExerciseGuidanceCard({required this.exercise});
+
+  final WorkoutExerciseSnapshot exercise;
+
+  @override
+  Widget build(BuildContext context) {
+    final instructions = exercise.instructions.isNotEmpty
+        ? exercise.instructions
+        : exercise.cues;
+    final programCues = exercise.instructions.isEmpty
+        ? const <String>[]
+        : exercise.cues
+              .where((cue) => !instructions.contains(cue))
+              .toList(growable: false);
+
+    return Card(
+      key: ValueKey('exercise-guidance-${exercise.exerciseId}'),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.menu_book_outlined, color: AppColors.primary),
+                const SizedBox(width: 8),
+                Text(
+                  'Cách thực hiện',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            if (instructions.isEmpty)
+              const Text(
+                'Chưa có hướng dẫn chi tiết cho bài tập này.',
+                style: TextStyle(color: AppColors.textMuted),
+              )
+            else
+              for (var index = 0; index < instructions.length; index++)
+                _GuidanceRow(
+                  leading: '${index + 1}',
+                  text: instructions[index],
+                  color: AppColors.primary,
+                ),
+            if (programCues.isNotEmpty) ...[
+              const Divider(height: 28),
+              Text(
+                'Gợi ý cho buổi tập',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              const SizedBox(height: 8),
+              for (final cue in programCues)
+                _GuidanceRow(
+                  icon: Icons.check_circle_outline,
+                  text: cue,
+                  color: AppColors.success,
+                ),
+            ],
+            if (exercise.commonMistakes.isNotEmpty) ...[
+              const Divider(height: 28),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.warning_amber_rounded,
+                    color: AppColors.warning,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Lỗi thường gặp',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              for (final mistake in exercise.commonMistakes)
+                _GuidanceRow(
+                  icon: Icons.close_rounded,
+                  text: mistake,
+                  color: AppColors.warning,
+                ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _GuidanceRow extends StatelessWidget {
+  const _GuidanceRow({
+    required this.text,
+    required this.color,
+    this.leading,
+    this.icon,
+  });
+
+  final String text;
+  final Color color;
+  final String? leading;
+  final IconData? icon;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: 8),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (icon case final icon?)
+          Icon(icon, size: 19, color: color)
+        else
+          CircleAvatar(
+            radius: 10,
+            backgroundColor: color.withValues(alpha: .12),
+            foregroundColor: color,
+            child: Text(
+              leading!,
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+            ),
+          ),
+        const SizedBox(width: 10),
+        Expanded(child: Text(text)),
+      ],
+    ),
+  );
 }
 
 class _ExerciseMediaBox extends StatelessWidget {

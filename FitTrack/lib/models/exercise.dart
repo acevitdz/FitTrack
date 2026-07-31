@@ -16,6 +16,7 @@ class Exercise {
     this.imageUrl,
     this.ownerId,
     this.isActive = true,
+    this.isLibraryVisible = true,
     this.sourceProvider = 'fittrack_authored',
     String? sourceExerciseId,
     this.sourceUrl,
@@ -42,6 +43,7 @@ class Exercise {
   final String? imageUrl;
   final String? ownerId;
   final bool isActive;
+  final bool isLibraryVisible;
   final String sourceProvider;
   final String? sourceExerciseId;
   final String? sourceUrl;
@@ -79,6 +81,7 @@ class Exercise {
     String? imageUrl,
     String? ownerId,
     bool? isActive,
+    bool? isLibraryVisible,
     String? sourceProvider,
     String? sourceExerciseId,
     String? sourceUrl,
@@ -104,6 +107,7 @@ class Exercise {
     imageUrl: imageUrl ?? this.imageUrl,
     ownerId: ownerId ?? this.ownerId,
     isActive: isActive ?? this.isActive,
+    isLibraryVisible: isLibraryVisible ?? this.isLibraryVisible,
     sourceProvider: sourceProvider ?? this.sourceProvider,
     sourceExerciseId: sourceExerciseId ?? this.sourceExerciseId,
     sourceUrl: sourceUrl ?? this.sourceUrl,
@@ -131,6 +135,7 @@ class Exercise {
     'imageUrl': imageUrl,
     'ownerId': ownerId,
     'isActive': isActive,
+    'isLibraryVisible': isLibraryVisible,
     'sourceProvider': sourceProvider,
     'sourceExerciseId': sourceExerciseId,
     'sourceUrl': sourceUrl,
@@ -162,6 +167,7 @@ class Exercise {
     imageUrl: json['imageUrl'] as String?,
     ownerId: json['ownerId'] as String?,
     isActive: json['isActive'] as bool? ?? true,
+    isLibraryVisible: json['isLibraryVisible'] as bool? ?? true,
     sourceProvider: json['sourceProvider'] as String? ?? 'fittrack_authored',
     sourceExerciseId: json['sourceExerciseId'] as String?,
     sourceUrl: json['sourceUrl'] as String?,

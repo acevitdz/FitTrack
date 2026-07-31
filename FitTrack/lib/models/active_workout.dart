@@ -78,6 +78,8 @@ class WorkoutExerciseAlternativeSnapshot {
     required this.name,
     this.muscleGroup = '',
     this.equipment = '',
+    this.instructions = const [],
+    this.commonMistakes = const [],
     this.mediaUrl,
     this.mediaAltText,
   });
@@ -86,6 +88,8 @@ class WorkoutExerciseAlternativeSnapshot {
   final String name;
   final String muscleGroup;
   final String equipment;
+  final List<String> instructions;
+  final List<String> commonMistakes;
   final String? mediaUrl;
   final String? mediaAltText;
 
@@ -94,6 +98,8 @@ class WorkoutExerciseAlternativeSnapshot {
     'name': name,
     'muscleGroup': muscleGroup,
     'equipment': equipment,
+    'instructions': instructions,
+    'commonMistakes': commonMistakes,
     'mediaUrl': mediaUrl,
     'mediaAltText': mediaAltText,
   };
@@ -105,6 +111,10 @@ class WorkoutExerciseAlternativeSnapshot {
     name: json['name'] as String,
     muscleGroup: json['muscleGroup'] as String? ?? '',
     equipment: json['equipment'] as String? ?? '',
+    instructions: List<String>.from(json['instructions'] as List? ?? const []),
+    commonMistakes: List<String>.from(
+      json['commonMistakes'] as List? ?? const [],
+    ),
     mediaUrl: json['mediaUrl'] as String?,
     mediaAltText: json['mediaAltText'] as String?,
   );
@@ -125,6 +135,8 @@ class WorkoutExerciseSnapshot {
     this.muscleGroup = '',
     this.equipment = '',
     List<String> cues = const [],
+    List<String> instructions = const [],
+    List<String> commonMistakes = const [],
     this.mediaUrl,
     this.mediaAltText,
     this.poseRuleVersionId,
@@ -135,6 +147,8 @@ class WorkoutExerciseSnapshot {
        transitionAfterExerciseSeconds =
            transitionAfterExerciseSeconds ?? restSeconds,
        cues = List.unmodifiable(cues),
+       instructions = List.unmodifiable(instructions),
+       commonMistakes = List.unmodifiable(commonMistakes),
        prescribedExerciseId = prescribedExerciseId ?? exerciseId,
        alternatives = List.unmodifiable(alternatives) {
     if (exerciseId.trim().isEmpty) {
@@ -189,6 +203,8 @@ class WorkoutExerciseSnapshot {
   int get restBetweenSetsSeconds => restSeconds;
   final int transitionAfterExerciseSeconds;
   final List<String> cues;
+  final List<String> instructions;
+  final List<String> commonMistakes;
   final String? mediaUrl;
   final String? mediaAltText;
   final String? poseRuleVersionId;
@@ -211,6 +227,8 @@ class WorkoutExerciseSnapshot {
     restSeconds: restSeconds,
     transitionAfterExerciseSeconds: transitionAfterExerciseSeconds,
     cues: cues,
+    instructions: alternative.instructions,
+    commonMistakes: alternative.commonMistakes,
     mediaUrl: alternative.mediaUrl,
     mediaAltText: alternative.mediaAltText,
     alternatives: alternatives,
@@ -230,6 +248,8 @@ class WorkoutExerciseSnapshot {
     'restBetweenSetsSeconds': restBetweenSetsSeconds,
     'transitionAfterExerciseSeconds': transitionAfterExerciseSeconds,
     'cues': cues,
+    'instructions': instructions,
+    'commonMistakes': commonMistakes,
     'mediaUrl': mediaUrl,
     'mediaAltText': mediaAltText,
     'poseRuleVersionId': poseRuleVersionId,
@@ -257,6 +277,12 @@ class WorkoutExerciseSnapshot {
         transitionAfterExerciseSeconds:
             (json['transitionAfterExerciseSeconds'] as num?)?.toInt(),
         cues: List<String>.from(json['cues'] as List? ?? const []),
+        instructions: List<String>.from(
+          json['instructions'] as List? ?? const [],
+        ),
+        commonMistakes: List<String>.from(
+          json['commonMistakes'] as List? ?? const [],
+        ),
         mediaUrl: json['mediaUrl'] as String?,
         mediaAltText: json['mediaAltText'] as String?,
         poseRuleVersionId: json['poseRuleVersionId'] as String?,
