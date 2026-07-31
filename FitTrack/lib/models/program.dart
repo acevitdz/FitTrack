@@ -29,25 +29,27 @@ enum ProgramStartPolicy { today, nextPreferredDay }
 
 abstract final class TrainingGoalKey {
   static const fatLoss = 'fat_loss';
+  static const muscleGain = 'muscle_gain';
   static const generalFitness = 'general_fitness';
   static const strength = 'strength';
+
+  /// Kept only to migrate preferences saved by catalog versions before v3.
   static const flexibility = 'flexibility';
 
   static const labels = <String, String>{
     fatLoss: 'Giảm mỡ',
-    generalFitness: 'Thể lực tổng quát',
+    muscleGain: 'Tăng cơ',
     strength: 'Tăng sức mạnh',
-    flexibility: 'Linh hoạt',
+    generalFitness: 'Khỏe và dẻo dai',
   };
 
-  static const values = <String>[
-    fatLoss,
-    generalFitness,
-    strength,
-    flexibility,
-  ];
+  static const values = <String>[fatLoss, muscleGain, strength, generalFitness];
 
-  static String labelFor(String key) => labels[key] ?? 'Thể lực tổng quát';
+  static String normalize(String key) =>
+      key == flexibility ? generalFitness : key;
+
+  static String labelFor(String key) =>
+      labels[normalize(key)] ?? 'Khỏe và dẻo dai';
 }
 
 /// One-tap choices used by the deterministic program matcher.
@@ -69,7 +71,7 @@ class UserTrainingPreferences {
 
   const UserTrainingPreferences.defaults()
     : populationKey = 'healthy_adult_18_64',
-      programAudiencePreference = ProgramAudiencePreference.unisex,
+      programAudiencePreference = ProgramAudiencePreference.male,
       goalKey = TrainingGoalKey.generalFitness,
       experienceKey = 'beginner',
       equipmentKeys = const ['bodyweight'],
@@ -103,7 +105,9 @@ class UserTrainingPreferences {
         programAudiencePreference: ProgramAudiencePreference.values.byName(
           json['programAudiencePreference'] as String,
         ),
-        goalKey: json['goalKey'] as String,
+        goalKey: TrainingGoalKey.normalize(
+          json['goalKey'] as String? ?? TrainingGoalKey.generalFitness,
+        ),
         experienceKey: json['experienceKey'] as String,
         equipmentKeys: _stringList(json['equipmentKeys']),
         sessionsPerWeek:
@@ -241,6 +245,7 @@ class Program {
     required this.createdBy,
     required this.createdAt,
     required this.updatedAt,
+    this.frequencyVariants = const {},
   });
 
   final String id;
@@ -253,6 +258,12 @@ class Program {
   final DateTime createdAt;
   final DateTime updatedAt;
 
+  /// Immutable version ID selected for each supported weekly frequency.
+  final Map<int, String> frequencyVariants;
+
+  String? versionIdForFrequency(int sessionsPerWeek) =>
+      frequencyVariants[sessionsPerWeek];
+
   Map<String, dynamic> toJson() => {
     'id': id,
     'title': title,
@@ -261,6 +272,10 @@ class Program {
     'createdBy': createdBy,
     'createdAt': createdAt.toIso8601String(),
     'updatedAt': updatedAt.toIso8601String(),
+    'frequencyVariants': {
+      for (final entry in frequencyVariants.entries)
+        entry.key.toString(): entry.value,
+    },
   };
 
   factory Program.fromJson(Map<String, dynamic> json) => Program(
@@ -271,6 +286,7 @@ class Program {
     createdBy: json['createdBy'] as String,
     createdAt: _dateTime(json['createdAt']),
     updatedAt: _dateTime(json['updatedAt']),
+    frequencyVariants: _frequencyVariantsFromJson(json['frequencyVariants']),
   );
 }
 
@@ -311,6 +327,7 @@ class ExercisePrescription {
     required this.mediaVersion,
     required this.cueVersion,
     this.poseRuleVersionId,
+    this.perSide = false,
   }) : transitionAfterExerciseSeconds =
            transitionAfterExerciseSeconds ?? restSeconds,
        assert(order >= 0),
@@ -345,14 +362,25 @@ class ExercisePrescription {
   final String mediaVersion;
   final String cueVersion;
   final String? poseRuleVersionId;
+  final bool perSide;
 
   String get targetLabel {
     final value = targetRange.isSingleValue
         ? '${targetRange.minimum}'
         : '${targetRange.minimum}-${targetRange.maximum}';
-    return targetType == PrescriptionTargetType.repetitions
-        ? '$value lần'
-        : '$value giây';
+    final suffix = perSide ? '/bên' : '';
+    if (targetType == PrescriptionTargetType.repetitions) {
+      return '$value lần$suffix';
+    }
+    if (targetRange.minimum % 60 == 0 && targetRange.maximum % 60 == 0) {
+      final minimumMinutes = targetRange.minimum ~/ 60;
+      final maximumMinutes = targetRange.maximum ~/ 60;
+      final minuteValue = minimumMinutes == maximumMinutes
+          ? '$minimumMinutes'
+          : '$minimumMinutes-$maximumMinutes';
+      return '$minuteValue phút$suffix';
+    }
+    return '$value giây$suffix';
   }
 
   Map<String, dynamic> toJson() => {
@@ -371,6 +399,7 @@ class ExercisePrescription {
     'mediaVersion': mediaVersion,
     'cueVersion': cueVersion,
     'poseRuleVersionId': poseRuleVersionId,
+    'perSide': perSide,
   };
 
   factory ExercisePrescription.fromJson(
@@ -397,6 +426,7 @@ class ExercisePrescription {
     mediaVersion: json['mediaVersion'] as String? ?? 'unknown',
     cueVersion: json['cueVersion'] as String? ?? 'unknown',
     poseRuleVersionId: json['poseRuleVersionId'] as String?,
+    perSide: json['perSide'] as bool? ?? false,
   );
 }
 
@@ -605,6 +635,7 @@ class ProgramVersion {
     required this.weeks,
     required this.createdBy,
     required this.createdAt,
+    this.environmentKey = 'home',
     this.matchingPriority = 0,
     this.publishedBy,
     this.publishedAt,
@@ -625,6 +656,10 @@ class ProgramVersion {
 
   /// Equipment required by every occurrence in this version.
   final List<String> equipmentKeys;
+
+  /// `home` or `gym`, stored explicitly for the four-axis route matrix.
+  final String environmentKey;
+
   final TrainingCadence cadence;
   final List<SourceReference> sourceRefs;
   final String changelog;
@@ -681,6 +716,7 @@ class ProgramVersion {
     'goalKeys': goalKeys,
     'experienceKeys': experienceKeys,
     'equipmentKeys': equipmentKeys,
+    'environmentKey': environmentKey,
     'cadence': cadence.toJson(),
     'sourceRefs': sourceRefs.map((item) => item.toJson()).toList(),
     'changelog': changelog,
@@ -711,6 +747,9 @@ class ProgramVersion {
     goalKeys: _stringList(json['goalKeys']),
     experienceKeys: _stringList(json['experienceKeys']),
     equipmentKeys: _stringList(json['equipmentKeys']),
+    environmentKey:
+        json['environmentKey'] as String? ??
+        (_stringList(json['equipmentKeys']).contains('gym') ? 'gym' : 'home'),
     cadence: TrainingCadence.fromJson(_jsonMap(json['cadence'])),
     sourceRefs: _jsonMapList(
       json['sourceRefs'],
@@ -1046,6 +1085,20 @@ Map<int, List<int>> _weekdayOptionsFromJson(Object? value) {
     final frequency = int.tryParse(entry.key);
     if (frequency != null) {
       result[frequency] = _intList(entry.value);
+    }
+  }
+  return result;
+}
+
+Map<int, String> _frequencyVariantsFromJson(Object? value) {
+  final result = <int, String>{};
+  for (final entry in Map<String, dynamic>.from(
+    value as Map? ?? const {},
+  ).entries) {
+    final frequency = int.tryParse(entry.key);
+    final versionId = entry.value;
+    if (frequency != null && versionId is String && versionId.isNotEmpty) {
+      result[frequency] = versionId;
     }
   }
   return result;

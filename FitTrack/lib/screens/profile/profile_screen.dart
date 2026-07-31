@@ -429,7 +429,10 @@ class _ProgramPreferencesScreenState extends State<ProgramPreferencesScreen> {
         ? current.preferredWeekdays.toSet()
         : _recommendedWeekdays(_sessionsPerWeek);
     _equipment = current.equipmentKeys.contains('gym') ? 'gym' : 'bodyweight';
-    _audience = current.programAudiencePreference;
+    _audience =
+        current.programAudiencePreference == ProgramAudiencePreference.unisex
+        ? ProgramAudiencePreference.male
+        : current.programAudiencePreference;
   }
 
   Future<void> _save() async {
@@ -495,7 +498,7 @@ class _ProgramPreferencesScreenState extends State<ProgramPreferencesScreen> {
             spacing: 8,
             runSpacing: 8,
             children: [
-              for (final value in const [2, 3, 4, 5])
+              for (final value in const [2, 3, 4])
                 ChoiceChip(
                   label: Text('$value buổi'),
                   selected: _sessionsPerWeek == value,
@@ -546,14 +549,10 @@ class _ProgramPreferencesScreenState extends State<ProgramPreferencesScreen> {
             (v) => _equipment = v,
           ),
           _choice('gym', 'Phòng gym', _equipment, (v) => _equipment = v),
-          _label('Ưu tiên nội dung'),
+          _label('Giới tính hồ sơ'),
           SegmentedButton<ProgramAudiencePreference>(
             showSelectedIcon: false,
             segments: const [
-              ButtonSegment(
-                value: ProgramAudiencePreference.unisex,
-                label: Text('Chung'),
-              ),
               ButtonSegment(
                 value: ProgramAudiencePreference.male,
                 label: Text('Nam'),

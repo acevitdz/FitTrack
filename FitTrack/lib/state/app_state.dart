@@ -17,7 +17,6 @@ import '../models/workout_schedule.dart';
 import '../services/firebase_gateway.dart';
 import '../services/active_workout_controller.dart';
 import '../services/active_workout_draft_store.dart';
-import '../services/bundled_exercise_catalog.dart';
 import '../services/local_store.dart';
 import '../services/notification_service.dart';
 import '../services/program_catalog_validator.dart';
@@ -35,12 +34,15 @@ class AppState extends ChangeNotifier {
     ActiveWorkoutDraftStore? workoutDraftStore,
     SpeechCueService? speechCueService,
     SyncQueue? syncQueue,
+    List<Exercise> testExerciseCatalog = const [],
   }) : _notifications = notificationService,
        _store = localStore ?? LocalStore(),
        _workoutDraftStore = workoutDraftStore ?? ActiveWorkoutDraftStore(),
        _speech = speechCueService ?? const SpeechCueService(),
        _syncQueue = syncQueue ?? SyncQueue(),
+       _testExerciseCatalog = List.unmodifiable(testExerciseCatalog),
        _firebase = FirebaseGateway(available: firebaseAvailable) {
+    exercises = List.of(_testExerciseCatalog);
     _notifications.setPayloadHandler(_handleNotificationPayload);
   }
 
@@ -50,10 +52,8 @@ class AppState extends ChangeNotifier {
   final ActiveWorkoutDraftStore _workoutDraftStore;
   final SpeechCueService _speech;
   final SyncQueue _syncQueue;
+  final List<Exercise> _testExerciseCatalog;
   final FirebaseGateway _firebase;
-  final BundledExerciseCatalog _bundledExerciseCatalog =
-      const BundledExerciseCatalog();
-  List<Exercise> _bundledExercises = const [];
 
   bool isAuthenticated = false;
   bool busy = false;
@@ -76,6 +76,8 @@ class AppState extends ChangeNotifier {
   bool _syncing = false;
   AccountAccess accountAccess = const AccountAccess.active();
   DataExportRequest? latestExportRequest;
+  String? exerciseCatalogError;
+  bool exerciseCatalogLoading = false;
 
   String? takePendingNotificationPayload() {
     final value = _pendingNotificationPayload;
@@ -99,7 +101,7 @@ class AppState extends ChangeNotifier {
     weeklyWorkoutGoal: 3,
   );
 
-  List<Exercise> exercises = List.of(SeedData.exercises);
+  late List<Exercise> exercises;
   final Set<String> favoriteExerciseIds = {};
   final List<WorkoutPlan> plans = [];
   final List<WorkoutSchedule> schedules = [];
@@ -158,7 +160,8 @@ class AppState extends ChangeNotifier {
             .where(
               (version) =>
                   version.status == ProgramLifecycleStatus.published &&
-                  version.guidedConfirmationAvailable,
+                  version.guidedConfirmationAvailable &&
+                  version.cadence.supports(trainingPreferences.sessionsPerWeek),
             )
             .toList()
           ..sort((left, right) {
@@ -385,7 +388,6 @@ class AppState extends ChangeNotifier {
   int get workoutStreak => targetWorkoutStreak;
 
   Future<void> initialize() async {
-    await _loadBundledExercises();
     final storedSession = await _store.loadAuthenticated();
     String? sessionUid;
     if (firebaseAvailable) {
@@ -503,6 +505,8 @@ class AppState extends ChangeNotifier {
     _remoteRevision = 0;
     accountAccess = const AccountAccess.active();
     latestExportRequest = null;
+    exerciseCatalogError = null;
+    exerciseCatalogLoading = false;
     themeMode = ThemeMode.system;
     notificationsEnabled = false;
     notificationPermissionRequested = false;
@@ -525,7 +529,7 @@ class AppState extends ChangeNotifier {
       weeklyWorkoutGoal: 3,
       onboardingCompleted: onboardingCompleted,
     );
-    exercises = _baselineExercises();
+    exercises = List.of(_testExerciseCatalog);
     favoriteExerciseIds.clear();
     plans.clear();
     schedules.clear();
@@ -685,28 +689,56 @@ class AppState extends ChangeNotifier {
     await _firebase.resetPassword(email.trim());
   }
 
-  Future<void> _refreshTemplateExercises() async {
-    if (!firebaseAvailable || uid == 'demo-user') return;
+  Future<bool> _refreshTemplateExercises() async {
+    if (!firebaseAvailable || uid == 'demo-user') {
+      exercises = List.of(_testExerciseCatalog);
+      exerciseCatalogError = _testExerciseCatalog.isEmpty
+          ? 'Danh mục bài tập chỉ được tải từ Firebase sau khi đăng nhập.'
+          : null;
+      return _testExerciseCatalog.isNotEmpty;
+    }
     try {
       final templates = await _firebase.loadTemplateExercises();
-      final personal = exercises
-          .where((exercise) => exercise.ownerId == uid)
-          .toList();
-      // Firestore is an override catalog, not the only source of truth. Keep
-      // the reviewed local baseline so a new/empty project can still enroll.
-      final mergedTemplates = <String, Exercise>{
-        for (final exercise in _baselineExercises()) exercise.id: exercise,
-        for (final exercise in templates)
-          if (exercise.isCatalogApproved) exercise.id: exercise,
-      };
-      exercises = [...mergedTemplates.values, ...personal];
+      final approved = templates
+          .where((exercise) => exercise.isCatalogApproved)
+          .toList(growable: false);
+      if (approved.isEmpty) {
+        throw StateError('firebase-exercise-catalog-empty');
+      }
+      exercises = approved;
+      exerciseCatalogError = null;
+      return true;
     } on Object {
-      // Keep the last local template cache while offline.
+      exercises = const [];
+      exerciseCatalogError =
+          'Không thể tải danh mục bài tập từ Firebase. Hãy kiểm tra kết nối và thử lại.';
+      return false;
+    }
+  }
+
+  Future<void> refreshExerciseCatalog() async {
+    if (exerciseCatalogLoading) return;
+    exerciseCatalogLoading = true;
+    notifyListeners();
+    try {
+      final loaded = await _refreshTemplateExercises();
+      await _refreshRemoteDomain();
+      if (loaded && profile.onboardingCompleted && enrollment == null) {
+        await ensureProgramEnrollment(persist: false);
+      }
+    } finally {
+      exerciseCatalogLoading = false;
+      notifyListeners();
     }
   }
 
   Future<void> _refreshRemoteDomain() async {
     if (!firebaseAvailable || uid == 'demo-user') return;
+    if (templateExercises.isEmpty) {
+      programs = const [];
+      programVersions = const [];
+      return;
+    }
     try {
       final remotePrograms = await _firebase.loadPrograms();
       final remoteVersions = await _firebase.loadProgramVersions();
@@ -1002,6 +1034,16 @@ class AppState extends ChangeNotifier {
     bool persist = true,
     bool forceNew = false,
   }) async {
+    if (templateExercises.isEmpty) {
+      const result = ProgramMatchResult(
+        status: ProgramMatchStatus.noSupportedProgram,
+        candidate: null,
+        rankedCandidates: [],
+        reasons: ['exercise_catalog_unavailable'],
+      );
+      lastProgramMatchStatus = result.status;
+      return result;
+    }
     if (!firebaseAvailable && programs.isEmpty) {
       programs = List.of(ProgramSeedData.programs);
     }
@@ -1077,7 +1119,10 @@ class AppState extends ChangeNotifier {
     final result = const ProgramMatcher().match(
       preferences: trainingPreferences,
       catalog: programVersions,
-      fallbackProgramVersionId: ProgramSeedData.defaultFallbackProgramVersionId,
+      fallbackProgramVersionId:
+          ProgramSeedData.defaultFallbackProgramVersionIdFor(
+            trainingPreferences.sessionsPerWeek,
+          ),
     );
     lastProgramMatchStatus = result.status;
     final version = result.version;
@@ -1233,7 +1278,10 @@ class AppState extends ChangeNotifier {
     final match = const ProgramMatcher().match(
       preferences: preferences,
       catalog: programVersions,
-      fallbackProgramVersionId: ProgramSeedData.defaultFallbackProgramVersionId,
+      fallbackProgramVersionId:
+          ProgramSeedData.defaultFallbackProgramVersionIdFor(
+            preferences.sessionsPerWeek,
+          ),
     );
     final version = match.version;
     if (version != null) {
@@ -2658,9 +2706,8 @@ class AppState extends ChangeNotifier {
       'unit': unit,
     },
     'target': {
+      'catalogSchemaVersion': 3,
       'trainingPreferences': trainingPreferences.toJson(),
-      'programs': programs.map((item) => item.toJson()).toList(),
-      'programVersions': programVersions.map((item) => item.toJson()).toList(),
       'enrollment': enrollment?.toJson(),
       'occurrences': occurrences.map((item) => item.toJson()).toList(),
       'workoutCompletions': workoutCompletions
@@ -2674,12 +2721,8 @@ class AppState extends ChangeNotifier {
     _remoteRevision =
         ((json['_sync'] as Map?)?['remoteRevision'] as num?)?.toInt() ?? 0;
     profile = UserProfile.fromJson(json['profile'] as Map<String, dynamic>);
-    if (json['exercises'] case final List<dynamic> savedExercises) {
-      exercises = savedExercises
-          .map((item) => Exercise.fromJson(item as Map<String, dynamic>))
-          .toList();
-    }
-    _mergeBundledExercises();
+    // Exercise content is never restored from a user snapshot. The runtime
+    // catalog is replaced only by the reviewed top-level Firestore collection.
     favoriteExerciseIds
       ..clear()
       ..addAll(List<String>.from(json['favoriteExerciseIds'] as List? ?? []));
@@ -2814,25 +2857,11 @@ class AppState extends ChangeNotifier {
                 targetState['trainingPreferences'] as Map,
               ),
             );
-      final storedPrograms = targetState['programs'] as List?;
-      programs = storedPrograms == null
-          ? List.of(ProgramSeedData.programs)
-          : storedPrograms
-                .map(
-                  (item) =>
-                      Program.fromJson(Map<String, dynamic>.from(item as Map)),
-                )
-                .toList();
-      final storedVersions = targetState['programVersions'] as List?;
-      programVersions = storedVersions == null
-          ? List.of(ProgramSeedData.versions)
-          : storedVersions
-                .map(
-                  (item) => ProgramVersion.fromJson(
-                    Map<String, dynamic>.from(item as Map),
-                  ),
-                )
-                .toList();
+      // Catalog content is bundled or loaded from the reviewed top-level
+      // Firebase collections. Never restore an obsolete catalog copy from a
+      // user's mutable snapshot.
+      programs = List.of(ProgramSeedData.programs);
+      programVersions = List.of(ProgramSeedData.versions);
       enrollment = targetState['enrollment'] == null
           ? null
           : ProgramEnrollment.fromJson(
@@ -2871,37 +2900,6 @@ class AppState extends ChangeNotifier {
       );
       _recalculateWorkoutStreak();
     }
-  }
-
-  Future<void> _loadBundledExercises() async {
-    try {
-      _bundledExercises = await _bundledExerciseCatalog.load();
-    } on Object {
-      // Keep the authored seed catalog available if an asset is unavailable
-      // during a test build or while an older binary is being upgraded.
-      _bundledExercises = const [];
-    }
-    _mergeBundledExercises();
-  }
-
-  List<Exercise> _baselineExercises() {
-    final merged = <String, Exercise>{
-      for (final exercise in SeedData.exercises) exercise.id: exercise,
-      for (final exercise in _bundledExercises) exercise.id: exercise,
-    };
-    return merged.values.toList(growable: false);
-  }
-
-  void _mergeBundledExercises() {
-    if (_bundledExercises.isEmpty) return;
-    final merged = <String, Exercise>{
-      for (final exercise in _baselineExercises()) exercise.id: exercise,
-      for (final exercise in exercises)
-        if (exercise.isPersonal ||
-            !_bundledExercises.any((bundled) => bundled.id == exercise.id))
-          exercise.id: exercise,
-    };
-    exercises = merged.values.toList(growable: false);
   }
 
   String _dateKey(DateTime date) =>
