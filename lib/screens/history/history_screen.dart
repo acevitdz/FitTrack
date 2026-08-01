@@ -8,6 +8,7 @@ import '../../state/app_state.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/common_widgets.dart';
 import '../health/weight_screen.dart';
+import 'streak_detail_screen.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key, required this.state});
@@ -78,9 +79,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                             Duration.zero,
                             (total, item) =>
                                 total +
-                                Duration(
-                                  seconds: item.actualDurationSeconds,
-                                ),
+                                Duration(seconds: item.actualDurationSeconds),
                           ),
                         ),
                         icon: Icons.timer_outlined,
@@ -240,17 +239,17 @@ class _HistoryScreenState extends State<HistoryScreen> {
     DateTime? start,
   ) {
     final now = DateTime.now();
-    return state.occurrences.where((occurrence) {
-      final date = occurrence.scheduledDate;
-      if (date.isAfter(now)) return false;
-      if (start != null && date.isBefore(start)) return false;
-      return occurrence.status != WorkoutOccurrenceStatus.cancelled;
-    }).toList(growable: false);
+    return state.occurrences
+        .where((occurrence) {
+          final date = occurrence.scheduledDate;
+          if (date.isAfter(now)) return false;
+          if (start != null && date.isBefore(start)) return false;
+          return occurrence.status != WorkoutOccurrenceStatus.cancelled;
+        })
+        .toList(growable: false);
   }
 
-  List<_RankedMetric> _topExercises(
-    List<WorkoutCompletion> completions,
-  ) {
+  List<_RankedMetric> _topExercises(List<WorkoutCompletion> completions) {
     final names = <String, String>{};
     final counts = <String, int>{};
     for (final completion in completions) {
@@ -259,7 +258,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
       }
       for (final event in completion.setEvents) {
         if (event.status != SetEventStatus.completed) continue;
-        counts.update(event.exerciseId, (value) => value + 1, ifAbsent: () => 1);
+        counts.update(
+          event.exerciseId,
+          (value) => value + 1,
+          ifAbsent: () => 1,
+        );
       }
     }
     return counts.entries
@@ -273,9 +276,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       ..sort((left, right) => right.value.compareTo(left.value));
   }
 
-  List<_RankedMetric> _muscleBalance(
-    List<WorkoutCompletion> completions,
-  ) {
+  List<_RankedMetric> _muscleBalance(List<WorkoutCompletion> completions) {
     final counts = <String, int>{};
     for (final completion in completions) {
       final groups = {
@@ -291,9 +292,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       }
     }
     return counts.entries
-        .map(
-          (entry) => _RankedMetric(label: entry.key, value: entry.value),
-        )
+        .map((entry) => _RankedMetric(label: entry.key, value: entry.value))
         .toList()
       ..sort((left, right) => right.value.compareTo(left.value));
   }
@@ -375,10 +374,20 @@ class _StreakSummaryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Hai loại streak', style: Theme.of(context).textTheme.titleLarge),
+          Text(
+            'Hai loại streak',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
           const SizedBox(height: 14),
           _StreakRow(
             icon: Icons.monitor_weight_outlined,
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) =>
+                    StreakDetailScreen(state: state, kind: StreakKind.weight),
+              ),
+            ),
             label: 'Nhập cân nặng',
             current: state.currentStreak,
             longest: state.longestStreak,
@@ -389,6 +398,13 @@ class _StreakSummaryCard extends StatelessWidget {
           _StreakRow(
             icon: Icons.fitness_center,
             label: 'Tập luyện',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) =>
+                    StreakDetailScreen(state: state, kind: StreakKind.workout),
+              ),
+            ),
             current: state.targetWorkoutStreak,
             longest: state.longestWorkoutStreak,
             totalDays: state.workoutDays.length,
@@ -403,6 +419,7 @@ class _StreakSummaryCard extends StatelessWidget {
 class _StreakRow extends StatelessWidget {
   const _StreakRow({
     required this.icon,
+    required this.onTap,
     required this.label,
     required this.current,
     required this.longest,
@@ -417,35 +434,36 @@ class _StreakRow extends StatelessWidget {
   final int totalDays;
   final Color color;
 
+  final VoidCallback onTap;
   @override
-  Widget build(BuildContext context) => Row(
-    children: [
-      CircleAvatar(
-        backgroundColor: color.withValues(alpha: .12),
-        foregroundColor: color,
-        child: Icon(icon),
-      ),
-      const SizedBox(width: 12),
-      Expanded(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: Theme.of(context).textTheme.titleMedium),
-            Text(
-              'Hiện tại $current ngày • dài nhất $longest ngày • tổng $totalDays ngày',
-            ),
-          ],
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: onTap,
+    child: Row(
+      children: [
+        CircleAvatar(
+          backgroundColor: color.withValues(alpha: .12),
+          foregroundColor: color,
+          child: Icon(icon),
         ),
-      ),
-    ],
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: Theme.of(context).textTheme.titleMedium),
+              Text(
+                'Hiện tại $current ngày • dài nhất $longest ngày • tổng $totalDays ngày',
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
   );
 }
 
 class _ActivityHeatmap extends StatelessWidget {
-  const _ActivityHeatmap({
-    required this.weightDays,
-    required this.workoutDays,
-  });
+  const _ActivityHeatmap({required this.weightDays, required this.workoutDays});
 
   final Set<String> weightDays;
   final Set<String> workoutDays;
@@ -532,7 +550,9 @@ class _HeatmapRow extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: activeDays.contains(_dayKey(day))
                           ? color
-                          : Theme.of(context).colorScheme.surfaceContainerHighest,
+                          : Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ),

@@ -93,9 +93,9 @@ class _ProgressScreenState extends State<ProgressScreen> {
               children: [
                 Text(
                   'Báo cáo hiệu suất',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: AppColors.navy,
-                    fontWeight: FontWeight.w800,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: AppColors.text,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -132,7 +132,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: _ProgressMetricCard(
                         label: 'Thời gian',
@@ -147,7 +147,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 Row(
                   children: [
                     Expanded(
@@ -162,7 +162,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: _ProgressMetricCard(
                         label: 'Chuyên cần',
@@ -179,21 +179,21 @@ class _ProgressScreenState extends State<ProgressScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 18),
+                const SizedBox(height: 32),
                 _ActivityTrendCard(
                   points: activity,
                   periodLabel: _periodDays == 0
                       ? '30 ngày gần nhất'
                       : '$_periodDays ngày',
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 24),
                 _MuscleDistributionCard(values: muscles),
-                const SizedBox(height: 14),
+                const SizedBox(height: 24),
                 _PersonalRecordsCard(
                   completions: allCompletions,
                   longestWorkoutStreak: state.longestWorkoutStreak,
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 32),
                 SectionHeader(
                   title: 'Lịch sử gần đây',
                   subtitle: 'Kết quả từ Active Workout',
@@ -378,42 +378,42 @@ class _ProgressMetricCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Card(
     child: SizedBox(
-      height: 132,
+      height: 128,
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(17),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Row(
               children: [
-                Container(
-                  width: 34,
-                  height: 34,
-                  decoration: BoxDecoration(
-                    color: AppColors.paleBlue.withValues(alpha: .6),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(icon, size: 19, color: AppColors.primary),
-                ),
+                Icon(icon, size: 20, color: AppColors.primary),
                 const Spacer(),
                 if (trend != null) _TrendBadge(trend: trend!),
               ],
             ),
-            const Spacer(),
-            Text(
-              value,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: AppColors.navy,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodySmall,
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppColors.textMuted,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: AppColors.text,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -462,7 +462,7 @@ class _ActivityTrendCard extends StatelessWidget {
     final formatter = DateFormat('dd/MM');
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -471,7 +471,7 @@ class _ActivityTrendCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     'Xu hướng số hiệp',
-                    style: Theme.of(context).textTheme.titleLarge,
+                    style: Theme.of(context).textTheme.titleSmall,
                   ),
                 ),
                 Text(
@@ -563,13 +563,13 @@ class _MuscleDistributionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Card(
     child: Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'Nhóm cơ nhiều nhất',
-            style: Theme.of(context).textTheme.titleLarge,
+            style: Theme.of(context).textTheme.titleSmall,
           ),
           const SizedBox(height: 4),
           Text(
@@ -621,7 +621,7 @@ class _PersonalRecordsCard extends StatelessWidget {
     );
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -633,8 +633,8 @@ class _PersonalRecordsCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Kỷ lục cá nhân',
-                  style: Theme.of(context).textTheme.titleLarge,
+                  'Kỷ lục mới (PRs)',
+                  style: Theme.of(context).textTheme.titleSmall,
                 ),
               ],
             ),

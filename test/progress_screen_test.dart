@@ -27,12 +27,9 @@ void main() {
     expect(find.text('Số buổi'), findsOneWidget);
     expect(find.text('Xu hướng số hiệp'), findsOneWidget);
 
-    await tester.drag(
-      find.byType(CustomScrollView),
-      const Offset(0, -700),
-    );
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -700));
     await tester.pumpAndSettle();
 
-    expect(find.text('Kỷ lục cá nhân'), findsOneWidget);
+    expect(find.text('Kỷ lục mới (PRs)'), findsOneWidget);
   });
 }

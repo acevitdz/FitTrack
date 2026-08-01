@@ -9,6 +9,8 @@ import '../../theme/app_colors.dart';
 import '../../widgets/common_widgets.dart';
 import '../../widgets/design_system.dart';
 
+import 'figma_body_metric_entry_screen.dart';
+
 class WeightScreen extends StatefulWidget {
   const WeightScreen({super.key, required this.state});
 
@@ -26,7 +28,7 @@ class _WeightScreenState extends State<WeightScreen> {
       context,
       MaterialPageRoute(
         fullscreenDialog: true,
-        builder: (_) => BodyMetricEntryScreen(state: widget.state),
+        builder: (_) => FigmaBodyMetricEntryScreen(state: widget.state),
       ),
     );
     if (mounted) setState(() {});
