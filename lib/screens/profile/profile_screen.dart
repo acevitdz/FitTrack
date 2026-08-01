@@ -10,6 +10,7 @@ import '../../widgets/design_system.dart';
 import '../exercises/exercise_library_screen.dart';
 import '../health/weight_screen.dart';
 import '../history/legacy_data_screen.dart';
+import '../history/progress_screen.dart';
 import 'achievements_screen.dart';
 import 'edit_profile_screen.dart';
 import 'reminders_screen.dart';
@@ -30,6 +31,217 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final state = widget.state;
+    final profile = state.profile;
+    final initial = profile.name.trim().isEmpty
+        ? 'F'
+        : profile.name.trim().characters.first.toUpperCase();
+
+    return Material(
+      color: AppColors.background,
+      child: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+          children: [
+            SizedBox(
+              height: 48,
+              child: Row(
+                children: [
+                  const SizedBox(width: 48),
+                  Expanded(
+                    child: Text(
+                      'FitTrack',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  PopupMenuButton<_ProfileMenuAction>(
+                    tooltip: 'Thông báo và cài đặt',
+                    icon: const Icon(Icons.notifications_none_outlined),
+                    onSelected: _handleProfileMenu,
+                    itemBuilder: (context) => const [
+                      PopupMenuItem(
+                        value: _ProfileMenuAction.notifications,
+                        child: ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: Icon(Icons.notifications_none_outlined),
+                          title: Text('Thông báo'),
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: _ProfileMenuAction.settings,
+                        child: ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: Icon(Icons.settings_outlined),
+                          title: Text('Cài đặt và tiện ích'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            Center(
+              child: Column(
+                children: [
+                  Tooltip(
+                    message: 'Đổi ảnh đại diện',
+                    child: InkWell(
+                      customBorder: const CircleBorder(),
+                      onTap: _updateAvatar,
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          CircleAvatar(
+                            radius: 40,
+                            backgroundColor: AppColors.paleBlue,
+                            backgroundImage: fitTrackImageProvider(
+                              profile.photoUrl,
+                            ),
+                            child: profile.photoUrl == null
+                                ? Text(
+                                    initial,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .headlineMedium
+                                        ?.copyWith(
+                                          color: AppColors.primary,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                  )
+                                : null,
+                          ),
+                          const Positioned(
+                            right: -2,
+                            bottom: -2,
+                            child: CircleAvatar(
+                              radius: 13,
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: Colors.white,
+                              child: Icon(Icons.edit_outlined, size: 14),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 13),
+                  Text(
+                    profile.name,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: AppColors.text,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    profile.email,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: const Color(0xFF9297A3),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.local_fire_department_outlined,
+                          color: Colors.white,
+                          size: 15,
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          TrainingGoalKey.labels[state
+                                  .trainingPreferences
+                                  .goalKey] ??
+                              'Mục tiêu luyện tập',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 28),
+            _FigmaProfileTile(
+              icon: Icons.person_outline,
+              title: 'Chỉnh sửa hồ sơ',
+              onTap: () => _open(EditProfileScreen(state: state)),
+            ),
+            const SizedBox(height: 10),
+            _FigmaProfileTile(
+              icon: Icons.monitor_weight_outlined,
+              title: 'Chỉ số cơ thể',
+              onTap: () => _open(WeightScreen(state: state)),
+            ),
+            const SizedBox(height: 10),
+            _FigmaProfileTile(
+              icon: Icons.query_stats_outlined,
+              title: 'Báo cáo tổng kết',
+              onTap: () => _open(ProgressScreen(state: state)),
+            ),
+            const SizedBox(height: 10),
+            _FigmaProfileTile(
+              icon: Icons.alarm_outlined,
+              title: 'Nhắc nhở luyện tập',
+              onTap: () => _open(RemindersScreen(state: state)),
+            ),
+            const SizedBox(height: 16),
+            _FigmaProfileTile(
+              icon: Icons.logout,
+              title: 'Đăng xuất',
+              destructive: true,
+              onTap: _signOut,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleProfileMenu(_ProfileMenuAction action) async {
+    switch (action) {
+      case _ProfileMenuAction.notifications:
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Bạn không có thông báo mới.')),
+        );
+        break;
+      case _ProfileMenuAction.settings:
+        await Navigator.push<void>(
+          context,
+          MaterialPageRoute(
+            builder: (_) => Scaffold(
+              appBar: AppBar(title: const Text('Cài đặt và tiện ích')),
+              body: Builder(builder: _buildLegacyProfile),
+            ),
+          ),
+        );
+        if (mounted) setState(() {});
+        break;
+    }
+  }
+
+  Widget _buildLegacyProfile(BuildContext context) {
     final state = widget.state;
     final profile = state.profile;
     final measurementUnit = MeasurementUnitSystem.fromStored(state.unit);
@@ -406,6 +618,72 @@ class _ProfileScreenState extends State<ProfileScreen> {
       confirmLabel: 'Gửi yêu cầu',
     );
     if (accepted) await widget.state.deleteAccountData();
+  }
+}
+
+enum _ProfileMenuAction { notifications, settings }
+
+class _FigmaProfileTile extends StatelessWidget {
+  const _FigmaProfileTile({
+    required this.icon,
+    required this.title,
+    required this.onTap,
+    this.destructive = false,
+  });
+
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+  final bool destructive;
+
+  @override
+  Widget build(BuildContext context) {
+    final foreground = destructive ? AppColors.error : AppColors.text;
+    final iconColor = destructive ? AppColors.error : AppColors.primary;
+    final iconBackground = destructive
+        ? AppColors.error.withValues(alpha: .1)
+        : AppColors.primary.withValues(alpha: .08);
+
+    return Material(
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: const BorderSide(color: AppColors.outline),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+          child: Row(
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: iconBackground,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                alignment: Alignment.center,
+                child: Icon(icon, size: 19, color: iconColor),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    color: foreground,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              Icon(Icons.chevron_right, size: 20, color: foreground),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
