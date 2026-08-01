@@ -203,15 +203,18 @@ class _ProgressScreenState extends State<ProgressScreen> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                if (allCompletions.isEmpty)
-                  const EmptyState(
+                if (completions.isEmpty)
+                  EmptyState(
                     icon: Icons.query_stats_outlined,
-                    title: 'Chưa có dữ liệu tiến độ',
-                    message:
-                        'Hoàn thành một buổi tập để FitTrack tạo báo cáo tự động.',
+                    title: allCompletions.isEmpty
+                        ? 'Chưa có dữ liệu tiến độ'
+                        : 'Không có dữ liệu trong khoảng này',
+                    message: allCompletions.isEmpty
+                        ? 'Hoàn thành một buổi tập để FitTrack tạo báo cáo tự động.'
+                        : 'Hãy chọn khoảng thời gian khác để xem kết quả đã ghi nhận.',
                   )
                 else
-                  for (final completion in allCompletions.take(3))
+                  for (final completion in completions.take(3))
                     _RecentCompletionTile(
                       completion: completion,
                       onTap: () => _openHistory(context),
@@ -244,13 +247,16 @@ class _ProgressScreenState extends State<ProgressScreen> {
     List<WorkoutCompletion> values, {
     required DateTime? start,
     required DateTime endExclusive,
-  }) => values
-      .where((item) {
-        final completedDate = _dateOnly(item.completedAt);
-        if (start != null && completedDate.isBefore(start)) return false;
-        return completedDate.isBefore(endExclusive);
-      })
-      .toList(growable: false);
+  }) {
+    final unique = <String, WorkoutCompletion>{};
+    for (final item in values) {
+      final completedDate = _dateOnly(item.completedAt);
+      if (start != null && completedDate.isBefore(start)) continue;
+      if (!completedDate.isBefore(endExclusive)) continue;
+      unique.putIfAbsent(item.idempotencyKey, () => item);
+    }
+    return unique.values.toList(growable: false);
+  }
 
   double? _attendance(
     AppState state, {
