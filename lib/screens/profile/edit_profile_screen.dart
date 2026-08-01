@@ -62,8 +62,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   double _parseNumber(String value) =>
       double.tryParse(value.trim().replaceAll(',', '.')) ?? 0;
 
-  String? _requiredNumber(String? value) {
-    return _parseNumber(value ?? '') > 0 ? null : 'Giá trị không hợp lệ';
+  String? _validateHeight(String? value) {
+    final heightCm = _unit.heightToCentimeters(_parseNumber(value ?? ''));
+    return heightCm < 100 || heightCm > 250
+        ? 'Chiều cao phải tương đương 100–250 cm'
+        : null;
+  }
+
+  String? _validateWeight(String? value) {
+    final weightKg = _unit.weightToKilograms(_parseNumber(value ?? ''));
+    return weightKg <= 0 || weightKg > 500
+        ? 'Cân nặng phải trên 0 và không quá 500 kg'
+        : null;
   }
 
   Future<void> _save() async {
@@ -302,7 +312,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           decimal: true,
                         ),
                         textInputAction: TextInputAction.next,
-                        validator: _requiredNumber,
+                        validator: _validateHeight,
                       ),
                     ),
                   ),
@@ -316,7 +326,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           decimal: true,
                         ),
                         textInputAction: TextInputAction.done,
-                        validator: _requiredNumber,
+                        validator: _validateWeight,
                       ),
                     ),
                   ),

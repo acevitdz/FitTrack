@@ -739,7 +739,19 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> updateProfile(UserProfile value) async {
-    profile = value;
+    if (value.name.trim().isEmpty) {
+      throw ArgumentError('Họ tên không được để trống.');
+    }
+    if (value.heightCm < 100 || value.heightCm > 250) {
+      throw ArgumentError('Chiều cao phải từ 100 đến 250 cm.');
+    }
+    if (value.currentWeightKg <= 0 || value.currentWeightKg > 500) {
+      throw ArgumentError('Cân nặng phải lớn hơn 0 và không quá 500 kg.');
+    }
+    if (value.weeklyWorkoutGoal < 1 || value.weeklyWorkoutGoal > 7) {
+      throw ArgumentError('Mục tiêu tuần phải từ 1 đến 7 buổi.');
+    }
+    profile = value.copyWith(name: value.name.trim());
     await _commit();
   }
 
