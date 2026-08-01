@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 
-import '../../models/measurement_units.dart';
 import '../../models/program.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_colors.dart';
@@ -20,10 +20,10 @@ class EditProfileScreen extends StatefulWidget {
 class _EditProfileScreenState extends State<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
-  late final TextEditingController _heightController;
-  late final TextEditingController _weightController;
-  late final MeasurementUnitSystem _unit;
+  late final TextEditingController _birthDateController;
+  late final TextEditingController _targetWeightController;
 
+  DateTime? _dateOfBirth;
   late ProgramAudiencePreference _audience;
   late String _goal;
   late int _sessionsPerWeek;
@@ -35,17 +35,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     super.initState();
     final profile = widget.state.profile;
     final preferences = widget.state.trainingPreferences;
-    _unit = MeasurementUnitSystem.fromStored(widget.state.unit);
     _nameController = TextEditingController(text: profile.name);
-    _heightController = TextEditingController(
-      text: _unit
-          .heightFromCentimeters(profile.heightCm)
-          .toStringAsFixed(_unit == MeasurementUnitSystem.metric ? 0 : 1),
+    _dateOfBirth = profile.dateOfBirth;
+    _birthDateController = TextEditingController(
+      text: _formatBirthDate(profile.dateOfBirth),
     );
-    _weightController = TextEditingController(
-      text: _unit
-          .weightFromKilograms(profile.currentWeightKg)
-          .toStringAsFixed(1),
+    _targetWeightController = TextEditingController(
+      text: (profile.targetWeightKg ?? profile.currentWeightKg).toStringAsFixed(
+        1,
+      ),
     );
     _audience = preferences.programAudiencePreference;
     _goal = preferences.goalKey;
@@ -55,40 +53,32 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   void dispose() {
     _nameController.dispose();
-    _heightController.dispose();
-    _weightController.dispose();
+    _birthDateController.dispose();
+    _targetWeightController.dispose();
     super.dispose();
   }
+
+  String _formatBirthDate(DateTime? value) =>
+      value == null ? '' : DateFormat('MM/dd/yyyy').format(value);
 
   double _parseNumber(String value) =>
       double.tryParse(value.trim().replaceAll(',', '.')) ?? 0;
 
-  String? _validateHeight(String? value) {
-    final heightCm = _unit.heightToCentimeters(_parseNumber(value ?? ''));
-    return heightCm < 100 || heightCm > 250
-        ? 'Chiều cao phải tương đương 100–250 cm'
-        : null;
-  }
-
-  String? _validateWeight(String? value) {
-    final weightKg = _unit.weightToKilograms(_parseNumber(value ?? ''));
+  String? _validateTargetWeight(String? value) {
+    final weightKg = _parseNumber(value ?? '');
     return weightKg <= 0 || weightKg > 500
-        ? 'Cân nặng phải trên 0 và không quá 500 kg'
+        ? 'Cân nặng mục tiêu phải trên 0 và không quá 500 kg'
         : null;
   }
 
   bool get _hasUnsavedChanges {
     final profile = widget.state.profile;
     final preferences = widget.state.trainingPreferences;
-    final heightCm = _unit.heightToCentimeters(
-      _parseNumber(_heightController.text),
-    );
-    final weightKg = _unit.weightToKilograms(
-      _parseNumber(_weightController.text),
-    );
+    final initialTarget = profile.targetWeightKg ?? profile.currentWeightKg;
+    final targetWeight = _parseNumber(_targetWeightController.text);
     return _nameController.text.trim() != profile.name.trim() ||
-        (heightCm - profile.heightCm).abs() > .01 ||
-        (weightKg - profile.currentWeightKg).abs() > .01 ||
+        _dateOfBirth != profile.dateOfBirth ||
+        (targetWeight - initialTarget).abs() > .01 ||
         _audience != preferences.programAudiencePreference ||
         _goal != preferences.goalKey ||
         _sessionsPerWeek != preferences.sessionsPerWeek;
@@ -123,22 +113,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     FocusScope.of(context).unfocus();
     if (_saving || !_formKey.currentState!.validate()) return;
 
-    final heightCm = _unit.heightToCentimeters(
-      _parseNumber(_heightController.text),
-    );
-    final weightKg = _unit.weightToKilograms(
-      _parseNumber(_weightController.text),
-    );
-
     setState(() => _saving = true);
     try {
       final profile = widget.state.profile.copyWith(
         name: _nameController.text.trim(),
-        heightCm: heightCm,
-        currentWeightKg: weightKg,
         goal: TrainingGoalKey.labelFor(_goal),
         weeklyWorkoutGoal: _sessionsPerWeek,
         gender: _audience.name,
+        dateOfBirth: _dateOfBirth,
+        targetWeightKg: _parseNumber(_targetWeightController.text),
       );
       final currentPreferences = widget.state.trainingPreferences;
 
@@ -153,10 +136,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           sessionsPerWeek: _sessionsPerWeek,
         ),
         rematch: false,
-      );
-      await widget.state.updateBodyMetrics(
-        heightCm: heightCm,
-        weightKg: weightKg,
       );
 
       if (!mounted) return;
@@ -176,6 +155,23 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     } finally {
       if (mounted) setState(() => _saving = false);
     }
+  }
+
+  Future<void> _selectBirthDate() async {
+    if (_saving) return;
+    final today = DateTime.now();
+    final selected = await showDatePicker(
+      context: context,
+      initialDate: _dateOfBirth ?? DateTime(today.year - 25),
+      firstDate: DateTime(today.year - 120, today.month, today.day),
+      lastDate: today,
+      helpText: 'Chọn ngày sinh',
+    );
+    if (selected == null || !mounted) return;
+    setState(() {
+      _dateOfBirth = selected;
+      _birthDateController.text = _formatBirthDate(selected);
+    });
   }
 
   Future<void> _updateAvatar() async {
@@ -209,9 +205,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         : profile.name.trim().characters.first.toUpperCase();
 
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('FitTrack'),
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
         centerTitle: true,
+        title: const Text(
+          'FitTrack',
+          style: TextStyle(
+            color: AppColors.primary,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
         actions: [
           IconButton(
             tooltip: 'Thông báo',
@@ -222,13 +227,25 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           ),
         ],
       ),
-      body: FitTrackPage(
-        maxWidth: 390,
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
-        child: Form(
-          key: _formKey,
-          canPop: _saving || _discarding || !_hasUnsavedChanges,
-          onPopInvokedWithResult: (didPop, result) => _handlePopInvoked(didPop),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Container(
+          color: Colors.white,
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+          child: AppPrimaryButton(
+            label: 'Lưu thay đổi',
+            loading: _saving,
+            onPressed: _save,
+          ),
+        ),
+      ),
+      body: Form(
+        key: _formKey,
+        canPop: _saving || _discarding || !_hasUnsavedChanges,
+        onPopInvokedWithResult: (didPop, result) => _handlePopInvoked(didPop),
+        child: SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 28),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -239,59 +256,63 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   fontWeight: FontWeight.w800,
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 3),
               Text(
                 'Cập nhật thông tin để tối ưu hóa lộ trình của bạn.',
                 style: Theme.of(
                   context,
                 ).textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
               Align(
                 alignment: Alignment.center,
-                child: InkWell(
-                  customBorder: const CircleBorder(),
-                  onTap: _saving ? null : _updateAvatar,
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      CircleAvatar(
-                        radius: 42,
-                        backgroundColor: AppColors.paleBlue,
-                        backgroundImage: fitTrackImageProvider(
-                          profile.photoUrl,
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: _saving ? null : _updateAvatar,
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        CircleAvatar(
+                          radius: 40,
+                          backgroundColor: AppColors.paleBlue,
+                          backgroundImage: fitTrackImageProvider(
+                            profile.photoUrl,
+                          ),
+                          child: profile.photoUrl == null
+                              ? Text(
+                                  initial,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineMedium
+                                      ?.copyWith(
+                                        color: AppColors.primary,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                )
+                              : null,
                         ),
-                        child: profile.photoUrl == null
-                            ? Text(
-                                initial,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .headlineMedium
-                                    ?.copyWith(
-                                      color: AppColors.primary,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                              )
-                            : null,
-                      ),
-                      const Positioned(
-                        right: -2,
-                        bottom: -2,
-                        child: CircleAvatar(
-                          radius: 14,
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
-                          child: Icon(Icons.edit_outlined, size: 15),
+                        const Positioned(
+                          right: -2,
+                          bottom: -2,
+                          child: CircleAvatar(
+                            radius: 13,
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            child: Icon(Icons.edit_outlined, size: 14),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 22),
               AppFormLabel(
                 label: 'Họ và tên',
                 child: TextFormField(
+                  key: const Key('edit_profile_name'),
                   controller: _nameController,
                   textInputAction: TextInputAction.next,
                   onChanged: (_) => setState(() {}),
@@ -301,7 +322,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       : null,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
+              AppFormLabel(
+                label: 'Ngày sinh',
+                child: TextFormField(
+                  key: const Key('edit_profile_birth_date'),
+                  controller: _birthDateController,
+                  readOnly: true,
+                  onTap: _selectBirthDate,
+                  decoration: const InputDecoration(
+                    hintText: 'Chọn ngày sinh',
+                    suffixIcon: Icon(Icons.calendar_today_outlined, size: 19),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
               Text('Giới tính', style: Theme.of(context).textTheme.bodySmall),
               const SizedBox(height: 8),
               SegmentedButton<ProgramAudiencePreference>(
@@ -325,10 +360,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ? null
                     : (value) => setState(() => _audience = value.first),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
               AppFormLabel(
                 label: 'Mục tiêu chính',
                 child: DropdownButtonFormField<String>(
+                  key: const Key('edit_profile_goal'),
                   initialValue: _goal,
                   decoration: const InputDecoration(),
                   items: [
@@ -345,91 +381,77 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         },
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
                     child: AppFormLabel(
-                      label: 'Chiều cao (${_unit.heightSymbol})',
+                      label: 'Cân nặng mục tiêu',
                       child: TextFormField(
-                        controller: _heightController,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        textInputAction: TextInputAction.next,
-                        onChanged: (_) => setState(() {}),
-                        validator: _validateHeight,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: AppFormLabel(
-                      label: 'Cân nặng (${_unit.weightSymbol})',
-                      child: TextFormField(
-                        controller: _weightController,
+                        key: const Key('edit_profile_target_weight'),
+                        controller: _targetWeightController,
                         keyboardType: const TextInputType.numberWithOptions(
                           decimal: true,
                         ),
                         textInputAction: TextInputAction.done,
                         onChanged: (_) => setState(() {}),
-                        validator: _validateWeight,
+                        validator: _validateTargetWeight,
+                        decoration: const InputDecoration(suffixText: 'kg'),
                       ),
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 18),
-              Text(
-                'Buổi tập mỗi tuần',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface,
-                  border: Border.all(color: AppColors.outline),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    IconButton(
-                      tooltip: 'Giảm số buổi',
-                      onPressed: _saving || _sessionsPerWeek <= 1
-                          ? null
-                          : () => setState(() => _sessionsPerWeek--),
-                      icon: const Icon(Icons.remove),
-                    ),
-                    Expanded(
-                      child: Text(
-                        '$_sessionsPerWeek',
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w800,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Buổi tập/tuần',
+                          style: Theme.of(context).textTheme.bodySmall,
                         ),
-                      ),
+                        const SizedBox(height: 8),
+                        Container(
+                          height: 52,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            border: Border.all(color: AppColors.outline),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              IconButton(
+                                tooltip: 'Giảm số buổi',
+                                onPressed: _saving || _sessionsPerWeek <= 1
+                                    ? null
+                                    : () => setState(() => _sessionsPerWeek--),
+                                icon: const Icon(Icons.remove, size: 18),
+                              ),
+                              Expanded(
+                                child: Text(
+                                  '$_sessionsPerWeek',
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    color: AppColors.primary,
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                              IconButton(
+                                tooltip: 'Tăng số buổi',
+                                onPressed: _saving || _sessionsPerWeek >= 7
+                                    ? null
+                                    : () => setState(() => _sessionsPerWeek++),
+                                icon: const Icon(Icons.add, size: 18),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                    IconButton(
-                      tooltip: 'Tăng số buổi',
-                      onPressed: _saving || _sessionsPerWeek >= 7
-                          ? null
-                          : () => setState(() => _sessionsPerWeek++),
-                      icon: const Icon(Icons.add),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 28),
-              AppPrimaryButton(
-                label: 'Lưu thay đổi',
-                loading: _saving,
-                onPressed: _save,
+                  ),
+                ],
               ),
             ],
           ),

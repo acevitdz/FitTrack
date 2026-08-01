@@ -751,6 +751,20 @@ class AppState extends ChangeNotifier {
     if (value.weeklyWorkoutGoal < 1 || value.weeklyWorkoutGoal > 7) {
       throw ArgumentError('Mục tiêu tuần phải từ 1 đến 7 buổi.');
     }
+    final birthDate = value.dateOfBirth;
+    if (birthDate != null) {
+      final today = DateTime.now();
+      final earliest = DateTime(today.year - 120, today.month, today.day);
+      if (birthDate.isAfter(today) || birthDate.isBefore(earliest)) {
+        throw ArgumentError('Ngày sinh không hợp lệ.');
+      }
+    }
+    final targetWeight = value.targetWeightKg;
+    if (targetWeight != null && (targetWeight <= 0 || targetWeight > 500)) {
+      throw ArgumentError(
+        'Cân nặng mục tiêu phải lớn hơn 0 và không quá 500 kg.',
+      );
+    }
     profile = value.copyWith(name: value.name.trim());
     await _commit();
   }

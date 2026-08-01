@@ -8,6 +8,8 @@ class UserProfile {
     required this.goal,
     required this.weeklyWorkoutGoal,
     this.gender = '',
+    this.dateOfBirth,
+    this.targetWeightKg,
     this.photoUrl,
     this.onboardingCompleted = false,
   });
@@ -20,6 +22,8 @@ class UserProfile {
   final String goal;
   final int weeklyWorkoutGoal;
   final String gender;
+  final DateTime? dateOfBirth;
+  final double? targetWeightKg;
   final String? photoUrl;
   final bool onboardingCompleted;
 
@@ -38,6 +42,8 @@ class UserProfile {
     String? goal,
     int? weeklyWorkoutGoal,
     String? gender,
+    DateTime? dateOfBirth,
+    double? targetWeightKg,
     Object? photoUrl = _unset,
     bool? onboardingCompleted,
   }) {
@@ -50,6 +56,8 @@ class UserProfile {
       goal: goal ?? this.goal,
       weeklyWorkoutGoal: weeklyWorkoutGoal ?? this.weeklyWorkoutGoal,
       gender: gender ?? this.gender,
+      dateOfBirth: dateOfBirth ?? this.dateOfBirth,
+      targetWeightKg: targetWeightKg ?? this.targetWeightKg,
       photoUrl: identical(photoUrl, _unset)
           ? this.photoUrl
           : photoUrl as String?,
@@ -66,6 +74,8 @@ class UserProfile {
     'goal': goal,
     'weeklyWorkoutGoal': weeklyWorkoutGoal,
     'gender': gender,
+    'dateOfBirth': dateOfBirth?.toIso8601String(),
+    'targetWeightKg': targetWeightKg,
     'photoUrl': photoUrl,
     'onboardingCompleted': onboardingCompleted,
   };
@@ -79,6 +89,10 @@ class UserProfile {
     goal: json['goal'] as String? ?? 'Thể lực tổng quát',
     weeklyWorkoutGoal: (json['weeklyWorkoutGoal'] as num?)?.toInt() ?? 3,
     gender: json['gender'] as String? ?? '',
+    dateOfBirth: json['dateOfBirth'] == null
+        ? null
+        : DateTime.tryParse(json['dateOfBirth'] as String),
+    targetWeightKg: (json['targetWeightKg'] as num?)?.toDouble(),
     photoUrl: json['photoUrl'] as String?,
     onboardingCompleted: json['onboardingCompleted'] as bool? ?? false,
   );

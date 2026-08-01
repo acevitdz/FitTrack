@@ -74,6 +74,23 @@ void main() {
     );
   });
 
+  test('rejects invalid birth date and target weight', () async {
+    final state = await createCleanAccount();
+
+    await expectLater(
+      state.updateProfile(
+        state.profile.copyWith(
+          dateOfBirth: DateTime.now().add(const Duration(days: 1)),
+        ),
+      ),
+      throwsArgumentError,
+    );
+    await expectLater(
+      state.updateProfile(state.profile.copyWith(targetWeightKg: 500.1)),
+      throwsArgumentError,
+    );
+  });
+
   test('trims and persists a valid profile update', () async {
     final state = await createCleanAccount();
 
@@ -83,6 +100,8 @@ void main() {
         heightCm: 172,
         currentWeightKg: 68,
         weeklyWorkoutGoal: 4,
+        dateOfBirth: DateTime(1995, 8, 15),
+        targetWeightKg: 75,
       ),
     );
     await state.signOut();
@@ -96,9 +115,13 @@ void main() {
     expect(state.profile.heightCm, 172);
     expect(state.profile.currentWeightKg, 68);
     expect(state.profile.weeklyWorkoutGoal, 4);
+    expect(state.profile.dateOfBirth, DateTime(1995, 8, 15));
+    expect(state.profile.targetWeightKg, 75);
   });
 
-  testWidgets('edit profile form shows metric range errors', (tester) async {
+  testWidgets('edit profile form follows UI-12 and validates target weight', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(390, 1200);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -108,20 +131,27 @@ void main() {
     await tester.pumpWidget(MaterialApp(home: EditProfileScreen(state: state)));
     await tester.pumpAndSettle();
 
-    final fields = find.byType(TextFormField);
-    expect(fields, findsNWidgets(3));
-    await tester.enterText(fields.at(1), '99');
-    await tester.enterText(fields.at(2), '501');
+    expect(find.text('Họ và tên'), findsOneWidget);
+    expect(find.text('Ngày sinh'), findsOneWidget);
+    expect(find.text('Giới tính'), findsOneWidget);
+    expect(find.text('Mục tiêu chính'), findsOneWidget);
+    expect(find.text('Cân nặng mục tiêu'), findsOneWidget);
+    expect(find.text('Buổi tập/tuần'), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(const Key('edit_profile_target_weight')),
+      '501',
+    );
     await tester.tap(find.text('Lưu thay đổi'));
     await tester.pump();
 
-    expect(find.text('Chiều cao phải tương đương 100–250 cm'), findsOneWidget);
     expect(
-      find.text('Cân nặng phải trên 0 và không quá 500 kg'),
+      find.text('Cân nặng mục tiêu phải trên 0 và không quá 500 kg'),
       findsOneWidget,
     );
     expect(state.profile.heightCm, 170);
     expect(state.profile.currentWeightKg, 65);
+    expect(state.profile.targetWeightKg, isNull);
     expect(tester.takeException(), isNull);
   });
 }
