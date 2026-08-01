@@ -28,6 +28,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   late String _goal;
   late int _sessionsPerWeek;
   var _saving = false;
+  var _discarding = false;
 
   @override
   void initState() {
@@ -74,6 +75,48 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     return weightKg <= 0 || weightKg > 500
         ? 'Cân nặng phải trên 0 và không quá 500 kg'
         : null;
+  }
+
+  bool get _hasUnsavedChanges {
+    final profile = widget.state.profile;
+    final preferences = widget.state.trainingPreferences;
+    final heightCm = _unit.heightToCentimeters(
+      _parseNumber(_heightController.text),
+    );
+    final weightKg = _unit.weightToKilograms(
+      _parseNumber(_weightController.text),
+    );
+    return _nameController.text.trim() != profile.name.trim() ||
+        (heightCm - profile.heightCm).abs() > .01 ||
+        (weightKg - profile.currentWeightKg).abs() > .01 ||
+        _audience != preferences.programAudiencePreference ||
+        _goal != preferences.goalKey ||
+        _sessionsPerWeek != preferences.sessionsPerWeek;
+  }
+
+  Future<void> _handlePopInvoked(bool didPop) async {
+    if (didPop || _saving || _discarding || !_hasUnsavedChanges) return;
+    final discard = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Bỏ thay đổi?'),
+        content: const Text('Các thay đổi chưa lưu sẽ bị mất.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Tiếp tục chỉnh sửa'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Bỏ thay đổi'),
+          ),
+        ],
+      ),
+    );
+    if (discard == true && mounted) {
+      setState(() => _discarding = true);
+      if (mounted) Navigator.pop(context);
+    }
   }
 
   Future<void> _save() async {
@@ -184,6 +227,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
         child: Form(
           key: _formKey,
+          canPop: _saving || _discarding || !_hasUnsavedChanges,
+          onPopInvokedWithResult: (didPop, result) => _handlePopInvoked(didPop),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -249,6 +294,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 child: TextFormField(
                   controller: _nameController,
                   textInputAction: TextInputAction.next,
+                  onChanged: (_) => setState(() {}),
                   decoration: const InputDecoration(hintText: 'Nhập họ và tên'),
                   validator: (value) => value == null || value.trim().isEmpty
                       ? 'Họ tên không được để trống'
@@ -312,6 +358,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           decimal: true,
                         ),
                         textInputAction: TextInputAction.next,
+                        onChanged: (_) => setState(() {}),
                         validator: _validateHeight,
                       ),
                     ),
@@ -326,6 +373,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           decimal: true,
                         ),
                         textInputAction: TextInputAction.done,
+                        onChanged: (_) => setState(() {}),
                         validator: _validateWeight,
                       ),
                     ),
