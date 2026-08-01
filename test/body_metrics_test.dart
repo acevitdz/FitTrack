@@ -116,6 +116,18 @@ void main() {
     expect(olderEntry.bmi, closeTo(22.49, 0.01));
   });
 
+  test('stores a trimmed note with the body metric entry', () async {
+    final state = await createCleanAccount();
+
+    await state.updateBodyMetrics(
+      heightCm: 170,
+      weightKg: 65,
+      note: '  Sau khi tập  ',
+    );
+
+    expect(state.latestWeight?.note, 'Sau khi tập');
+  });
+
   test('metric and imperial conversions round-trip accurately', () {
     const imperial = MeasurementUnitSystem.imperial;
 

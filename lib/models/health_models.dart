@@ -15,9 +15,8 @@ class WeightEntry {
   /// Height snapshot used to keep historical BMI stable when the profile
   /// height changes. Null is accepted only for migrated V1 records.
   final double? heightCm;
-  @Deprecated(
-    'Legacy V1 field; the target Body Metrics flow has no note input.',
-  )
+
+  /// Optional context supplied when the measurement is recorded.
   final String note;
   @Deprecated(
     'Legacy V1 field; progress photos are not captured by the target flow.',

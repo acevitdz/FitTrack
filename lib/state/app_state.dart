@@ -1167,6 +1167,7 @@ class AppState extends ChangeNotifier {
     required double heightCm,
     required double weightKg,
     DateTime? recordedAt,
+    String note = '',
   }) async {
     if (heightCm < 100 || heightCm > 250) {
       throw ArgumentError('Chiều cao phải từ 100 đến 250 cm.');
@@ -1185,6 +1186,7 @@ class AppState extends ChangeNotifier {
         weightKg: weightKg,
         heightCm: heightCm,
         recordedAt: moment,
+        note: note.trim(),
       ),
     );
     await _recordWeightActivity(moment, persist: false);
