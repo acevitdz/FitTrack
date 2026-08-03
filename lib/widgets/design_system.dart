@@ -181,9 +181,12 @@ class OfflineBanner extends StatelessWidget {
 }
 
 class OnboardingProgress extends StatelessWidget {
-  const OnboardingProgress({super.key, required this.step});
+  const OnboardingProgress({super.key, required this.step, this.totalSteps = 3})
+    : assert(totalSteps > 0),
+      assert(step > 0 && step <= totalSteps);
 
   final int step;
+  final int totalSteps;
 
   @override
   Widget build(BuildContext context) {
@@ -191,7 +194,7 @@ class OnboardingProgress extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'BƯỚC $step CỦA 3',
+          'BƯỚC $step CỦA $totalSteps',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
             letterSpacing: .5,
             fontWeight: FontWeight.w600,
@@ -200,7 +203,10 @@ class OnboardingProgress extends StatelessWidget {
         const SizedBox(height: 8),
         ClipRRect(
           borderRadius: BorderRadius.circular(999),
-          child: LinearProgressIndicator(value: step / 3, minHeight: 8),
+          child: LinearProgressIndicator(
+            value: step / totalSteps,
+            minHeight: 8,
+          ),
         ),
       ],
     );
