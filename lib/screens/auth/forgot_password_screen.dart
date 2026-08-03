@@ -29,9 +29,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   @override
   void initState() {
     super.initState();
-    _emailController = TextEditingController(
-      text: widget.initialEmail.trim(),
-    );
+    _emailController = TextEditingController(text: widget.initialEmail.trim());
   }
 
   @override
@@ -73,6 +71,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: const ValueKey('ui-04-forgot-password'),
       body: FitTrackPage(
         maxWidth: 390,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
@@ -138,6 +137,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   AppFormLabel(
                     label: 'Email',
                     child: TextFormField(
+                      key: const Key('forgot_email'),
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.done,
@@ -159,6 +159,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   ],
                   const SizedBox(height: 22),
                   AppPrimaryButton(
+                    key: const Key('forgot_submit'),
                     label: 'Gửi liên kết',
                     loading: _sending,
                     onPressed: _submit,

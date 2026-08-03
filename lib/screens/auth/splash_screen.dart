@@ -51,6 +51,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: const ValueKey('ui-01-splash'),
       backgroundColor: AppColors.navy,
       body: SafeArea(
         child: Padding(

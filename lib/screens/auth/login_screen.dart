@@ -17,8 +17,8 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _emailController = TextEditingController(text: 'demo@fittrack.vn');
-  final _passwordController = TextEditingController(text: 'FitTrack123!');
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
 
   var _register = false;
@@ -83,6 +83,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return AnimatedBuilder(
       animation: widget.state,
       builder: (context, _) => Scaffold(
+        key: ValueKey(_register ? 'ui-03-register' : 'ui-02-login'),
         body: FitTrackPage(
           maxWidth: 390,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 32),
@@ -125,6 +126,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           AppFormLabel(
                             label: 'Họ và tên',
                             child: TextFormField(
+                              key: const Key('auth_name'),
                               controller: _nameController,
                               textInputAction: TextInputAction.next,
                               autofillHints: const [AutofillHints.name],
@@ -143,6 +145,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         AppFormLabel(
                           label: 'Email',
                           child: TextFormField(
+                            key: const Key('auth_email'),
                             controller: _emailController,
                             keyboardType: TextInputType.emailAddress,
                             textInputAction: TextInputAction.next,
@@ -158,6 +161,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         AppFormLabel(
                           label: 'Mật khẩu',
                           child: TextFormField(
+                            key: const Key('auth_password'),
                             controller: _passwordController,
                             obscureText: _obscurePassword,
                             textInputAction: _register
@@ -197,6 +201,29 @@ class _LoginScreenState extends State<LoginScreen> {
                                 : null,
                           ),
                         ),
+                        if (_register) ...[
+                          const SizedBox(height: 8),
+                          const Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(
+                                Icons.info_outline,
+                                size: 16,
+                                color: AppColors.textMuted,
+                              ),
+                              SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  'Sử dụng ít nhất 8 ký tự để bảo vệ tài khoản.',
+                                  style: TextStyle(
+                                    color: AppColors.textMuted,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                         if (!_register)
                           Align(
                             alignment: Alignment.centerRight,
@@ -225,6 +252,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           AppFormLabel(
                             label: 'Xác nhận mật khẩu',
                             child: TextFormField(
+                              key: const Key('auth_confirm_password'),
                               controller: _confirmController,
                               obscureText: _obscureConfirm,
                               textInputAction: TextInputAction.done,
@@ -253,6 +281,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                           CheckboxListTile(
+                            key: const Key('auth_terms'),
                             value: _acceptedTerms,
                             onChanged: widget.state.busy
                                 ? null
@@ -269,6 +298,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ],
                         const SizedBox(height: 12),
                         AppPrimaryButton(
+                          key: const Key('auth_submit'),
                           label: _register ? 'Đăng ký' : 'Đăng nhập',
                           loading: widget.state.busy,
                           onPressed: _submit,
