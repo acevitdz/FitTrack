@@ -331,6 +331,8 @@ class AppState extends ChangeNotifier {
     isAuthenticated = true;
     await _store.saveAuthenticated(true);
     await _store.saveAuthenticatedUid(uid);
+    // Create the UID-scoped cloud profile before loading large shared catalogs.
+    await _commit();
     await _refreshRemoteDomain();
     await _refreshTemplateExercises();
     activeWorkoutDraft = await _workoutDraftStore.load(uid);
@@ -338,7 +340,7 @@ class AppState extends ChangeNotifier {
       await ensureProgramEnrollment(persist: false);
     }
     await _initializeMessagingIfOptedIn();
-    await _store.saveState(_toJson());
+    await _commit();
   }
 
   void _prepareAccountState({
@@ -448,7 +450,11 @@ class AppState extends ChangeNotifier {
     notifyListeners();
     try {
       final signedInUid = register
-          ? await _firebase.register(email.trim(), password)
+          ? await _firebase.register(
+              email.trim(),
+              password,
+              displayName: displayName,
+            )
           : await _firebase.signIn(email.trim(), password);
       uid = signedInUid;
       _store.scopeTo(uid);
@@ -483,11 +489,13 @@ class AppState extends ChangeNotifier {
 
       profile = profile.copyWith(id: uid, email: email.trim());
       await _mergeRemoteActivityDays();
-      await _refreshRemoteDomain();
-      await _refreshTemplateExercises();
       isAuthenticated = true;
       await _store.saveAuthenticated(true);
       await _store.saveAuthenticatedUid(uid);
+      // Persist the account immediately; remote catalogs can be loaded after.
+      await _commit();
+      await _refreshRemoteDomain();
+      await _refreshTemplateExercises();
       activeWorkoutDraft = await _workoutDraftStore.load(uid);
       if (profile.onboardingCompleted) {
         await ensureProgramEnrollment(persist: false);
