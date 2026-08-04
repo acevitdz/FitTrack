@@ -130,13 +130,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: 13),
-                  Text(
-                    profile.name,
-                    textAlign: TextAlign.center,
+                  _ProfileNameButton(
+                    name: profile.name,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       color: AppColors.text,
                       fontWeight: FontWeight.w800,
                     ),
+                    onTap: _renameProfile,
                   ),
                   const SizedBox(height: 2),
                   Text(
@@ -320,13 +320,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                Text(
-                  profile.name,
-                  textAlign: TextAlign.center,
+                _ProfileNameButton(
+                  name: profile.name,
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     color: AppColors.text,
                     fontWeight: FontWeight.w800,
                   ),
+                  onTap: _renameProfile,
                 ),
                 const SizedBox(height: 3),
                 Text(
@@ -569,25 +569,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _showSafetyAndPrivacy() => showDialog<void>(
     context: context,
-    builder: (context) => AlertDialog(
-      title: const Text('Quyền riêng tư và an toàn'),
-      content: const SingleChildScrollView(
-        child: Text(
-          '• Camera Coach xử lý khung hình trên thiết bị và không lưu hoặc tải video lên mặc định.\n\n'
-          '• Chiều cao, cân nặng và lịch sử tập là dữ liệu riêng, được bảo vệ theo tài khoản của bạn.\n\n'
-          '• AI Camera Coach chỉ hỗ trợ kỹ thuật cho bài có rule đã phát hành, có thể không chắc chắn và luôn có Guided Confirmation.\n\n'
-          '• BMI và gợi ý tập chỉ mang tính tham khảo, không thay thế tư vấn hoặc chẩn đoán y khoa.\n\n'
-          '• Nguồn của từng chương trình được hiển thị trong màn Chương trình và lịch sử phiên bản.',
-        ),
-      ),
-      actions: [
-        FilledButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Đã hiểu'),
-        ),
-      ],
-    ),
+    builder: (context) => const _PrivacyDialog(),
   );
+
+  Future<void> _renameProfile() async {
+    final name = await showDialog<String>(
+      context: context,
+      builder: (context) =>
+          _RenameProfileDialog(initialName: widget.state.profile.name),
+    );
+    if (name == null || !mounted) return;
+    try {
+      await widget.state.updateProfileName(name);
+      if (!mounted) return;
+      setState(() {});
+    } on Object catch (error) {
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Không thể cập nhật tên'),
+          content: Text('$error'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Đóng'),
+            ),
+          ],
+        ),
+      );
+    }
+  }
 
   Future<void> _editPreferences() async {
     await Navigator.push(
@@ -600,24 +612,323 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _signOut() async {
-    final accepted = await confirmAction(
-      context,
-      title: 'Đăng xuất?',
-      message: 'Buổi tập đang dở sẽ được xóa khỏi thiết bị khi đăng xuất.',
-      confirmLabel: 'Đăng xuất',
+    final accepted = await showDialog<bool>(
+      context: context,
+      builder: (context) => const _AccountConfirmationDialog(
+        icon: Icons.logout,
+        title: 'Đăng xuất?',
+        message: 'Buổi tập đang dở sẽ được xóa khỏi thiết bị khi đăng xuất.',
+        confirmLabel: 'Đăng xuất',
+      ),
     );
-    if (accepted) await widget.state.signOut();
+    if (accepted == true) await widget.state.signOut();
   }
 
   Future<void> _deleteAccount() async {
-    final accepted = await confirmAction(
-      context,
-      title: 'Gửi yêu cầu xóa tài khoản?',
-      message:
-          'FitTrack sẽ ghi nhận yêu cầu, đăng xuất và xóa bản dữ liệu cục bộ của tài khoản này. Dữ liệu máy chủ được xóa theo quy trình chính sách.',
-      confirmLabel: 'Gửi yêu cầu',
+    final accepted = await showDialog<bool>(
+      context: context,
+      builder: (context) => const _AccountConfirmationDialog(
+        icon: Icons.warning_amber_rounded,
+        title: 'Gửi yêu cầu xóa tài khoản?',
+        message:
+            'FitTrack sẽ ghi nhận yêu cầu, đăng xuất và xóa bản dữ liệu cục bộ của tài khoản này.',
+        confirmLabel: 'Gửi yêu cầu',
+        destructive: true,
+      ),
     );
-    if (accepted) await widget.state.deleteAccountData();
+    if (accepted == true) await widget.state.deleteAccountData();
+  }
+}
+
+class _ProfileNameButton extends StatelessWidget {
+  const _ProfileNameButton({
+    required this.name,
+    required this.style,
+    required this.onTap,
+  });
+
+  final String name;
+  final TextStyle? style;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Tooltip(
+    message: 'Sửa tên hiển thị',
+    child: Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          child: Text(name, textAlign: TextAlign.center, style: style),
+        ),
+      ),
+    ),
+  );
+}
+
+class _RenameProfileDialog extends StatefulWidget {
+  const _RenameProfileDialog({required this.initialName});
+
+  final String initialName;
+
+  @override
+  State<_RenameProfileDialog> createState() => _RenameProfileDialogState();
+}
+
+class _RenameProfileDialogState extends State<_RenameProfileDialog> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialName);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    if (!_formKey.currentState!.validate()) return;
+    Navigator.pop(context, _controller.text.trim());
+  }
+
+  @override
+  Widget build(BuildContext context) => Dialog(
+    insetPadding: const EdgeInsets.symmetric(horizontal: 28),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+    child: Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 14),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Tên hiển thị',
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              key: const Key('rename_profile_name'),
+              controller: _controller,
+              autofocus: true,
+              textInputAction: TextInputAction.done,
+              onFieldSubmitted: (_) => _save(),
+              decoration: const InputDecoration(hintText: 'Nhập tên hiển thị'),
+              validator: (value) => value == null || value.trim().isEmpty
+                  ? 'Tên hiển thị không được để trống'
+                  : null,
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Hủy'),
+                ),
+                const SizedBox(width: 8),
+                FilledButton(onPressed: _save, child: const Text('Lưu')),
+              ],
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+class _PrivacyDialog extends StatelessWidget {
+  const _PrivacyDialog();
+
+  @override
+  Widget build(BuildContext context) => Dialog(
+    insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+    child: Padding(
+      padding: const EdgeInsets.fromLTRB(18, 20, 18, 16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const CircleAvatar(
+            radius: 24,
+            backgroundColor: Color(0xFFE8EEFF),
+            foregroundColor: AppColors.primary,
+            child: Icon(Icons.shield_outlined, size: 24),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            'Quyền riêng tư và an toàn',
+            textAlign: TextAlign.center,
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 18),
+          const _PrivacyRow(
+            icon: Icons.phone_android_outlined,
+            label: 'Xử lý trên thiết bị, không lưu video.',
+          ),
+          const SizedBox(height: 12),
+          const _PrivacyRow(
+            icon: Icons.lock_outline,
+            label: 'Dữ liệu sức khỏe được bảo vệ.',
+          ),
+          const SizedBox(height: 12),
+          const _PrivacyRow(
+            icon: Icons.verified_user_outlined,
+            label: 'Camera Coach có Guided Confirmation.',
+          ),
+          const SizedBox(height: 12),
+          const _PrivacyRow(
+            icon: Icons.info_outline,
+            label: 'BMI chỉ mang tính tham khảo.',
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Đã hiểu'),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+class _PrivacyRow extends StatelessWidget {
+  const _PrivacyRow({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      Container(
+        width: 28,
+        height: 28,
+        decoration: const BoxDecoration(
+          color: Color(0xFFE8EEFF),
+          shape: BoxShape.circle,
+        ),
+        alignment: Alignment.center,
+        child: Icon(icon, color: AppColors.primary, size: 15),
+      ),
+      const SizedBox(width: 10),
+      Expanded(
+        child: Text(
+          label,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: AppColors.textMuted,
+            height: 1.35,
+          ),
+        ),
+      ),
+    ],
+  );
+}
+
+class _AccountConfirmationDialog extends StatelessWidget {
+  const _AccountConfirmationDialog({
+    required this.icon,
+    required this.title,
+    required this.message,
+    required this.confirmLabel,
+    this.destructive = false,
+  });
+
+  final IconData icon;
+  final String title;
+  final String message;
+  final String confirmLabel;
+  final bool destructive;
+
+  @override
+  Widget build(BuildContext context) {
+    final actionColor = destructive ? AppColors.error : AppColors.action;
+    return Dialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 28),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 14),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CircleAvatar(
+                  radius: 22,
+                  backgroundColor: AppColors.error.withValues(alpha: .12),
+                  foregroundColor: AppColors.error,
+                  child: Icon(icon, size: 22),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 7),
+                    child: Text(
+                      title,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Text(
+              message,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: AppColors.textMuted,
+                height: 1.45,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Hủy'),
+                ),
+                const SizedBox(width: 8),
+                if (destructive)
+                  FilledButton.icon(
+                    onPressed: () => Navigator.pop(context, true),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: actionColor,
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                    ),
+                    icon: const Icon(Icons.delete_outline, size: 18),
+                    label: Text(confirmLabel),
+                  )
+                else
+                  FilledButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    style: FilledButton.styleFrom(backgroundColor: actionColor),
+                    child: Text(confirmLabel),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

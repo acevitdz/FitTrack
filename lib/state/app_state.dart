@@ -777,6 +777,16 @@ class AppState extends ChangeNotifier {
     await _commit();
   }
 
+  Future<void> updateProfileName(String value) async {
+    final normalizedName = value.trim();
+    if (normalizedName.isEmpty) {
+      throw ArgumentError('Tên hiển thị không được để trống.');
+    }
+    await _firebase.updateDisplayName(normalizedName);
+    profile = profile.copyWith(name: normalizedName);
+    await _commit();
+  }
+
   Future<void> completeOnboarding(UserProfile value) async {
     profile = value.copyWith(onboardingCompleted: true);
     await ensureProgramEnrollment(persist: false);

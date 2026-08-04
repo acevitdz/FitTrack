@@ -99,16 +99,26 @@ class FirebaseGateway {
     }
   }
 
+  Future<void> updateDisplayName(String name) async {
+    final normalizedName = name.trim();
+    if (normalizedName.isEmpty) {
+      throw ArgumentError('Tên hiển thị không được để trống.');
+    }
+    if (!available) return;
+    final user = _authClient.currentUser;
+    if (user == null) {
+      throw StateError('Người dùng chưa đăng nhập.');
+    }
+    await user.updateDisplayName(normalizedName);
+  }
+
   Future<Map<String, dynamic>?> loadSnapshot(String uid) async {
     if (!available) return null;
     final snapshot = await _stateDocument(uid).get();
     return snapshot.data();
   }
 
-  Future<void> syncSnapshot(
-    String uid,
-    Map<String, dynamic> snapshot,
-  ) async {
+  Future<void> syncSnapshot(String uid, Map<String, dynamic> snapshot) async {
     if (!available) return;
     final cloudSnapshot = compactSnapshotForCloud(snapshot);
     final batch = _database.batch();
@@ -337,9 +347,7 @@ class FirebaseGateway {
   }
 }
 
-Map<String, dynamic> compactSnapshotForCloud(
-  Map<String, dynamic> snapshot,
-) {
+Map<String, dynamic> compactSnapshotForCloud(Map<String, dynamic> snapshot) {
   final compact = Map<String, dynamic>.from(snapshot)..remove('exercises');
   final target = snapshot['target'];
   if (target is Map) {
