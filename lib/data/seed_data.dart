@@ -308,46 +308,33 @@ abstract final class SeedData {
   static List<Achievement> achievements() => [
     const Achievement(
       id: 'first_workout',
-      title: 'Khởi đầu mạnh mẽ',
-      description: 'Hoàn thành buổi tập đầu tiên',
+      title: 'Buổi tập đầu tiên',
+      description: 'Hoàn thành buổi tập đầu tiên.',
       iconCodePoint: 0xe1d1,
     ),
     const Achievement(
-      id: 'workout_5',
-      title: 'Nhịp độ ổn định',
-      description: 'Hoàn thành 5 buổi tập',
-      iconCodePoint: 0xf06bb,
-    ),
-    const Achievement(
-      id: 'workout_10',
-      title: 'Bền bỉ',
-      description: 'Hoàn thành 10 buổi tập',
-      iconCodePoint: 0xe5d2,
+      id: 'streak_7',
+      title: 'Chuỗi 7 ngày',
+      description: 'Duy trì hoạt động trong 7 ngày.',
+      iconCodePoint: 0xef55,
     ),
     const Achievement(
       id: 'streak_3',
-      title: 'Chuỗi 3 ngày',
-      description: 'Duy trì streak nhập cân hoặc tập luyện 3 ngày liên tiếp',
+      title: 'Streak 3 ngày',
+      description: 'Tập luyện 3 ngày liên tiếp.',
       iconCodePoint: 0xef55,
     ),
     const Achievement(
-      id: 'streak_7',
-      title: 'Một tuần trọn vẹn',
-      description: 'Duy trì streak nhập cân hoặc tập luyện 7 ngày liên tiếp',
-      iconCodePoint: 0xef55,
-    ),
-    const Achievement(
-      id: 'streak_30',
-      title: 'Thói quen thép',
-      description: 'Duy trì streak nhập cân hoặc tập luyện 30 ngày liên tiếp',
-      iconCodePoint: 0xef55,
+      id: 'workout_50',
+      title: '50 buổi tập',
+      description: 'Hoàn thành tổng cộng 50 buổi.',
+      iconCodePoint: 0xe5d2,
     ),
   ];
 
   static IconData achievementIcon(String id) => switch (id) {
-    'first_workout' => Icons.rocket_launch,
-    'workout_5' => Icons.fitness_center,
-    'workout_10' => Icons.military_tech,
+    'first_workout' => Icons.workspace_premium_outlined,
+    'workout_50' => Icons.fitness_center,
     _ => Icons.local_fire_department,
   };
 }

@@ -1675,11 +1675,9 @@ class AppState extends ChangeNotifier {
         : longestWorkoutStreak;
     final conditions = <String, bool>{
       'first_workout': completed >= 1,
-      'workout_5': completed >= 5,
-      'workout_10': completed >= 10,
       'streak_3': bestStreak >= 3,
       'streak_7': bestStreak >= 7,
-      'streak_30': bestStreak >= 30,
+      'workout_50': completed >= 50,
     };
     achievements = achievements.map((achievement) {
       if (!achievement.unlocked && (conditions[achievement.id] ?? false)) {
@@ -1840,10 +1838,20 @@ class AppState extends ChangeNotifier {
           (item) => WorkoutReminder.fromJson(item as Map<String, dynamic>),
         ),
       );
-    achievements = (json['achievements'] as List? ?? [])
+    final storedAchievements = (json['achievements'] as List? ?? [])
         .map((item) => Achievement.fromJson(item as Map<String, dynamic>))
         .toList();
-    if (achievements.isEmpty) achievements = SeedData.achievements();
+    final storedAchievementsById = {
+      for (final achievement in storedAchievements) achievement.id: achievement,
+    };
+    achievements = SeedData.achievements()
+        .map((achievement) {
+          final unlockedAt = storedAchievementsById[achievement.id]?.unlockedAt;
+          return unlockedAt == null
+              ? achievement
+              : achievement.copyWith(unlockedAt: unlockedAt);
+        })
+        .toList(growable: false);
     // V2 activeDays may contain login-only days. Weight entries are the
     // authoritative migration source, so those legacy days are not reused.
     _rebuildWeightActivityDays();

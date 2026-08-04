@@ -8,7 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('achievements show progress and milestone details', (
+  testWidgets('achievements match the Figma grid and show milestone details', (
     tester,
   ) async {
     SharedPreferences.setMockInitialValues({});
@@ -23,15 +23,40 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Mốc buổi tập'), findsOneWidget);
-    expect(find.text('Khởi đầu mạnh mẽ'), findsOneWidget);
-    expect(find.text('Tất cả'), findsOneWidget);
-    expect(find.text('Đã mở'), findsOneWidget);
-    expect(find.text('Chưa mở'), findsOneWidget);
+    expect(find.text('Thành tích'), findsOneWidget);
+    expect(find.byType(GridView), findsOneWidget);
+    expect(find.text('Buổi tập đầu tiên'), findsOneWidget);
+    expect(find.text('Chuỗi 7 ngày'), findsOneWidget);
+    expect(find.text('Streak 3 ngày'), findsOneWidget);
+    expect(find.text('50 buổi tập'), findsOneWidget);
+    expect(find.text('Chưa mở khóa'), findsNWidgets(4));
 
-    await tester.tap(find.text('Khởi đầu mạnh mẽ'));
+    await tester.tap(find.text('Buổi tập đầu tiên'));
     await tester.pumpAndSettle();
 
     expect(find.text('Còn 1 buổi để mở khóa'), findsOneWidget);
+  });
+
+  testWidgets('achievement overflow menu filters locked milestones', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final state = AppState(
+      firebaseAvailable: false,
+      notificationService: NotificationService(),
+    );
+    await state.initialize();
+
+    await tester.pumpWidget(
+      MaterialApp(home: AchievementsScreen(state: state)),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Lọc thành tích'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Đã mở khóa'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Không có thành tích phù hợp'), findsOneWidget);
   });
 }
