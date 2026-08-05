@@ -578,11 +578,12 @@ class AppState extends ChangeNotifier {
 
   Future<void> requestDataExport() => _firebase.requestDataExport();
 
-  Future<void> deleteAccountData() async {
+  Future<void> requestAccountDeletion() async {
+    await _firebase.requestAccountDeletion();
     await _speech.stop();
     await _notifications.cancelAll();
     await _workoutDraftStore.clear(uid);
-    await _firebase.deleteCurrentAccount();
+    await _firebase.signOut();
     await _store.clear();
     isAuthenticated = false;
     _store.clearScope();

@@ -636,7 +636,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
         destructive: true,
       ),
     );
-    if (accepted == true) await widget.state.deleteAccountData();
+    if (accepted != true) return;
+    try {
+      await widget.state.requestAccountDeletion();
+    } on Object {
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Chưa thể gửi yêu cầu'),
+          content: Text(
+            'FitTrack chưa thể ghi nhận yêu cầu xóa tài khoản. '
+            'Vui lòng thử lại.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Đóng'),
+            ),
+          ],
+        ),
+      );
+    }
   }
 }
 

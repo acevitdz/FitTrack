@@ -189,37 +189,26 @@ class FirebaseGateway {
   }
 
   Future<void> requestDataExport() async {
-    if (!available) return;
-    final uid = _requireUid();
-    await _database.collection('users').doc(uid).collection('requests').add({
-      'type': 'data_export',
-      'status': 'pending',
-      'createdAt': FieldValue.serverTimestamp(),
-    });
+    await _submitAccountRequest('data_export');
   }
 
-  Future<void> deleteCurrentAccount() async {
-    if (!available) {
-      _currentUid = null;
-      return;
-    }
-    final user = _authClient.currentUser;
-    if (user == null) return;
-    await _stateDocument(user.uid).delete();
-    await _deleteCollection(
-      _database
-          .collection('users')
-          .doc(user.uid)
-          .collection('weightActivityDays'),
-    );
-    await _deleteCollection(
-      _database
-          .collection('users')
-          .doc(user.uid)
-          .collection('workoutActivityDays'),
-    );
-    await _deleteStorageTree(_storageClient.ref('users/${user.uid}'));
-    await user.delete();
+  Future<void> requestAccountDeletion() async {
+    await _submitAccountRequest('account_deletion');
+  }
+
+  Future<void> _submitAccountRequest(String type) async {
+    if (!available) return;
+    final uid = _requireUid();
+    await _database
+        .collection('users')
+        .doc(uid)
+        .collection('requests')
+        .doc(type)
+        .set({
+          'type': type,
+          'status': 'pending',
+          'requestedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
   }
 
   Future<void> recordWeightActivityDay({
@@ -311,28 +300,6 @@ class FirebaseGateway {
     final uid = _authClient.currentUser?.uid;
     if (uid == null) throw StateError('Người dùng chưa đăng nhập.');
     return uid;
-  }
-
-  Future<void> _deleteCollection(
-    CollectionReference<Map<String, dynamic>> collection,
-  ) async {
-    final documents = await collection.get();
-    if (documents.docs.isEmpty) return;
-    final batch = _database.batch();
-    for (final document in documents.docs) {
-      batch.delete(document.reference);
-    }
-    await batch.commit();
-  }
-
-  Future<void> _deleteStorageTree(Reference root) async {
-    final result = await root.listAll();
-    for (final item in result.items) {
-      await item.delete();
-    }
-    for (final prefix in result.prefixes) {
-      await _deleteStorageTree(prefix);
-    }
   }
 
   void _validateCredentials(String email, String password) {
