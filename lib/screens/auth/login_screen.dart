@@ -17,8 +17,8 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _emailController = TextEditingController(text: 'demo@fittrack.vn');
-  final _passwordController = TextEditingController(text: 'FitTrack123!');
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
   var _register = false;
   var _obscurePassword = true;
@@ -161,11 +161,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                 keyboardType: TextInputType.emailAddress,
                                 textInputAction: TextInputAction.next,
                                 autofillHints: const [AutofillHints.email],
-                                decoration: InputDecoration(
-                                  hintText: _register
-                                      ? 'ví dụ: ten@email.com'
-                                      : 'nhap@email.com',
-                                  prefixIcon: const Icon(Icons.email_outlined),
+                                decoration: const InputDecoration(
+                                  hintText: 'Nhập email của bạn',
+                                  prefixIcon: Icon(Icons.email_outlined),
                                 ),
                                 validator: _emailValidator,
                               ),
@@ -211,9 +209,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               onFieldSubmitted: (_) =>
                                   _register ? null : _submit(),
                               decoration: InputDecoration(
-                                hintText: _register
-                                    ? 'Tạo mật khẩu'
-                                    : '••••••••',
+                                hintText: '••••••••',
                                 prefixIcon: const Icon(Icons.lock_outline),
                                 suffixIcon: IconButton(
                                   tooltip: _obscurePassword
