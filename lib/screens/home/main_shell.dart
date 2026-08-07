@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../models/active_workout.dart';
+import '../../models/program.dart';
+import '../../services/notification_service.dart';
 import '../../state/app_state.dart';
 import '../active/active_workout_screen.dart';
 import '../history/history_screen.dart';
@@ -17,7 +20,9 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   var _index = 0;
+  final _visitedPages = <int>{0};
   var _routingNotification = false;
+  String? _preferredOccurrenceId;
 
   @override
   void initState() {
@@ -37,6 +42,13 @@ class _MainShellState extends State<MainShell> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _routeNotification());
   }
 
+  void _selectPage(int index) {
+    setState(() {
+      _visitedPages.add(index);
+      _index = index;
+    });
+  }
+
   Future<void> _routeNotification() async {
     if (!mounted || _routingNotification) return;
     final payload = widget.state.takePendingNotificationPayload();
@@ -44,13 +56,36 @@ class _MainShellState extends State<MainShell> {
     _routingNotification = true;
     setState(() => _index = 0);
     try {
-      if (!payload.startsWith('active:')) return;
+      final route = decodeFitTrackNotificationPayload(payload);
+      if (route == null) return;
+      if (route['type'] == 'today') {
+        final occurrence = widget.state.occurrenceById(
+          route['occurrenceId'] as String,
+        );
+        if (occurrence == null ||
+            !occurrence.isOpen ||
+            occurrence.status == WorkoutOccurrenceStatus.inProgress) {
+          return;
+        }
+        if (mounted) {
+          setState(() => _preferredOccurrenceId = occurrence.id);
+        }
+        return;
+      }
+      if (route['type'] != 'active') return;
       final draft = widget.state.activeWorkoutDraft;
-      if (draft == null) return;
-      final occurrence = widget.state.occurrences
-          .where((item) => item.id == draft.occurrenceId)
-          .firstOrNull;
-      if (occurrence == null) return;
+      if (draft == null ||
+          draft.phase != WorkoutPhase.resting ||
+          draft.sessionId != route['sessionId'] ||
+          draft.phaseId != route['phaseId'] ||
+          draft.restEndsAt?.millisecondsSinceEpoch != route['restEndsAt']) {
+        return;
+      }
+      final occurrence = widget.state.occurrenceById(draft.occurrenceId);
+      if (occurrence == null ||
+          occurrence.status != WorkoutOccurrenceStatus.inProgress) {
+        return;
+      }
       final controller = await widget.state.openWorkout(occurrence);
       if (!mounted) return;
       await Navigator.push(
@@ -59,7 +94,7 @@ class _MainShellState extends State<MainShell> {
           builder: (_) => ActiveWorkoutScreen(
             state: widget.state,
             controller: controller,
-            onOpenHistory: () => setState(() => _index = 2),
+            onOpenHistory: () => _selectPage(2),
           ),
         ),
       );
@@ -73,19 +108,26 @@ class _MainShellState extends State<MainShell> {
     final pages = [
       HomeScreen(
         state: widget.state,
-        onOpenProgram: () => setState(() => _index = 1),
-        onOpenProfile: () => setState(() => _index = 3),
-        onOpenHistory: () => setState(() => _index = 2),
+        preferredOccurrenceId: _preferredOccurrenceId,
+        onOpenProgram: () => _selectPage(1),
+        onOpenProfile: () => _selectPage(3),
+        onOpenHistory: () => _selectPage(2),
       ),
-      ProgramOverviewScreen(state: widget.state),
-      HistoryScreen(state: widget.state),
-      ProfileScreen(state: widget.state),
+      _visitedPages.contains(1)
+          ? ProgramOverviewScreen(state: widget.state)
+          : const SizedBox.shrink(),
+      _visitedPages.contains(2)
+          ? HistoryScreen(state: widget.state)
+          : const SizedBox.shrink(),
+      _visitedPages.contains(3)
+          ? ProfileScreen(state: widget.state)
+          : const SizedBox.shrink(),
     ];
     return Scaffold(
       body: IndexedStack(index: _index, children: pages),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
-        onDestinationSelected: (value) => setState(() => _index = value),
+        onDestinationSelected: _selectPage,
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.home_outlined),
