@@ -1,11 +1,27 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 ImageProvider<Object>? fitTrackImageProvider(String? source) {
-  if (source == null || source.isEmpty) return null;
-  if (source.startsWith('data:')) {
-    return MemoryImage(Uri.parse(source).data!.contentAsBytes());
+  if (source == null || source.trim().isEmpty) return null;
+  final normalized = source.trim();
+  if (normalized.startsWith('data:')) {
+    try {
+      final data = Uri.parse(normalized).data;
+      return data == null ? null : MemoryImage(data.contentAsBytes());
+    } on FormatException {
+      return null;
+    }
   }
-  return NetworkImage(source);
+  final uri = Uri.tryParse(normalized);
+  if (uri == null || (uri.scheme != 'https' && uri.scheme != 'http')) {
+    return null;
+  }
+  return CachedNetworkImageProvider(
+    normalized,
+    errorListener: (error) {
+      debugPrint('Không thể tải media bài tập: $error');
+    },
+  );
 }
 
 class SectionHeader extends StatelessWidget {
