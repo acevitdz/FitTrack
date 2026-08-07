@@ -36,10 +36,14 @@ class _WeightScreenState extends State<WeightScreen> {
   Widget build(BuildContext context) {
     final entries = [...widget.state.weightEntries]
       ..sort((a, b) => a.recordedAt.compareTo(b.recordedAt));
-    final cutoff = DateTime.now().subtract(Duration(days: _periodDays));
-    final chartEntries = entries
-        .where((item) => !item.recordedAt.isBefore(cutoff))
-        .toList();
+    final cutoff = _periodDays == 0
+        ? null
+        : DateTime.now().subtract(Duration(days: _periodDays));
+    final chartEntries = _latestEntryPerDay(
+      entries.where(
+        (item) => cutoff == null || !item.recordedAt.isBefore(cutoff),
+      ),
+    );
     final bmi = widget.state.profile.bmi;
     final unit = MeasurementUnitSystem.fromStored(widget.state.unit);
     return Scaffold(
@@ -78,7 +82,7 @@ class _WeightScreenState extends State<WeightScreen> {
             children: [
               Expanded(
                 child: MetricCard(
-                  label: 'Streak',
+                  label: 'Chuỗi ngày hiện tại',
                   value: '${widget.state.currentStreak} ngày',
                   icon: Icons.local_fire_department_outlined,
                   color: AppColors.warning,
@@ -97,7 +101,7 @@ class _WeightScreenState extends State<WeightScreen> {
           ),
           const SizedBox(height: 8),
           const Text(
-            'Nhập cân nặng trong ngày để duy trì streak hằng ngày. Nhiều lần cập nhật trong cùng một ngày vẫn chỉ được tính một ngày.',
+            'Nhập cân nặng trong ngày để duy trì chuỗi hoạt động. Nhiều lần cập nhật trong cùng một ngày vẫn chỉ được tính một ngày.',
             style: TextStyle(color: AppColors.textMuted, fontSize: 12),
           ),
           const SizedBox(height: 10),
@@ -152,18 +156,30 @@ class _WeightScreenState extends State<WeightScreen> {
                           style: Theme.of(context).textTheme.titleLarge,
                         ),
                       ),
-                      SegmentedButton<int>(
-                        showSelectedIcon: false,
-                        segments: const [
-                          ButtonSegment(value: 7, label: Text('Tuần')),
-                          ButtonSegment(value: 30, label: Text('Tháng')),
+                      PopupMenuButton<int>(
+                        initialValue: _periodDays,
+                        tooltip: 'Chọn khoảng thời gian',
+                        onSelected: (value) =>
+                            setState(() => _periodDays = value),
+                        itemBuilder: (_) => const [
+                          PopupMenuItem(value: 7, child: Text('7 ngày')),
+                          PopupMenuItem(value: 30, child: Text('30 ngày')),
+                          PopupMenuItem(value: 90, child: Text('90 ngày')),
+                          PopupMenuItem(value: 0, child: Text('Toàn bộ')),
                         ],
-                        selected: {_periodDays},
-                        onSelectionChanged: (value) =>
-                            setState(() => _periodDays = value.first),
+                        child: Chip(
+                          avatar: const Icon(Icons.date_range_outlined),
+                          label: Text(
+                            _periodDays == 0 ? 'Toàn bộ' : '$_periodDays ngày',
+                          ),
+                        ),
                       ),
                     ],
                   ),
+                  if (chartEntries.length >= 2) ...[
+                    const SizedBox(height: 10),
+                    _TrendSummary(entries: chartEntries, unit: unit),
+                  ],
                   const SizedBox(height: 16),
                   SizedBox(
                     height: 280,
@@ -171,12 +187,10 @@ class _WeightScreenState extends State<WeightScreen> {
                         ? const EmptyState(
                             icon: Icons.show_chart,
                             title: 'Chưa đủ dữ liệu',
-                            message: 'Cần ít nhất hai lần đo trong kỳ đã chọn.',
+                            message:
+                                'Cần ít nhất hai ngày có dữ liệu trong kỳ đã chọn.',
                           )
-                        : _BodyMetricChart(
-                            entries: chartEntries,
-                            unit: unit,
-                          ),
+                        : _BodyMetricChart(entries: chartEntries, unit: unit),
                   ),
                 ],
               ),
@@ -205,9 +219,7 @@ class _WeightScreenState extends State<WeightScreen> {
                         backgroundColor: AppColors.input,
                         child: Icon(Icons.straighten),
                       ),
-                      title: Text(
-                        unit.formatWeight(entries[index].weightKg),
-                      ),
+                      title: Text(unit.formatWeight(entries[index].weightKg)),
                       subtitle: Text(
                         '${entries[index].heightCm == null ? '—' : unit.formatHeight(entries[index].heightCm!)} • '
                         'BMI ${entries[index].bmi?.toStringAsFixed(1) ?? '—'} • '
@@ -231,6 +243,23 @@ class _WeightScreenState extends State<WeightScreen> {
     if (value < 30) return 'Cao';
     return 'Thừa cân';
   }
+
+  List<WeightEntry> _latestEntryPerDay(Iterable<WeightEntry> source) {
+    final latest = <DateTime, WeightEntry>{};
+    for (final entry in source) {
+      final day = DateTime(
+        entry.recordedAt.year,
+        entry.recordedAt.month,
+        entry.recordedAt.day,
+      );
+      final current = latest[day];
+      if (current == null || entry.recordedAt.isAfter(current.recordedAt)) {
+        latest[day] = entry;
+      }
+    }
+    return latest.values.toList()
+      ..sort((a, b) => a.recordedAt.compareTo(b.recordedAt));
+  }
 }
 
 class BodyMetricEntryScreen extends StatefulWidget {
@@ -246,11 +275,13 @@ class _BodyMetricEntryScreenState extends State<BodyMetricEntryScreen> {
   late final TextEditingController _height;
   late final TextEditingController _weight;
   late MeasurementUnitSystem _unit;
+  late DateTime _recordedAt;
   bool _saving = false;
 
   @override
   void initState() {
     super.initState();
+    _recordedAt = DateTime.now();
     _unit = MeasurementUnitSystem.fromStored(widget.state.unit);
     _height = TextEditingController(
       text: _unit
@@ -280,6 +311,7 @@ class _BodyMetricEntryScreenState extends State<BodyMetricEntryScreen> {
       await widget.state.updateBodyMetrics(
         heightCm: heightCm,
         weightKg: weightKg,
+        recordedAt: _recordedAt,
       );
       await widget.state.setUnit(_unit.storageKey);
       if (mounted) Navigator.pop(context);
@@ -296,12 +328,8 @@ class _BodyMetricEntryScreenState extends State<BodyMetricEntryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final heightCm = _unit.heightToCentimeters(
-      _parseOrZero(_height.text),
-    );
-    final weightKg = _unit.weightToKilograms(
-      _parseOrZero(_weight.text),
-    );
+    final heightCm = _unit.heightToCentimeters(_parseOrZero(_height.text));
+    final weightKg = _unit.weightToKilograms(_parseOrZero(_weight.text));
     final meters = heightCm / 100;
     final bmi = meters > 0 && weightKg > 0
         ? weightKg / (meters * meters)
@@ -328,7 +356,7 @@ class _BodyMetricEntryScreenState extends State<BodyMetricEntryScreen> {
               ),
               const SizedBox(height: 8),
               const Text(
-                'FitTrack chỉ yêu cầu chiều cao và cân nặng. BMI được tính tự động; lưu cân nặng sẽ duy trì streak hằng ngày, tối đa một lần tính mỗi ngày.',
+                'FitTrack chỉ yêu cầu chiều cao và cân nặng. BMI được tính tự động; lưu cân nặng sẽ duy trì chuỗi hoạt động, tối đa một lần tính mỗi ngày.',
               ),
               const SizedBox(height: 16),
               SegmentedButton<MeasurementUnitSystem>(
@@ -363,6 +391,24 @@ class _BodyMetricEntryScreenState extends State<BodyMetricEntryScreen> {
                         ? 'Nhập chiều cao tương đương 100–250 cm'
                         : null;
                   },
+                ),
+              ),
+              const SizedBox(height: 18),
+              AppFormLabel(
+                label: 'Thời điểm đo',
+                child: Card(
+                  margin: EdgeInsets.zero,
+                  child: ListTile(
+                    leading: const Icon(Icons.event_outlined),
+                    title: Text(
+                      DateFormat('dd/MM/yyyy • HH:mm').format(_recordedAt),
+                    ),
+                    subtitle: const Text(
+                      'Dùng thời điểm thực tế để biểu đồ và lịch sử chính xác.',
+                    ),
+                    trailing: const Icon(Icons.edit_calendar_outlined),
+                    onTap: _pickRecordedAt,
+                  ),
                 ),
               ),
               const SizedBox(height: 18),
@@ -413,6 +459,32 @@ class _BodyMetricEntryScreenState extends State<BodyMetricEntryScreen> {
   double _parseOrZero(String value) =>
       double.tryParse(value.replaceAll(',', '.')) ?? 0;
 
+  Future<void> _pickRecordedAt() async {
+    final now = DateTime.now();
+    final date = await showDatePicker(
+      context: context,
+      initialDate: _recordedAt.isAfter(now) ? now : _recordedAt,
+      firstDate: DateTime(1900),
+      lastDate: now,
+      helpText: 'Chọn ngày đo',
+    );
+    if (date == null || !mounted) return;
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(_recordedAt),
+      helpText: 'Chọn giờ đo',
+    );
+    if (time == null) return;
+    final selected = DateTime(
+      date.year,
+      date.month,
+      date.day,
+      time.hour,
+      time.minute,
+    );
+    setState(() => _recordedAt = selected.isAfter(now) ? now : selected);
+  }
+
   void _changeUnit(MeasurementUnitSystem next) {
     if (next == _unit) return;
     final height = _parseOrZero(_height.text);
@@ -438,35 +510,133 @@ class _BodyMetricChart extends StatelessWidget {
   final List<WeightEntry> entries;
   final MeasurementUnitSystem unit;
 
+  double _day(DateTime value) =>
+      DateTime.utc(value.year, value.month, value.day).millisecondsSinceEpoch /
+      Duration.millisecondsPerDay;
+
   @override
-  Widget build(BuildContext context) => LineChart(
-    LineChartData(
-      borderData: FlBorderData(show: false),
-      gridData: const FlGridData(drawVerticalLine: false),
-      titlesData: const FlTitlesData(
-        topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+  Widget build(BuildContext context) {
+    final spots = entries
+        .map(
+          (entry) => FlSpot(
+            _day(entry.recordedAt),
+            unit.weightFromKilograms(entry.weightKg),
+          ),
+        )
+        .toList();
+    final weights = spots.map((spot) => spot.y);
+    final low = weights.reduce((a, b) => a < b ? a : b);
+    final high = weights.reduce((a, b) => a > b ? a : b);
+    final padding = (high - low).abs() < .5 ? 1.0 : (high - low) * .2;
+    return LineChart(
+      LineChartData(
+        minX: spots.first.x,
+        maxX: spots.last.x,
+        minY: low - padding,
+        maxY: high + padding,
+        borderData: FlBorderData(show: false),
+        gridData: const FlGridData(drawVerticalLine: false),
+        titlesData: FlTitlesData(
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          leftTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 30,
+              interval: (spots.last.x - spots.first.x).clamp(1, 30) / 3,
+              getTitlesWidget: (value, meta) {
+                if ((value - spots.first.x).abs() > .6 &&
+                    (value - spots.last.x).abs() > .6 &&
+                    meta.appliedInterval == 0) {
+                  return const SizedBox.shrink();
+                }
+                final date = DateTime.fromMillisecondsSinceEpoch(
+                  (value * Duration.millisecondsPerDay).round(),
+                  isUtc: true,
+                );
+                return Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    DateFormat('dd/MM').format(date),
+                    style: const TextStyle(fontSize: 10),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+        lineTouchData: LineTouchData(
+          touchTooltipData: LineTouchTooltipData(
+            getTooltipItems: (items) => items
+                .map(
+                  (item) => LineTooltipItem(
+                    '${item.y.toStringAsFixed(1)} ${unit.weightSymbol}\n'
+                    '${DateFormat('dd/MM/yyyy').format(DateTime.fromMillisecondsSinceEpoch((item.x * Duration.millisecondsPerDay).round(), isUtc: true))}',
+                    const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                )
+                .toList(),
+          ),
+        ),
+        lineBarsData: [
+          LineChartBarData(
+            spots: spots,
+            color: AppColors.primary,
+            barWidth: 3,
+            dotData: const FlDotData(show: true),
+            belowBarData: BarAreaData(
+              show: true,
+              color: AppColors.paleBlue.withValues(alpha: .35),
+            ),
+          ),
+        ],
       ),
-      lineBarsData: [
-        LineChartBarData(
-          spots: entries.indexed
-              .map(
-                (item) => FlSpot(
-                  item.$1.toDouble(),
-                  unit.weightFromKilograms(item.$2.weightKg),
-                ),
-              )
-              .toList(),
-          color: AppColors.primary,
-          barWidth: 3,
-          dotData: const FlDotData(show: true),
-          belowBarData: BarAreaData(
-            show: true,
-            color: AppColors.paleBlue.withValues(alpha: .35),
+    );
+  }
+}
+
+class _TrendSummary extends StatelessWidget {
+  const _TrendSummary({required this.entries, required this.unit});
+
+  final List<WeightEntry> entries;
+  final MeasurementUnitSystem unit;
+
+  @override
+  Widget build(BuildContext context) {
+    final deltaKg = entries.last.weightKg - entries.first.weightKg;
+    final delta = unit.weightFromKilograms(deltaKg.abs());
+    final direction = deltaKg > .01
+        ? 'Tăng'
+        : deltaKg < -.01
+        ? 'Giảm'
+        : 'Ổn định';
+    final icon = deltaKg > .01
+        ? Icons.trending_up
+        : deltaKg < -.01
+        ? Icons.trending_down
+        : Icons.trending_flat;
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: AppColors.primary),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            '$direction ${delta.toStringAsFixed(1)} ${unit.weightSymbol} • '
+            '${entries.length} ngày có dữ liệu',
+            style: const TextStyle(color: AppColors.textMuted),
           ),
         ),
       ],
-    ),
-  );
+    );
+  }
 }

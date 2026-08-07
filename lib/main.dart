@@ -1,20 +1,35 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
-void main() {
-  runApp(const FitTrackApp());
-}
+import 'app.dart';
+import 'services/notification_service.dart';
+import 'state/app_state.dart';
+import 'firebase_options.dart';
 
-class FitTrackApp extends StatelessWidget {
-  const FitTrackApp({super.key});
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('vi');
 
-  @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'FitTrack',
-      home: Scaffold(
-        body: Center(child: Text('FitTrack project structure is ready.')),
-      ),
+  var firebaseAvailable = false;
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
     );
+    firebaseAvailable = true;
+  } on Object {
+    // Authentication can still render an actionable error, but exercise
+    // content is intentionally never loaded from a local fallback.
   }
+
+  final notifications = NotificationService();
+  await notifications.initialize();
+
+  final state = AppState(
+    firebaseAvailable: firebaseAvailable,
+    notificationService: notifications,
+  );
+  await state.initialize();
+
+  runApp(FitTrackApp(state: state));
 }
