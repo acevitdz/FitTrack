@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../models/account.dart';
 import '../../models/measurement_units.dart';
 import '../../models/program.dart';
 import '../../state/app_state.dart';
@@ -90,7 +91,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           style: const TextStyle(color: AppColors.textMuted),
                         ),
                         const SizedBox(height: 4),
-                        const Text('Người dùng'),
+                        Text(_accountStatusLabel(state.accountAccess.status)),
                       ],
                     ),
                   ),
@@ -142,16 +143,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               SwitchListTile(
                 secondary: const Icon(Icons.record_voice_over_outlined),
-                title: const Text('Voice Coach'),
-                subtitle: const Text('Đọc cue và chuyển pha trên thiết bị'),
+                title: const Text('Huấn luyện bằng giọng nói'),
+                subtitle: const Text(
+                  'Đọc nhịp và hướng dẫn ngay trên thiết bị',
+                ),
                 value: state.voiceCoachEnabled,
                 onChanged: state.setVoiceCoachEnabled,
               ),
               SwitchListTile(
-                secondary: const Icon(Icons.vibration),
-                title: const Text('Phản hồi rung'),
-                value: state.hapticsEnabled,
-                onChanged: state.setHapticsEnabled,
+                secondary: const Icon(Icons.notifications_active_outlined),
+                title: const Text('Âm thanh đếm ngược'),
+                subtitle: const Text(
+                  'Phát âm báo ở 3–2–1 giây cuối khi nghỉ và tập theo thời gian',
+                ),
+                value: state.countdownSoundsEnabled,
+                onChanged: state.setCountdownSoundsEnabled,
               ),
               _MenuTile(
                 icon: Icons.alarm_outlined,
@@ -168,23 +174,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ListTile(
                 leading: const Icon(Icons.brightness_6_outlined),
                 title: const Text('Giao diện'),
-                trailing: DropdownButton<ThemeMode>(
-                  value: state.themeMode,
-                  underline: const SizedBox.shrink(),
-                  items: const [
-                    DropdownMenuItem(
-                      value: ThemeMode.system,
-                      child: Text('Hệ thống'),
+                trailing: SizedBox(
+                  width: 116,
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<ThemeMode>(
+                      value: state.themeMode,
+                      isExpanded: true,
+                      alignment: Alignment.center,
+                      items: const [
+                        DropdownMenuItem(
+                          value: ThemeMode.light,
+                          alignment: Alignment.center,
+                          child: Text('Sáng', textAlign: TextAlign.center),
+                        ),
+                        DropdownMenuItem(
+                          value: ThemeMode.dark,
+                          alignment: Alignment.center,
+                          child: Text('Tối', textAlign: TextAlign.center),
+                        ),
+                      ],
+                      onChanged: (value) {
+                        if (value != null) state.setThemeMode(value);
+                      },
                     ),
-                    DropdownMenuItem(
-                      value: ThemeMode.light,
-                      child: Text('Sáng'),
-                    ),
-                    DropdownMenuItem(value: ThemeMode.dark, child: Text('Tối')),
-                  ],
-                  onChanged: (value) {
-                    if (value != null) state.setThemeMode(value);
-                  },
+                  ),
                 ),
               ),
               ListTile(
@@ -217,12 +230,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 subtitle: 'Giới hạn AI, dữ liệu camera và lưu trữ sức khỏe',
                 onTap: _showSafetyAndPrivacy,
               ),
-              _MenuTile(
-                icon: Icons.download_outlined,
-                title: 'Yêu cầu xuất dữ liệu',
-                subtitle: 'Tạo yêu cầu nhận bản sao dữ liệu tài khoản',
-                onTap: _requestDataExport,
-              ),
               if (state.plans.isNotEmpty || state.completions.isNotEmpty)
                 _MenuTile(
                   icon: Icons.archive_outlined,
@@ -242,7 +249,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           TextButton(
             onPressed: _deleteAccount,
             style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            child: const Text('Yêu cầu xóa tài khoản và dữ liệu'),
+            child: const Text('Xóa tài khoản'),
           ),
         ],
       ),
@@ -250,29 +257,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _editName() async {
-    final controller = TextEditingController(text: widget.state.profile.name);
-    final value = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Tên hiển thị'),
-        content: TextField(controller: controller, autofocus: true),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Hủy'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, controller.text.trim()),
-            child: const Text('Lưu'),
-          ),
-        ],
-      ),
+    final value = await _showSettledDialog<String>(
+      (_) => _EditDisplayNameDialog(initialName: widget.state.profile.name),
     );
-    controller.dispose();
-    if (value == null || value.isEmpty) return;
-    await widget.state.updateProfile(
-      widget.state.profile.copyWith(name: value),
-    );
+    if (!mounted || value == null || value.isEmpty) return;
+    try {
+      await widget.state.updateProfile(
+        widget.state.profile.copyWith(name: value),
+      );
+      if (mounted) {
+        setState(() {});
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Đã cập nhật tên hiển thị.')),
+        );
+      }
+    } on Object catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Không thể cập nhật tên: ${error.toString().replaceFirst('Invalid argument(s): ', '')}',
+          ),
+        ),
+      );
+    }
   }
 
   Future<void> _updateAvatar() async {
@@ -297,36 +305,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  Future<void> _requestDataExport() async {
-    try {
-      await widget.state.requestDataExport();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            widget.state.firebaseAvailable
-                ? 'Đã gửi yêu cầu xuất dữ liệu.'
-                : 'Bản demo chỉ lưu dữ liệu trên thiết bị; chưa có máy chủ để xử lý yêu cầu.',
-          ),
-        ),
-      );
-    } on Object catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Không thể gửi yêu cầu: $error')));
-    }
-  }
-
   Future<void> _showSafetyAndPrivacy() => showDialog<void>(
     context: context,
     builder: (context) => AlertDialog(
       title: const Text('Quyền riêng tư và an toàn'),
       content: const SingleChildScrollView(
         child: Text(
-          '• Camera Coach xử lý khung hình trên thiết bị và không lưu hoặc tải video lên mặc định.\n\n'
+          '• Hướng dẫn bằng camera xử lý khung hình trên thiết bị và mặc định không lưu hoặc tải video lên.\n\n'
           '• Chiều cao, cân nặng và lịch sử tập là dữ liệu riêng, được bảo vệ theo tài khoản của bạn.\n\n'
-          '• AI Camera Coach chỉ hỗ trợ kỹ thuật cho bài có rule đã phát hành, có thể không chắc chắn và luôn có Guided Confirmation.\n\n'
+          '• Camera AI chỉ hỗ trợ kỹ thuật cho bài có quy tắc nhận diện đã phát hành, có thể không chính xác và luôn có chế độ tự xác nhận.\n\n'
           '• BMI và gợi ý tập chỉ mang tính tham khảo, không thay thế tư vấn hoặc chẩn đoán y khoa.\n\n'
           '• Nguồn của từng chương trình được hiển thị trong màn Chương trình và lịch sử phiên bản.',
         ),
@@ -361,15 +348,148 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _deleteAccount() async {
-    final accepted = await confirmAction(
-      context,
-      title: 'Gửi yêu cầu xóa tài khoản?',
-      message:
-          'FitTrack sẽ ghi nhận yêu cầu, đăng xuất và xóa bản dữ liệu cục bộ của tài khoản này. Dữ liệu máy chủ được xóa theo quy trình chính sách.',
-      confirmLabel: 'Gửi yêu cầu',
+    final accepted = await _showSettledDialog<bool>(
+      (_) => const _DeleteAccountDialog(),
     );
-    if (accepted) await widget.state.deleteAccountData();
+    if (!mounted) return;
+    if (accepted == true) {
+      try {
+        await widget.state.deleteAccountData();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Đã xóa tài khoản và dữ liệu thành công.'),
+            ),
+          );
+        }
+      } on Object catch (error) {
+        if (!mounted) return;
+        final msg = error.toString().replaceFirst('Bad state: ', '');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Không thể xóa tài khoản: $msg')),
+        );
+      }
+    }
   }
+
+  Future<T?> _showSettledDialog<T>(WidgetBuilder builder) async {
+    final navigator = Navigator.of(context, rootNavigator: true);
+    final route = DialogRoute<T>(context: context, builder: builder);
+    final result = await navigator.push<T>(route);
+    await route.completed;
+    return result;
+  }
+
+  String _accountStatusLabel(AccountStatus status) => switch (status) {
+    AccountStatus.active => 'Tài khoản đang hoạt động',
+    AccountStatus.suspended => 'Tài khoản đang tạm khóa',
+    AccountStatus.deletionPending => 'Tài khoản đang được xóa',
+    AccountStatus.deleted => 'Tài khoản đã xóa',
+  };
+}
+
+class _EditDisplayNameDialog extends StatefulWidget {
+  const _EditDisplayNameDialog({required this.initialName});
+
+  final String initialName;
+
+  @override
+  State<_EditDisplayNameDialog> createState() => _EditDisplayNameDialogState();
+}
+
+class _EditDisplayNameDialogState extends State<_EditDisplayNameDialog> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialName);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: const Text('Tên hiển thị'),
+    content: TextField(
+      controller: _controller,
+      autofocus: true,
+      maxLength: 50,
+      textCapitalization: TextCapitalization.words,
+      decoration: const InputDecoration(
+        labelText: 'Tên bạn muốn hiển thị',
+        helperText: 'Từ 2 đến 50 ký tự',
+      ),
+    ),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(context),
+        child: const Text('Hủy'),
+      ),
+      FilledButton(
+        onPressed: () => Navigator.pop(context, _controller.text.trim()),
+        child: const Text('Lưu'),
+      ),
+    ],
+  );
+}
+
+class _DeleteAccountDialog extends StatefulWidget {
+  const _DeleteAccountDialog();
+
+  @override
+  State<_DeleteAccountDialog> createState() => _DeleteAccountDialogState();
+}
+
+class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
+  final _controller = TextEditingController();
+
+  bool get _isConfirmed {
+    final confirmation = _controller.text.trim().toUpperCase();
+    return confirmation == 'XÓA' || confirmation == 'XOA';
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: const Text('Xóa tài khoản và dữ liệu?'),
+    content: Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Hồ sơ, lịch tập, lịch sử, ảnh và tài khoản đăng nhập sẽ được xóa khỏi hệ thống. Thao tác này không thể hoàn tác.',
+        ),
+        const SizedBox(height: 14),
+        TextField(
+          controller: _controller,
+          autofocus: true,
+          onChanged: (_) => setState(() {}),
+          decoration: const InputDecoration(labelText: 'Nhập XÓA để xác nhận'),
+        ),
+      ],
+    ),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(context, false),
+        child: const Text('Hủy'),
+      ),
+      FilledButton(
+        style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+        onPressed: _isConfirmed ? () => Navigator.pop(context, true) : null,
+        child: const Text('Xóa tài khoản'),
+      ),
+    ],
+  );
 }
 
 class ProgramPreferencesScreen extends StatefulWidget {
@@ -387,6 +507,7 @@ class _ProgramPreferencesScreenState extends State<ProgramPreferencesScreen> {
   late String _equipment;
   late int _sessionsPerWeek;
   late ProgramAudiencePreference _audience;
+  late Set<int> _weekdays;
   bool _saving = false;
 
   @override
@@ -396,12 +517,26 @@ class _ProgramPreferencesScreenState extends State<ProgramPreferencesScreen> {
     _goal = current.goalKey;
     _experience = current.experienceKey;
     _sessionsPerWeek = current.sessionsPerWeek;
+    _weekdays = current.preferredWeekdays.length == _sessionsPerWeek
+        ? current.preferredWeekdays.toSet()
+        : _recommendedWeekdays(_sessionsPerWeek);
     _equipment = current.equipmentKeys.contains('gym') ? 'gym' : 'bodyweight';
-    _audience = current.programAudiencePreference;
+    _audience =
+        current.programAudiencePreference == ProgramAudiencePreference.unisex
+        ? ProgramAudiencePreference.male
+        : current.programAudiencePreference;
   }
 
   Future<void> _save() async {
     if (_saving) return;
+    if (_weekdays.length != _sessionsPerWeek) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Hãy chọn đúng $_sessionsPerWeek ngày tập trong tuần.'),
+        ),
+      );
+      return;
+    }
     setState(() => _saving = true);
     try {
       final current = widget.state.trainingPreferences;
@@ -415,6 +550,7 @@ class _ProgramPreferencesScreenState extends State<ProgramPreferencesScreen> {
               ? const ['bodyweight', 'gym']
               : const ['bodyweight'],
           sessionsPerWeek: _sessionsPerWeek,
+          preferredWeekdays: _weekdays.toList()..sort(),
         ),
       );
       if (mounted) Navigator.pop(context);
@@ -454,11 +590,33 @@ class _ProgramPreferencesScreenState extends State<ProgramPreferencesScreen> {
             spacing: 8,
             runSpacing: 8,
             children: [
-              for (final value in const [2, 3, 4, 5])
+              for (final value in const [2, 3, 4])
                 ChoiceChip(
                   label: Text('$value buổi'),
                   selected: _sessionsPerWeek == value,
-                  onSelected: (_) => setState(() => _sessionsPerWeek = value),
+                  onSelected: (_) => setState(() {
+                    _sessionsPerWeek = value;
+                    _weekdays = _recommendedWeekdays(value);
+                  }),
+                ),
+            ],
+          ),
+          _label('Ngày tập mong muốn'),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (var day = DateTime.monday; day <= DateTime.sunday; day++)
+                FilterChip(
+                  label: Text(_weekdayLabel(day)),
+                  selected: _weekdays.contains(day),
+                  onSelected: (selected) => setState(() {
+                    if (selected && _weekdays.length < _sessionsPerWeek) {
+                      _weekdays.add(day);
+                    } else if (!selected) {
+                      _weekdays.remove(day);
+                    }
+                  }),
                 ),
             ],
           ),
@@ -483,14 +641,10 @@ class _ProgramPreferencesScreenState extends State<ProgramPreferencesScreen> {
             (v) => _equipment = v,
           ),
           _choice('gym', 'Phòng gym', _equipment, (v) => _equipment = v),
-          _label('Ưu tiên nội dung'),
+          _label('Giới tính hồ sơ'),
           SegmentedButton<ProgramAudiencePreference>(
             showSelectedIcon: false,
             segments: const [
-              ButtonSegment(
-                value: ProgramAudiencePreference.unisex,
-                label: Text('Chung'),
-              ),
               ButtonSegment(
                 value: ProgramAudiencePreference.male,
                 label: Text('Nam'),
@@ -533,6 +687,34 @@ class _ProgramPreferencesScreenState extends State<ProgramPreferencesScreen> {
     selected: value == selected,
     onTap: () => setState(() => update(value)),
   );
+
+  Set<int> _recommendedWeekdays(int frequency) => switch (frequency) {
+    2 => {DateTime.monday, DateTime.thursday},
+    3 => {DateTime.monday, DateTime.wednesday, DateTime.friday},
+    4 => {
+      DateTime.monday,
+      DateTime.tuesday,
+      DateTime.thursday,
+      DateTime.saturday,
+    },
+    _ => {
+      DateTime.monday,
+      DateTime.tuesday,
+      DateTime.wednesday,
+      DateTime.friday,
+      DateTime.saturday,
+    },
+  };
+
+  String _weekdayLabel(int day) => switch (day) {
+    DateTime.monday => 'T2',
+    DateTime.tuesday => 'T3',
+    DateTime.wednesday => 'T4',
+    DateTime.thursday => 'T5',
+    DateTime.friday => 'T6',
+    DateTime.saturday => 'T7',
+    _ => 'CN',
+  };
 }
 
 class _Section extends StatelessWidget {

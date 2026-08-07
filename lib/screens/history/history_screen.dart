@@ -8,6 +8,8 @@ import '../../state/app_state.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/common_widgets.dart';
 import '../health/weight_screen.dart';
+import 'muscle_balance_screen.dart';
+import 'workout_completion_detail_screen.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key, required this.state});
@@ -33,38 +35,53 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final completions = start == null
         ? allCompletions
         : allCompletions
-              .where((item) => reportOccurrenceIds.contains(item.occurrenceId))
+              .where((item) => !item.completedAt.isBefore(start))
               .toList(growable: false);
     final scheduledCount = start == null
         ? _occurrencesInPeriod(state, null).length
         : reportOccurrences.length;
-    final completedOccurrenceIds = allCompletions
+    final participatingOccurrenceIds = allCompletions
+        .where((item) => item.hasParticipation)
         .map((item) => item.occurrenceId)
         .toSet();
     final attendedCount = reportOccurrenceIds
-        .where(completedOccurrenceIds.contains)
+        .where(participatingOccurrenceIds.contains)
         .length;
-    final completedSetCount = completions.fold<int>(
+    final fullyCompletedCount = completions
+        .where((item) => item.status == WorkoutCompletionStatus.completed)
+        .length;
+    final partialCount = completions
+        .where(
+          (item) => item.status == WorkoutCompletionStatus.partiallyCompleted,
+        )
+        .length;
+    final abandonedCount = completions
+        .where((item) => item.status == WorkoutCompletionStatus.abandoned)
+        .length;
+    final participatingCompletions = completions
+        .where((item) => item.hasParticipation)
+        .toList(growable: false);
+    final completedSetCount = participatingCompletions.fold<int>(
       0,
       (total, item) => total + item.completedSetCount,
     );
-    final topExercises = _topExercises(completions);
-    final muscleBalance = _muscleBalance(completions);
+    final topExercises = _topExercises(participatingCompletions);
+    final muscleBalance = _muscleBalance(participatingCompletions);
     final measurementUnit = MeasurementUnitSystem.fromStored(state.unit);
     return SafeArea(
       child: CustomScrollView(
         slivers: [
           const SliverAppBar.large(pinned: true, title: Text('Tiến độ')),
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             sliver: SliverList.list(
               children: [
                 Row(
                   children: [
                     Expanded(
                       child: MetricCard(
-                        label: 'Buổi trong kỳ',
-                        value: '${completions.length}',
+                        label: 'Buổi có tham gia',
+                        value: '${fullyCompletedCount + partialCount}',
                         icon: Icons.task_alt,
                         color: AppColors.success,
                       ),
@@ -74,13 +91,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       child: MetricCard(
                         label: 'Thời gian trong kỳ',
                         value: _totalDuration(
-                          completions.fold<Duration>(
+                          participatingCompletions.fold<Duration>(
                             Duration.zero,
                             (total, item) =>
                                 total +
-                                Duration(
-                                  seconds: item.actualDurationSeconds,
-                                ),
+                                Duration(seconds: item.actualDurationSeconds),
                           ),
                         ),
                         icon: Icons.timer_outlined,
@@ -101,7 +116,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: MetricCard(
-                        label: 'Streak tập luyện',
+                        label: 'Chuỗi ngày tập luyện',
                         value: '${state.targetWorkoutStreak} ngày',
                         icon: Icons.local_fire_department,
                         color: AppColors.warning,
@@ -114,7 +129,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   children: [
                     Expanded(
                       child: MetricCard(
-                        label: 'Streak nhập cân',
+                        label: 'Chuỗi ngày nhập cân',
                         value: '${state.currentStreak} ngày',
                         icon: Icons.monitor_weight_outlined,
                         color: AppColors.primary,
@@ -123,7 +138,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: MetricCard(
-                        label: 'Streak nhập cân dài nhất',
+                        label: 'Chuỗi nhập cân dài nhất',
                         value: '${state.longestStreak} ngày',
                         icon: Icons.workspace_premium_outlined,
                         color: AppColors.success,
@@ -136,6 +151,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   periodDays: _periodDays,
                   completedCount: attendedCount,
                   scheduledCount: scheduledCount,
+                  fullyCompletedCount: fullyCompletedCount,
+                  partialCount: partialCount,
+                  abandonedCount: abandonedCount,
                   onPeriodChanged: (value) =>
                       setState(() => _periodDays = value),
                 ),
@@ -162,6 +180,26 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   values: muscleBalance,
                   icon: Icons.accessibility_new,
                 ),
+                const SizedBox(height: 12),
+                Card(
+                  child: ListTile(
+                    leading: const CircleAvatar(
+                      backgroundColor: AppColors.paleBlue,
+                      child: Icon(Icons.accessibility_new),
+                    ),
+                    title: const Text('Bản đồ cân bằng cơ'),
+                    subtitle: const Text(
+                      'Xem mức độ tác động theo hiệp, nhóm cơ phụ và từng buổi tập.',
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => MuscleBalanceScreen(state: state),
+                      ),
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 18),
                 Card(
                   child: ListTile(
@@ -173,7 +211,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     subtitle: Text(
                       '${measurementUnit.formatWeight(state.profile.currentWeightKg)} • '
                       'BMI ${state.profile.bmi.toStringAsFixed(1)} • '
-                      'streak ${state.currentStreak} ngày',
+                      'chuỗi ${state.currentStreak} ngày',
                     ),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () => Navigator.push(
@@ -195,27 +233,37 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     icon: Icons.history,
                     title: 'Chưa có dữ liệu',
                     message:
-                        'Kết quả sẽ xuất hiện tự động sau khi bạn hoàn tất Active Workout.',
-                  )
-                else
-                  for (final completion in completions)
-                    _CompletionTile(completion: completion),
-                if (state.completions.isNotEmpty || state.plans.isNotEmpty) ...[
-                  const SizedBox(height: 18),
-                  Card(
-                    color: AppColors.input,
-                    child: const ListTile(
-                      leading: Icon(Icons.archive_outlined),
-                      title: Text('Dữ liệu phiên bản cũ'),
-                      subtitle: Text(
-                        'Kế hoạch và kết quả thủ công cũ được giữ ở chế độ chỉ đọc; không dùng để kê đơn mới.',
-                      ),
-                    ),
+                        'Kết quả sẽ xuất hiện tự động sau khi bạn hoàn tất buổi tập.',
                   ),
-                ],
               ],
             ),
           ),
+          if (completions.isNotEmpty)
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              sliver: SliverList.builder(
+                itemCount: completions.length,
+                itemBuilder: (context, index) =>
+                    _CompletionTile(completion: completions[index]),
+              ),
+            ),
+          if (state.completions.isNotEmpty || state.plans.isNotEmpty)
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
+              sliver: SliverToBoxAdapter(
+                child: Card(
+                  color: AppColors.input,
+                  child: const ListTile(
+                    leading: Icon(Icons.archive_outlined),
+                    title: Text('Dữ liệu phiên bản cũ'),
+                    subtitle: Text(
+                      'Kế hoạch và kết quả thủ công cũ được giữ ở chế độ chỉ đọc; không dùng để kê đơn mới.',
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          const SliverToBoxAdapter(child: SizedBox(height: 32)),
         ],
       ),
     );
@@ -240,17 +288,17 @@ class _HistoryScreenState extends State<HistoryScreen> {
     DateTime? start,
   ) {
     final now = DateTime.now();
-    return state.occurrences.where((occurrence) {
-      final date = occurrence.scheduledDate;
-      if (date.isAfter(now)) return false;
-      if (start != null && date.isBefore(start)) return false;
-      return occurrence.status != WorkoutOccurrenceStatus.cancelled;
-    }).toList(growable: false);
+    return state.occurrences
+        .where((occurrence) {
+          final date = occurrence.scheduledDate;
+          if (date.isAfter(now)) return false;
+          if (start != null && date.isBefore(start)) return false;
+          return occurrence.status != WorkoutOccurrenceStatus.cancelled;
+        })
+        .toList(growable: false);
   }
 
-  List<_RankedMetric> _topExercises(
-    List<WorkoutCompletion> completions,
-  ) {
+  List<_RankedMetric> _topExercises(List<WorkoutCompletion> completions) {
     final names = <String, String>{};
     final counts = <String, int>{};
     for (final completion in completions) {
@@ -259,7 +307,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
       }
       for (final event in completion.setEvents) {
         if (event.status != SetEventStatus.completed) continue;
-        counts.update(event.exerciseId, (value) => value + 1, ifAbsent: () => 1);
+        counts.update(
+          event.exerciseId,
+          (value) => value + 1,
+          ifAbsent: () => 1,
+        );
       }
     }
     return counts.entries
@@ -273,9 +325,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       ..sort((left, right) => right.value.compareTo(left.value));
   }
 
-  List<_RankedMetric> _muscleBalance(
-    List<WorkoutCompletion> completions,
-  ) {
+  List<_RankedMetric> _muscleBalance(List<WorkoutCompletion> completions) {
     final counts = <String, int>{};
     for (final completion in completions) {
       final groups = {
@@ -291,9 +341,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       }
     }
     return counts.entries
-        .map(
-          (entry) => _RankedMetric(label: entry.key, value: entry.value),
-        )
+        .map((entry) => _RankedMetric(label: entry.key, value: entry.value))
         .toList()
       ..sort((left, right) => right.value.compareTo(left.value));
   }
@@ -304,12 +352,18 @@ class _PeriodReportCard extends StatelessWidget {
     required this.periodDays,
     required this.completedCount,
     required this.scheduledCount,
+    required this.fullyCompletedCount,
+    required this.partialCount,
+    required this.abandonedCount,
     required this.onPeriodChanged,
   });
 
   final int periodDays;
   final int completedCount;
   final int scheduledCount;
+  final int fullyCompletedCount;
+  final int partialCount;
+  final int abandonedCount;
   final ValueChanged<int> onPeriodChanged;
 
   @override
@@ -353,7 +407,13 @@ class _PeriodReportCard extends StatelessWidget {
             Text(
               scheduledCount == 0
                   ? 'Chưa có occurrence đến hạn trong kỳ đã chọn.'
-                  : '$completedCount/$scheduledCount buổi đến hạn đã hoàn thành. Buổi legacy không được đưa vào báo cáo.',
+                  : '$completedCount/$scheduledCount buổi đến hạn có ít nhất một hiệp hoàn tất.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Hoàn tất đủ: $fullyCompletedCount • Một phần: $partialCount'
+              ' • 0 hiệp/bỏ dở: $abandonedCount',
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ],
@@ -375,7 +435,10 @@ class _StreakSummaryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Hai loại streak', style: Theme.of(context).textTheme.titleLarge),
+          Text(
+            'Hai loại chuỗi hoạt động',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
           const SizedBox(height: 14),
           _StreakRow(
             icon: Icons.monitor_weight_outlined,
@@ -442,10 +505,7 @@ class _StreakRow extends StatelessWidget {
 }
 
 class _ActivityHeatmap extends StatelessWidget {
-  const _ActivityHeatmap({
-    required this.weightDays,
-    required this.workoutDays,
-  });
+  const _ActivityHeatmap({required this.weightDays, required this.workoutDays});
 
   final Set<String> weightDays;
   final Set<String> workoutDays;
@@ -470,7 +530,7 @@ class _ActivityHeatmap extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'Mỗi ô dùng ngày địa phương; một ngày chỉ được tính một lần cho từng streak.',
+              'Mỗi ô dùng ngày địa phương; một ngày chỉ được tính một lần cho từng chuỗi hoạt động.',
               style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 14),
@@ -532,7 +592,9 @@ class _HeatmapRow extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: activeDays.contains(_dayKey(day))
                           ? color
-                          : Theme.of(context).colorScheme.surfaceContainerHighest,
+                          : Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ),
@@ -618,21 +680,25 @@ class _CompletionTile extends StatelessWidget {
   Widget build(BuildContext context) => Card(
     child: ExpansionTile(
       leading: CircleAvatar(
-        backgroundColor: completion.status == WorkoutCompletionStatus.completed
-            ? const Color(0xFFE1F7EC)
-            : const Color(0xFFFFF1D5),
-        foregroundColor: completion.status == WorkoutCompletionStatus.completed
-            ? AppColors.success
-            : AppColors.warning,
-        child: Icon(
-          completion.status == WorkoutCompletionStatus.completed
-              ? Icons.check
-              : Icons.timelapse,
-        ),
+        backgroundColor: switch (completion.status) {
+          WorkoutCompletionStatus.completed => const Color(0xFFE1F7EC),
+          WorkoutCompletionStatus.partiallyCompleted => const Color(0xFFFFF1D5),
+          WorkoutCompletionStatus.abandoned => const Color(0xFFF1F3F5),
+        },
+        foregroundColor: switch (completion.status) {
+          WorkoutCompletionStatus.completed => AppColors.success,
+          WorkoutCompletionStatus.partiallyCompleted => AppColors.warning,
+          WorkoutCompletionStatus.abandoned => AppColors.textMuted,
+        },
+        child: Icon(switch (completion.status) {
+          WorkoutCompletionStatus.completed => Icons.check,
+          WorkoutCompletionStatus.partiallyCompleted => Icons.timelapse,
+          WorkoutCompletionStatus.abandoned => Icons.block_outlined,
+        }),
       ),
-      title: Text(completion.snapshot.title),
+      title: Text(AppState.displaySessionTitle(completion.snapshot.title)),
       subtitle: Text(
-        '${completion.snapshot.programTitle.isEmpty ? 'Chương trình FitTrack' : completion.snapshot.programTitle}'
+        '${AppState.displayStoredProgramTitle(completion.snapshot.programTitle)}'
         '${completion.snapshot.contentVersion.isEmpty ? '' : ' • v${completion.snapshot.contentVersion}'}\n'
         '${DateFormat('dd/MM/yyyy • HH:mm').format(completion.completedAt)} • '
         '${(completion.actualDurationSeconds / 60).ceil()} phút',
@@ -643,7 +709,14 @@ class _CompletionTile extends StatelessWidget {
           child: Row(
             children: [
               Expanded(
-                child: Text('${completion.completedSetCount} hiệp hoàn tất'),
+                child: Text(switch (completion.status) {
+                  WorkoutCompletionStatus.completed =>
+                    '${completion.completedSetCount} hiệp hoàn tất',
+                  WorkoutCompletionStatus.partiallyCompleted =>
+                    '${completion.completedSetCount} hiệp • hoàn tất một phần',
+                  WorkoutCompletionStatus.abandoned =>
+                    'Bỏ dở, không hoàn tất hiệp nào',
+                }),
               ),
               if (completion.skippedSetCount > 0)
                 Text('${completion.skippedSetCount} hiệp bỏ qua'),
@@ -652,15 +725,58 @@ class _CompletionTile extends StatelessWidget {
         ),
         ListTile(
           dense: true,
+          leading: const Icon(Icons.receipt_long_outlined),
+          title: const Text('Xem chi tiết từng bài, từng hiệp'),
+          subtitle: const Text(
+            'Mục tiêu, kết quả thực tế, bài thay thế và bằng chứng AI',
+          ),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) =>
+                  WorkoutCompletionDetailScreen(completion: completion),
+            ),
+          ),
+        ),
+        ListTile(
+          dense: true,
           leading: const Icon(Icons.fact_check_outlined),
           title: const Text('Chế độ xác nhận'),
           subtitle: Text(_confirmationModes(completion)),
         ),
+        if (_timedEvents(completion) case final timedEvents
+            when timedEvents.isNotEmpty)
+          ListTile(
+            dense: true,
+            leading: const Icon(Icons.timer_outlined),
+            title: const Text('Hiệp tính giờ'),
+            subtitle: Text(
+              '${timedEvents.length} hiệp • '
+              '${timedEvents.fold<int>(0, (total, event) => total + event.timedDurationSeconds!)} giây thực tế',
+            ),
+          ),
+        if (completion.snapshot.exercises
+                .where((exercise) => exercise.isAlternative)
+                .toList()
+            case final alternatives when alternatives.isNotEmpty)
+          ListTile(
+            dense: true,
+            leading: const Icon(Icons.swap_horiz),
+            title: const Text('Bài thay thế đã dùng'),
+            subtitle: Text(
+              alternatives.map((exercise) => exercise.name).join(', '),
+            ),
+          ),
         ListTile(
           dense: true,
           leading: const Icon(Icons.account_tree_outlined),
           title: const Text('Phiên bản chương trình'),
-          subtitle: Text(completion.programVersionId),
+          subtitle: Text(
+            completion.snapshot.programTitle.isNotEmpty
+                ? '${AppState.displayStoredProgramTitle(completion.snapshot.programTitle)}${completion.snapshot.contentVersion.isEmpty ? '' : ' (v${completion.snapshot.contentVersion})'}'
+                : 'Chương trình tập luyện',
+          ),
         ),
         ListTile(
           dense: true,
@@ -685,10 +801,19 @@ class _CompletionTile extends StatelessWidget {
     return modes
         .map(
           (mode) => switch (mode) {
-            WorkoutConfirmationMode.aiCamera => 'AI Camera Coach',
-            WorkoutConfirmationMode.guided => 'Guided Confirmation',
+            WorkoutConfirmationMode.aiCamera => 'Hướng dẫn bằng camera AI',
+            WorkoutConfirmationMode.guided => 'Tự xác nhận có hướng dẫn',
           },
         )
         .join(' + ');
   }
+
+  List<SetEvent> _timedEvents(WorkoutCompletion completion) => completion
+      .setEvents
+      .where(
+        (event) =>
+            event.status == SetEventStatus.completed &&
+            event.timedDurationSeconds != null,
+      )
+      .toList(growable: false);
 }

@@ -17,19 +17,29 @@ class HomeScreen extends StatelessWidget {
     required this.onOpenProgram,
     required this.onOpenProfile,
     required this.onOpenHistory,
+    this.preferredOccurrenceId,
   });
 
   final AppState state;
   final VoidCallback onOpenProgram;
   final VoidCallback onOpenProfile;
   final VoidCallback onOpenHistory;
+  final String? preferredOccurrenceId;
 
   @override
   Widget build(BuildContext context) {
-    final occurrence = state.todayOccurrence;
+    final preferred = preferredOccurrenceId == null
+        ? null
+        : state.occurrenceById(preferredOccurrenceId!);
+    final occurrence =
+        preferred?.isOpen == true &&
+            preferred?.status != WorkoutOccurrenceStatus.inProgress
+        ? preferred
+        : state.todayOccurrence;
     final session = occurrence == null
         ? null
         : state.sessionForOccurrence(occurrence);
+    final next = state.nextOccurrence;
     return SafeArea(
       child: RefreshIndicator(
         onRefresh: state.ensureProgramEnrollment,
@@ -81,7 +91,14 @@ class HomeScreen extends StatelessWidget {
             if (state.activeWorkoutDraft != null)
               _ResumeCard(state: state, onOpenHistory: onOpenHistory)
             else if (occurrence == null || session == null)
-              _NoSessionCard(onOpenProgram: onOpenProgram)
+              _NoSessionCard(
+                state: state,
+                nextOccurrence: next,
+                nextSession: next == null
+                    ? null
+                    : state.sessionForOccurrence(next),
+                onOpenProgram: onOpenProgram,
+              )
             else
               _SessionCard(
                 state: state,
@@ -98,7 +115,7 @@ class HomeScreen extends StatelessWidget {
                   child: MetricCard(
                     label: 'Đã tập tuần này',
                     value:
-                        '${state.targetWorkoutsThisWeek}/${state.activeProgramVersion?.cadence.sessionsPerWeek ?? state.profile.weeklyWorkoutGoal}',
+                        '${state.targetWorkoutsThisWeek}/${state.activeSessionsPerWeek}',
                     icon: Icons.task_alt,
                     color: AppColors.success,
                   ),
@@ -124,7 +141,7 @@ class HomeScreen extends StatelessWidget {
                     color: AppColors.warning,
                   ),
                 ),
-                title: Text('Streak: ${state.currentStreak} ngày'),
+                title: Text('Chuỗi hoạt động: ${state.currentStreak} ngày'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => Navigator.push(
                   context,
@@ -140,7 +157,7 @@ class HomeScreen extends StatelessWidget {
                   child: Icon(Icons.route_outlined, color: AppColors.primary),
                 ),
                 title: Text(
-                  state.activeProgram?.title ?? 'Chương trình FitTrack',
+                  state.activeProgramDisplayTitle,
                 ),
                 subtitle: Text(
                   state.enrollment == null
@@ -190,6 +207,17 @@ class _SessionCard extends StatefulWidget {
 class _SessionCardState extends State<_SessionCard> {
   bool _busy = false;
 
+  bool get _isOverdue {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final scheduled = widget.occurrence.scheduledDate;
+    return DateTime(
+      scheduled.year,
+      scheduled.month,
+      scheduled.day,
+    ).isBefore(today);
+  }
+
   Future<void> _start(WorkoutConfirmationMode mode) async {
     if (_busy) return;
     setState(() => _busy = true);
@@ -220,9 +248,86 @@ class _SessionCardState extends State<_SessionCard> {
     }
   }
 
+  Future<void> _reschedule() async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final scheduled = widget.occurrence.scheduledDate;
+    final initialDate = scheduled.isBefore(today) ? today : scheduled;
+    final date = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: today,
+      lastDate: today.add(const Duration(days: 365)),
+    );
+    if (date == null || !mounted) return;
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(
+        hour:
+            widget.occurrence.scheduledHour ?? widget.state.programReminderHour,
+        minute:
+            widget.occurrence.scheduledMinute ??
+            widget.state.programReminderMinute,
+      ),
+    );
+    if (time == null || !mounted) return;
+    final mode = await showModalBottomSheet<OccurrenceRescheduleMode>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.event),
+              title: const Text('Chỉ dời buổi này'),
+              subtitle: const Text(
+                'Giữ nguyên các buổi sau; FitTrack sẽ kiểm tra thời gian nghỉ.',
+              ),
+              onTap: () =>
+                  Navigator.pop(context, OccurrenceRescheduleMode.single),
+            ),
+            ListTile(
+              leading: const Icon(Icons.event_repeat),
+              title: const Text('Dời buổi này và các buổi sau'),
+              subtitle: const Text(
+                'Dịch toàn bộ phần lịch còn lại cùng số ngày.',
+              ),
+              onTap: () =>
+                  Navigator.pop(context, OccurrenceRescheduleMode.cascade),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (mode == null || !mounted) return;
+    setState(() => _busy = true);
+    try {
+      await widget.state.rescheduleOccurrence(
+        widget.occurrence,
+        scheduledDate: date,
+        hour: time.hour,
+        minute: time.minute,
+        mode: mode,
+      );
+    } on Object catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(_message(error))));
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final choice = widget.occurrence.readinessChoice;
+    final readinessCurrent = widget.state.isReadinessCurrent(widget.occurrence);
+    final choice = readinessCurrent ? widget.occurrence.readinessChoice : null;
+    final readinessVariant = choice == null
+        ? null
+        : widget.session.readinessVariantFor(choice);
     return Card(
       clipBehavior: Clip.antiAlias,
       child: Padding(
@@ -236,7 +341,7 @@ class _SessionCardState extends State<_SessionCard> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Buổi tập được đề xuất',
+                    _isOverdue ? 'Buổi tập quá hạn' : 'Buổi tập được đề xuất',
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ),
@@ -245,8 +350,16 @@ class _SessionCardState extends State<_SessionCard> {
             ),
             const SizedBox(height: 12),
             Text(
-              widget.session.title,
+              AppState.displaySessionTitle(widget.session.title),
               style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              '${DateFormat('dd/MM/yyyy').format(widget.occurrence.scheduledDate)}'
+              ' • ${TimeOfDay(hour: widget.occurrence.scheduledHour ?? widget.state.programReminderHour, minute: widget.occurrence.scheduledMinute ?? widget.state.programReminderMinute).format(context)}',
+              style: TextStyle(
+                color: _isOverdue ? AppColors.warning : AppColors.textMuted,
+              ),
             ),
             const SizedBox(height: 6),
             Text(
@@ -261,6 +374,7 @@ class _SessionCardState extends State<_SessionCard> {
             const SizedBox(height: 8),
             SegmentedButton<ReadinessChoice>(
               showSelectedIcon: false,
+              emptySelectionAllowed: true,
               segments: const [
                 ButtonSegment(
                   value: ReadinessChoice.ready,
@@ -278,31 +392,49 @@ class _SessionCardState extends State<_SessionCard> {
                   label: Text('Cần nghỉ ngơi'),
                 ),
               ],
-              selected: {choice ?? ReadinessChoice.ready},
+              selected: choice == null ? const {} : {choice},
               onSelectionChanged: _busy
                   ? null
-                  : (values) => widget.state.chooseReadiness(
-                      widget.occurrence,
-                      values.first,
-                    ),
+                  : (values) {
+                      if (values.isEmpty) return;
+                      widget.state.chooseReadiness(
+                        widget.occurrence,
+                        values.first,
+                      );
+                    },
             ),
+            if (readinessVariant != null) ...[
+              const SizedBox(height: 12),
+              Text(
+                readinessVariant.guidance,
+                style: const TextStyle(color: AppColors.textMuted),
+              ),
+              if (readinessVariant.safetyMessage case final warning?) ...[
+                const SizedBox(height: 6),
+                Text(warning, style: const TextStyle(color: AppColors.warning)),
+              ],
+            ] else ...[
+              const SizedBox(height: 10),
+              const Text(
+                'Vui lòng đánh giá lại mỗi ngày để FitTrack chọn đúng biến thể buổi tập.',
+                style: TextStyle(color: AppColors.textMuted),
+              ),
+            ],
             const SizedBox(height: 18),
             AppPrimaryButton(
               label: 'Bắt đầu với hướng dẫn',
               icon: Icons.play_arrow_rounded,
               loading: _busy,
-              onPressed: () => _start(WorkoutConfirmationMode.guided),
+              onPressed: readinessCurrent
+                  ? () => _start(WorkoutConfirmationMode.guided)
+                  : null,
             ),
             const SizedBox(height: 8),
             Row(
               children: [
                 Expanded(
                   child: TextButton.icon(
-                    onPressed: _busy
-                        ? null
-                        : () => widget.state.postponeOccurrence(
-                            widget.occurrence,
-                          ),
+                    onPressed: _busy ? null : _reschedule,
                     icon: const Icon(Icons.event_repeat),
                     label: const Text('Dời lịch'),
                   ),
@@ -320,13 +452,19 @@ class _SessionCardState extends State<_SessionCard> {
                               confirmLabel: 'Bỏ qua',
                             );
                             if (confirmed) {
-                              await widget.state.skipOccurrence(
-                                widget.occurrence,
-                              );
+                              if (_isOverdue) {
+                                await widget.state.markOccurrenceMissed(
+                                  widget.occurrence,
+                                );
+                              } else {
+                                await widget.state.skipOccurrence(
+                                  widget.occurrence,
+                                );
+                              }
                             }
                           },
                     icon: const Icon(Icons.skip_next_outlined),
-                    label: const Text('Bỏ qua'),
+                    label: Text(_isOverdue ? 'Đã lỡ' : 'Bỏ qua'),
                   ),
                 ),
               ],
@@ -395,7 +533,10 @@ class _ResumeCardState extends State<_ResumeCard> {
   Future<void> _finish() async {
     final draft = widget.state.activeWorkoutDraft;
     final occurrence = _occurrenceForDraft();
-    if (draft == null || draft.startedAt == null || occurrence == null || _busy) {
+    if (draft == null ||
+        draft.startedAt == null ||
+        occurrence == null ||
+        _busy) {
       return;
     }
     final confirmed = await confirmAction(
@@ -466,6 +607,7 @@ class _ResumeCardState extends State<_ResumeCard> {
     final draft = widget.state.activeWorkoutDraft!;
     final canDiscard =
         draft.phase == WorkoutPhase.preparing ||
+        draft.phase == WorkoutPhase.countingDown ||
         draft.phase == WorkoutPhase.working ||
         draft.phase == WorkoutPhase.resting ||
         draft.phase == WorkoutPhase.paused;
@@ -485,7 +627,7 @@ class _ResumeCardState extends State<_ResumeCard> {
             ),
             const SizedBox(height: 6),
             Text(
-              draft.snapshot.title,
+              AppState.displaySessionTitle(draft.snapshot.title),
               style: Theme.of(
                 context,
               ).textTheme.headlineSmall?.copyWith(color: Colors.white),
@@ -543,33 +685,75 @@ class _ResumeCardState extends State<_ResumeCard> {
 }
 
 class _NoSessionCard extends StatelessWidget {
-  const _NoSessionCard({required this.onOpenProgram});
+  const _NoSessionCard({
+    required this.state,
+    required this.nextOccurrence,
+    required this.nextSession,
+    required this.onOpenProgram,
+  });
+
+  final AppState state;
+  final WorkoutOccurrence? nextOccurrence;
+  final ProgramSession? nextSession;
   final VoidCallback onOpenProgram;
 
   @override
-  Widget build(BuildContext context) => Card(
-    child: Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        children: [
-          const Icon(Icons.event_available, size: 52, color: AppColors.primary),
-          const SizedBox(height: 12),
-          Text(
-            'Không có buổi tập cần làm',
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          const SizedBox(height: 6),
-          const Text(
-            'Bạn có thể nghỉ ngơi hoặc xem trước các buổi trong chương trình.',
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 16),
-          OutlinedButton(
-            onPressed: onOpenProgram,
-            child: const Text('Xem chương trình'),
-          ),
-        ],
+  Widget build(BuildContext context) {
+    final completed =
+        state.enrollment?.status == ProgramEnrollmentStatus.completed;
+    final next = nextOccurrence;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
+            Icon(
+              completed ? Icons.emoji_events_outlined : Icons.event_available,
+              size: 52,
+              color: AppColors.primary,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              completed
+                  ? 'Bạn đã kết thúc lộ trình'
+                  : 'Không có buổi tập cần làm hôm nay',
+              style: Theme.of(context).textTheme.titleLarge,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              completed
+                  ? 'Kết quả cũ vẫn được giữ nguyên. Bạn có thể bắt đầu một enrollment mới.'
+                  : next == null
+                  ? 'Bạn có thể nghỉ ngơi hoặc xem lại chương trình.'
+                  : 'Buổi kế tiếp: ${nextSession?.title ?? 'Buổi tập FitTrack'}'
+                        ' • ${DateFormat('dd/MM/yyyy').format(next.scheduledDate)}',
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            if (completed)
+              FilledButton.icon(
+                onPressed: () async {
+                  try {
+                    await state.restartProgramEnrollment();
+                  } on Object catch (error) {
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text(error.toString())));
+                  }
+                },
+                icon: const Icon(Icons.replay),
+                label: const Text('Bắt đầu lộ trình mới'),
+              )
+            else
+              OutlinedButton(
+                onPressed: onOpenProgram,
+                child: const Text('Xem chương trình'),
+              ),
+          ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
